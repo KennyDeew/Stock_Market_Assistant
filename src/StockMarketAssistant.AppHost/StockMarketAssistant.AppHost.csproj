@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <Sdk Name="Aspire.AppHost.Sdk" Version="9.0.0" />
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsAspireHost>true</IsAspireHost>
+    <UserSecretsId>3bf6d1f4-92b6-4e0a-b089-131ed84c219c</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.AppHost" Version="9.3.0" />
+    <PackageReference Include="Aspire.Hosting.Redis" Version="9.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\backend\gateway\Gateway.WebApi.csproj" />
+    <ProjectReference Include="..\backend\services\AuthService\WebApi\AuthService.WebApi.csproj" />
+    <ProjectReference Include="..\backend\services\NotificationService\WebApi\NotificationService.WebApi.csproj" />
+    <ProjectReference Include="..\backend\services\PortfolioService\WebApi\PortfolioService.WebApi.csproj" />
+    <ProjectReference Include="..\backend\services\StockCardService\WebApi\StockCardService.WebApi.csproj" />
+  </ItemGroup>
+
+</Project>
