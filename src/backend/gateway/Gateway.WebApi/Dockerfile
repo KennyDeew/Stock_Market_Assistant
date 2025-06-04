@@ -12,19 +12,19 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["WebApi/WebApi.csproj", "WebApi/"]
-RUN dotnet restore "./WebApi/WebApi.csproj"
+COPY ["src/backend/gateway/Gateway.WebApi/Gateway.WebApi.csproj", "src/backend/gateway/Gateway.WebApi/"]
+RUN dotnet restore "./src/backend/gateway/Gateway.WebApi/Gateway.WebApi.csproj"
 COPY . .
-WORKDIR "/src/WebApi"
-RUN dotnet build "./WebApi.csproj" -c $BUILD_CONFIGURATION -o /app/build
+WORKDIR "/src/src/backend/gateway/Gateway.WebApi"
+RUN dotnet build "./Gateway.WebApi.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 # Этот этап используется для публикации проекта службы, который будет скопирован на последний этап
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./WebApi.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "./Gateway.WebApi.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 # Этот этап используется в рабочей среде или при запуске из VS в обычном режиме (по умолчанию, когда конфигурация отладки не используется)
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "WebApi.dll"]
+ENTRYPOINT ["dotnet", "Gateway.WebApi.dll"]

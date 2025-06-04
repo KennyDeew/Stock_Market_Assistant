@@ -1,4 +1,4 @@
-namespace WebApi
+namespace Gateway.WebApi
 {
     public class WeatherForecast
     {
