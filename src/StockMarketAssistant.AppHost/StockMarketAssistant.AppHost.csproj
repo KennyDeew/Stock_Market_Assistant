@@ -18,10 +18,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\backend\gateway\Gateway.WebApi\Gateway.WebApi.csproj" />
-    <ProjectReference Include="..\backend\services\AuthService\Presentation\AuthService.WebApi\AuthService.WebApi.csproj" />
-    <ProjectReference Include="..\backend\services\NotificationService\Presentation\NotificationService.WebApi\NotificationService.WebApi.csproj" />
-    <ProjectReference Include="..\backend\services\PortfolioService\Presentation\PortfolioService.WebApi\PortfolioService.WebApi.csproj" />
-    <ProjectReference Include="..\backend\services\StockCardService\Presentation\StockCardService.WebApi\StockCardService.WebApi.csproj" />
+    <ProjectReference Include="..\backend\services\AuthService\AuthService.WebApi\AuthService.WebApi.csproj" />
+    <ProjectReference Include="..\backend\services\NotificationService\NotificationService.WebApi\NotificationService.WebApi.csproj" />
+    <ProjectReference Include="..\backend\services\PortfolioService\PortfolioService.WebApi\PortfolioService.WebApi.csproj" />
+    <ProjectReference Include="..\backend\services\StockCardService\StockCardService.WebApi\StockCardService.WebApi.csproj" />
   </ItemGroup>
 
 </Project>

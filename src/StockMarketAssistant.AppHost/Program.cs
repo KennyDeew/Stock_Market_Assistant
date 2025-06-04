@@ -19,7 +19,7 @@
 
         // Связывание ресурсов с проектами
         apiPortfolioService.WithReference(redis);
-        //apiService.WithReference(postgres);
+        //apiPortfolioService.WithReference(postgres);
 
 
         builder.Build().Run();
