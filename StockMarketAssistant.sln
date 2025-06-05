@@ -102,6 +102,24 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StockCardService.Infrastruc
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StockCardService.Infrastructure.Repositories", "src\backend\services\StockCardService\StockCardService.Infrastructure.Repositories\StockCardService.Infrastructure.Repositories.csproj", "{37B2D898-FDEF-43D0-96E1-BC43BE432522}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AnalyticsService", "AnalyticsService", "{41545DF1-0759-40B3-BE1A-E20985ADF86A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core", "Core", "{85EFCDCA-7275-4D84-A087-41071F855F94}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Infrastructure", "Infrastructure", "{9B6D6EF2-E538-40EC-96D2-B81BBEF741DA}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Presentation", "Presentation", "{76FAE845-4F9E-4076-9C6F-3EB9485CC772}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AnalyticsService.Application", "src\backend\services\AnalyticsService\AnalyticsService.Application\AnalyticsService.Application.csproj", "{4FBDD5BC-1D69-49CE-9DBF-85DACA3A9278}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AnalyticsService.Domain", "src\backend\services\AnalyticsService\AnalyticsService.Domain\AnalyticsService.Domain.csproj", "{36CAA749-134E-4AE5-9A14-5B0E5041C368}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AnalyticsService.Infrastructure.EntityFramework", "src\backend\services\AnalyticsService\AnalyticsService.Infrastructure.EntityFramework\AnalyticsService.Infrastructure.EntityFramework.csproj", "{2850E90D-E920-4C0C-B3B5-C6D31C488FD2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AnalyticsService.Infrastructure.Repositories", "src\backend\services\AnalyticsService\AnalyticsService.Infrastructure.Repositories\AnalyticsService.Infrastructure.Repositories.csproj", "{8147C948-3B45-4360-90D7-2B622C5C98D1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AnalyticsService.WebApi", "src\backend\services\AnalyticsService\AnalyticsService.WebApi\AnalyticsService.WebApi.csproj", "{E2784DD7-59E8-449A-B54B-33A28188A04F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -200,6 +218,26 @@ Global
 		{37B2D898-FDEF-43D0-96E1-BC43BE432522}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{37B2D898-FDEF-43D0-96E1-BC43BE432522}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{37B2D898-FDEF-43D0-96E1-BC43BE432522}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4FBDD5BC-1D69-49CE-9DBF-85DACA3A9278}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4FBDD5BC-1D69-49CE-9DBF-85DACA3A9278}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4FBDD5BC-1D69-49CE-9DBF-85DACA3A9278}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4FBDD5BC-1D69-49CE-9DBF-85DACA3A9278}.Release|Any CPU.Build.0 = Release|Any CPU
+		{36CAA749-134E-4AE5-9A14-5B0E5041C368}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{36CAA749-134E-4AE5-9A14-5B0E5041C368}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{36CAA749-134E-4AE5-9A14-5B0E5041C368}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{36CAA749-134E-4AE5-9A14-5B0E5041C368}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2850E90D-E920-4C0C-B3B5-C6D31C488FD2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2850E90D-E920-4C0C-B3B5-C6D31C488FD2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2850E90D-E920-4C0C-B3B5-C6D31C488FD2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2850E90D-E920-4C0C-B3B5-C6D31C488FD2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8147C948-3B45-4360-90D7-2B622C5C98D1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8147C948-3B45-4360-90D7-2B622C5C98D1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8147C948-3B45-4360-90D7-2B622C5C98D1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8147C948-3B45-4360-90D7-2B622C5C98D1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E2784DD7-59E8-449A-B54B-33A28188A04F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E2784DD7-59E8-449A-B54B-33A28188A04F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E2784DD7-59E8-449A-B54B-33A28188A04F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E2784DD7-59E8-449A-B54B-33A28188A04F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -248,6 +286,15 @@ Global
 		{814CD296-15E2-4A0D-89EE-A8E29F15B93F} = {A82D7451-4E30-487C-9261-F8E23AE65C53}
 		{74874E8A-ADF7-4E09-AB86-8B2126DD85D4} = {2FB4AA13-2170-44D1-A977-065FA5380850}
 		{37B2D898-FDEF-43D0-96E1-BC43BE432522} = {2FB4AA13-2170-44D1-A977-065FA5380850}
+		{41545DF1-0759-40B3-BE1A-E20985ADF86A} = {4E7F5360-0B88-4676-8937-B529A66EE43A}
+		{85EFCDCA-7275-4D84-A087-41071F855F94} = {41545DF1-0759-40B3-BE1A-E20985ADF86A}
+		{9B6D6EF2-E538-40EC-96D2-B81BBEF741DA} = {41545DF1-0759-40B3-BE1A-E20985ADF86A}
+		{76FAE845-4F9E-4076-9C6F-3EB9485CC772} = {41545DF1-0759-40B3-BE1A-E20985ADF86A}
+		{4FBDD5BC-1D69-49CE-9DBF-85DACA3A9278} = {85EFCDCA-7275-4D84-A087-41071F855F94}
+		{36CAA749-134E-4AE5-9A14-5B0E5041C368} = {85EFCDCA-7275-4D84-A087-41071F855F94}
+		{2850E90D-E920-4C0C-B3B5-C6D31C488FD2} = {9B6D6EF2-E538-40EC-96D2-B81BBEF741DA}
+		{8147C948-3B45-4360-90D7-2B622C5C98D1} = {9B6D6EF2-E538-40EC-96D2-B81BBEF741DA}
+		{E2784DD7-59E8-449A-B54B-33A28188A04F} = {76FAE845-4F9E-4076-9C6F-3EB9485CC772}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {C7DE2C96-9A08-45EC-9A91-EF711525ABF1}
