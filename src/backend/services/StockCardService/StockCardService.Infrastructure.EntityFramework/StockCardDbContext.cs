@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using StockMarketAssistant.StockCardService.Models;
+using StockMarketAssistant.StockCardService.Domain.Entities;
+
 
 namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
 
