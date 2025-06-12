@@ -1,4 +1,6 @@
-﻿namespace StockCardService.WebApi
+﻿using StockCardService.Infrastructure.EntityFramework;
+
+namespace StockCardService.WebApi
 {
     public class Program
     {
@@ -9,7 +11,11 @@
 
             var app = builder.Build();
 
-            app.MapGet("/", () => "Hello World!");
+            //app.MapGet("/", () => "Hello World!");
+
+            var StockCardServisConnectionString = builder.Configuration.GetConnectionString("StockCardDb");
+            DbInitializer.Initialize(StockCardServisConnectionString);
+            
 
             app.Run();
         }
