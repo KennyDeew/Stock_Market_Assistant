@@ -10,7 +10,8 @@ namespace StockMarketAssistant.StockCardService.Domain.Entities
         public string Ticker { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
-        public string MaturityPeriod { get; set; }
+        public DateTime MaturityPeriod { get; set; }
+
         
         public ICollection<Coupon> Coupons { get; set; }
     }
