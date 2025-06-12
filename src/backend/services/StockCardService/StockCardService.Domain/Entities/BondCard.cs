@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace StockMarketAssistant.StockCardService.Models
+namespace StockMarketAssistant.StockCardService.Domain.Entities
+
 {
     public class BondCard
     {
@@ -13,4 +14,5 @@ namespace StockMarketAssistant.StockCardService.Models
         
         public ICollection<Coupon> Coupons { get; set; }
     }
-}
+}
+
