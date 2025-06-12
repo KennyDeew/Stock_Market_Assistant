@@ -1,6 +1,7 @@
 ﻿using System;
 
-namespace StockMarketAssistant.StockCardService.Models
+namespace StockMarketAssistant.StockCardService.Domain.Entities
+
 {
     public class Multiplier
     {
@@ -11,4 +12,5 @@ namespace StockMarketAssistant.StockCardService.Models
         
         public ShareCard ShareCard { get; set; }
     }
-}
+}
+
