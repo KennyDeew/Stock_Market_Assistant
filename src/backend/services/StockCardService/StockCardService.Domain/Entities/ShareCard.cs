@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace StockMarketAssistant.StockCardService.Models
+namespace StockMarketAssistant.StockCardService.Domain.Entities
+
 {
     public class ShareCard
     {
@@ -14,4 +15,5 @@ namespace StockMarketAssistant.StockCardService.Models
         public ICollection<Multiplier> Multipliers { get; set; }
         public ICollection<Dividend> Dividends { get; set; }
     }
-}
+}
+
