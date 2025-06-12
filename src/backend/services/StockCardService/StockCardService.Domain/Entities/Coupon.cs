@@ -1,6 +1,7 @@
 ﻿using System;
 
-namespace StockMarketAssistant.StockCardService.Models
+namespace StockMarketAssistant.StockCardService.Domain.Entities
+
 {
     public class Coupon
     {
@@ -12,4 +13,5 @@ namespace StockMarketAssistant.StockCardService.Models
         
         public BondCard Bond { get; set; }
     }
-}
+}
+
