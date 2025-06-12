@@ -1,7 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using StockMarketAssistant.StockCardService.Models;
 
-namespace StockMarketAssistant.StockCardService.Data
+namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
+
 {     //*//
     public class StockCardDbContext : DbContext
     {
@@ -81,4 +82,5 @@ namespace StockMarketAssistant.StockCardService.Data
                 .HasMaxLength(50);
         }
     }
-}
+}
+
