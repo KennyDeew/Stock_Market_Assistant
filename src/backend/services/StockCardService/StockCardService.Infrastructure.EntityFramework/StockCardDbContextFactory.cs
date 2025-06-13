@@ -3,9 +3,6 @@ using Microsoft.EntityFrameworkCore.Design;
 using StockMarketAssistant.StockCardService.Infrastructure.EntityFramework;
 
 using Microsoft.EntityFrameworkCore.Design;
-using StockMarketAssistant.StockCardService.Data;
-using StockMarketAssistant.StockCardService.Data;
-
 namespace StockMarketAssistant.StockCardService;
 
 

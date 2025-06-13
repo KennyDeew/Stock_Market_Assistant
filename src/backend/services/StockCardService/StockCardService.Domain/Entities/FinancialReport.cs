@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace StockMarketAssistant.StockCardService.Models
+namespace StockMarketAssistant.StockCardService.Domain.Entities
 {
     public class FinancialReport
     {
@@ -8,7 +8,7 @@ namespace StockMarketAssistant.StockCardService.Models
         public Guid ShareCardId { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
-        public string Period { get; set; }
+        public DateTime Period { get; set; }
         public decimal Revenue { get; set; }
         public decimal EBITDA { get; set; }
         public decimal NetProfit { get; set; }
@@ -18,4 +18,5 @@ namespace StockMarketAssistant.StockCardService.Models
         
         public ShareCard ShareCard { get; set; }
     }
-}
+}
+

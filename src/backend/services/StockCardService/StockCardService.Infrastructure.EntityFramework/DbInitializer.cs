@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using StockCardService.Infrastructure.EntityFramework;
-using StockMarketAssistant.StockCardService.Data;
+using StockMarketAssistant.StockCardService.Infrastructure.EntityFramework;
 
 namespace StockCardService.Infrastructure.EntityFramework
 {
@@ -17,4 +16,5 @@ namespace StockCardService.Infrastructure.EntityFramework
             }
         }
     }
-}
+}
+

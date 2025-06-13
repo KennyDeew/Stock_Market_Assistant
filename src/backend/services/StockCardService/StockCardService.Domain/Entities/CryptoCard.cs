@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace StockMarketAssistant.StockCardService.Models
+namespace StockMarketAssistant.StockCardService.Domain.Entities
 {
     public class CryptoCard
     {
@@ -9,4 +9,5 @@ namespace StockMarketAssistant.StockCardService.Models
         public string Name { get; set; }
         public string Description { get; set; }
     }
-}
+}
+
