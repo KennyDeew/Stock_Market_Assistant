@@ -1,4 +1,4 @@
-namespace Gateway.WebApi
+namespace StockMarketAssistant.Gateway.WebApi
 {
     public class WeatherForecast
     {

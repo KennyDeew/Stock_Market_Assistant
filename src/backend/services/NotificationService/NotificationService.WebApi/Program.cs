@@ -1,4 +1,4 @@
-﻿namespace NotificationService.WebApi
+﻿namespace StockMarketAssistant.NotificationService.WebApi
 {
     public class Program
     {

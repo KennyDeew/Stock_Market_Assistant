@@ -1,4 +1,4 @@
-namespace AnalyticsService.WebApi
+namespace StockMarketAssistant.AnalyticsService.WebApi
 {
     public class Program
     {

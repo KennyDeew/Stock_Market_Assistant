@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 
-namespace Gateway.WebApi.Controllers
+namespace StockMarketAssistant.Gateway.WebApi.Controllers
 {
     [ApiController]
     [Route("[controller]")]
