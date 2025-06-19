@@ -1,4 +1,4 @@
-﻿namespace PortfolioService.WebApi
+﻿namespace StockMarketAssistant.PortfolioService.WebApi
 {
     public class Program
     {

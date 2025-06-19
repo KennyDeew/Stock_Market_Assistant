@@ -1,4 +1,4 @@
-﻿namespace AuthService.WebApi
+﻿namespace StockMarketAssistant.AuthService.WebApi
 {
     public class Program
     {

@@ -1,6 +1,6 @@
 ﻿using StockCardService.Infrastructure.EntityFramework;
 
-namespace StockCardService.WebApi
+namespace StockMarketAssistant.StockCardService.WebApi
 {
     public class Program
     {
@@ -13,8 +13,8 @@ namespace StockCardService.WebApi
 
             //app.MapGet("/", () => "Hello World!");
 
-            var StockCardServisConnectionString = builder.Configuration.GetConnectionString("StockCardDb");
-            DbInitializer.Initialize(StockCardServisConnectionString);
+            var StockCardServiceConnectionString = builder.Configuration.GetConnectionString("StockCardDb");
+            DbInitializer.Initialize(StockCardServiceConnectionString);
             
 
             app.Run();
