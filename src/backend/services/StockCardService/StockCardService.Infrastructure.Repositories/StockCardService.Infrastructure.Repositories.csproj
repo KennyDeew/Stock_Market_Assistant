@@ -7,4 +7,9 @@
     <RootNamespace>$(SolutionName).$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\StockCardService.Abstractions.Repositories\StockCardService.Abstractions.Repositories.csproj" />
+    <ProjectReference Include="..\StockCardService.Infrastructure.EntityFramework\StockCardService.Infrastructure.EntityFramework.csproj" />
+  </ItemGroup>
+
 </Project>
