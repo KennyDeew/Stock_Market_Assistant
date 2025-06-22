@@ -1,4 +1,7 @@
-﻿using StockMarketAssistant.StockCardService.Domain.Entities;
+﻿using StockCardService.WebApi.Models._01sub_Dividend;
+using StockCardService.WebApi.Models._01sub_FinancialReport;
+using StockCardService.WebApi.Models._01sub_Multiplier;
+using StockMarketAssistant.StockCardService.Domain.Entities;
 
 namespace StockCardService.WebApi.Models.ShareCard
 {
@@ -30,16 +33,16 @@ namespace StockCardService.WebApi.Models.ShareCard
         /// <summary>
         /// Финансовые отчеты по акции
         /// </summary>
-        public ICollection<FinancialReport> FinancialReports { get; set; }
+        public List<FinancialReportModel> FinancialReports { get; set; }
 
         /// <summary>
         /// Мультипликаторы акции
         /// </summary>
-        public ICollection<Multiplier> Multipliers { get; set; }
+        public List<MultiplierModel> Multipliers { get; set; }
 
         /// <summary>
         /// Дивиденды акции
         /// </summary>
-        public ICollection<Dividend> Dividends { get; set; }
+        public List<DividendModel> Dividends { get; set; }
     }
 }
