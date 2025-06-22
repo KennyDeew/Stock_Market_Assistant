@@ -1,8 +1,9 @@
-﻿using System;
+﻿using StockCardService.Domain.Entities;
+using System;
 
 namespace StockMarketAssistant.StockCardService.Domain.Entities
 {
-    public class CryptoCard
+    public class CryptoCard : IEntity<Guid>
     {
         public Guid Id { get; set; }
         public string Ticker { get; set; }

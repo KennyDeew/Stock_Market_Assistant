@@ -1,9 +1,10 @@
-﻿using System;
+﻿using StockCardService.Domain.Entities;
+using System;
 
 namespace StockMarketAssistant.StockCardService.Domain.Entities
 
 {
-    public class Coupon
+    public class Coupon : IEntity<Guid>
     {
         public Guid Id { get; set; }
         public Guid BondId { get; set; }

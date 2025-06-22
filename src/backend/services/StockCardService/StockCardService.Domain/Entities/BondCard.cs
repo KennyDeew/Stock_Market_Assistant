@@ -1,10 +1,11 @@
-﻿using System;
+﻿using StockCardService.Domain.Entities;
+using System;
 using System.Collections.Generic;
 
 namespace StockMarketAssistant.StockCardService.Domain.Entities
 
 {
-    public class BondCard
+    public class BondCard : IEntity<Guid>
     {
         public Guid Id { get; set; }
         public string Ticker { get; set; }

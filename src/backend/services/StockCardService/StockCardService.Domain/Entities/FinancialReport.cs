@@ -1,8 +1,9 @@
-﻿using System;
+﻿using StockCardService.Domain.Entities;
+using System;
 
 namespace StockMarketAssistant.StockCardService.Domain.Entities
 {
-    public class FinancialReport
+    public class FinancialReport : IEntity<Guid>
     {
         public Guid Id { get; set; }
         public Guid ShareCardId { get; set; }
