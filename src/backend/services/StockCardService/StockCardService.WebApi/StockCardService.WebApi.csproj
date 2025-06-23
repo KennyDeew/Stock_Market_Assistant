@@ -17,12 +17,13 @@
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.6" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1-Preview.1" />
-    <PackageReference Include="NSwag.AspNetCore" Version="14.4.0" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="8.1.3" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\StockMarketAssistant.ServiceDefaults\StockMarketAssistant.ServiceDefaults.csproj" />
-    <ProjectReference Include="..\StockCardService.Abstractions.Repositories\StockCardService.Abstractions.Repositories.csproj" />
+    <ProjectReference Include="..\StockCardService.Application\StockCardService.Application.csproj" />
     <ProjectReference Include="..\StockCardService.Infrastructure.EntityFramework\StockCardService.Infrastructure.EntityFramework.csproj" />
     <ProjectReference Include="..\StockCardService.Infrastructure.Repositories\StockCardService.Infrastructure.Repositories.csproj" />
   </ItemGroup>
