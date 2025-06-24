@@ -12,7 +12,7 @@ using StockMarketAssistant.StockCardService.Infrastructure.EntityFramework;
 namespace StockCardService.Infrastructure.EntityFramework.Migrations
 {
     [DbContext(typeof(StockCardDbContext))]
-    [Migration("20250609191149_InitialCreate")]
+    [Migration("20250624190440_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -20,12 +20,12 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.5")
+                .HasAnnotation("ProductVersion", "9.0.6")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("StockMarketAssistant.StockCardService.Models.BondCard", b =>
+            modelBuilder.Entity("StockMarketAssistant.StockCardService.Domain.Entities.BondCard", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -35,9 +35,8 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("MaturityPeriod")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<DateTime>("MaturityPeriod")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -53,7 +52,7 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                     b.ToTable("BondCards");
                 });
 
-            modelBuilder.Entity("StockMarketAssistant.StockCardService.Models.Coupon", b =>
+            modelBuilder.Entity("StockMarketAssistant.StockCardService.Domain.Entities.Coupon", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -66,10 +65,9 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("Period")
-                        .IsRequired()
+                    b.Property<DateTime>("Period")
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<decimal>("Value")
                         .HasColumnType("numeric");
@@ -81,7 +79,7 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                     b.ToTable("Coupons");
                 });
 
-            modelBuilder.Entity("StockMarketAssistant.StockCardService.Models.CryptoCard", b =>
+            modelBuilder.Entity("StockMarketAssistant.StockCardService.Domain.Entities.CryptoCard", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -105,7 +103,7 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                     b.ToTable("CryptoCards");
                 });
 
-            modelBuilder.Entity("StockMarketAssistant.StockCardService.Models.Dividend", b =>
+            modelBuilder.Entity("StockMarketAssistant.StockCardService.Domain.Entities.Dividend", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -115,10 +113,9 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("Period")
-                        .IsRequired()
+                    b.Property<DateTime>("Period")
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("ShareCardId")
                         .HasColumnType("uuid");
@@ -133,7 +130,7 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                     b.ToTable("Dividends");
                 });
 
-            modelBuilder.Entity("StockMarketAssistant.StockCardService.Models.FinancialReport", b =>
+            modelBuilder.Entity("StockMarketAssistant.StockCardService.Domain.Entities.FinancialReport", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -162,10 +159,9 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                     b.Property<decimal>("NetProfit")
                         .HasColumnType("numeric");
 
-                    b.Property<string>("Period")
-                        .IsRequired()
+                    b.Property<DateTime>("Period")
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<decimal>("Revenue")
                         .HasColumnType("numeric");
@@ -180,7 +176,7 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                     b.ToTable("FinancialReports");
                 });
 
-            modelBuilder.Entity("StockMarketAssistant.StockCardService.Models.Multiplier", b =>
+            modelBuilder.Entity("StockMarketAssistant.StockCardService.Domain.Entities.Multiplier", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -203,7 +199,7 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                     b.ToTable("Multipliers");
                 });
 
-            modelBuilder.Entity("StockMarketAssistant.StockCardService.Models.ShareCard", b =>
+            modelBuilder.Entity("StockMarketAssistant.StockCardService.Domain.Entities.ShareCard", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -227,9 +223,9 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                     b.ToTable("ShareCards");
                 });
 
-            modelBuilder.Entity("StockMarketAssistant.StockCardService.Models.Coupon", b =>
+            modelBuilder.Entity("StockMarketAssistant.StockCardService.Domain.Entities.Coupon", b =>
                 {
-                    b.HasOne("StockMarketAssistant.StockCardService.Models.BondCard", "Bond")
+                    b.HasOne("StockMarketAssistant.StockCardService.Domain.Entities.BondCard", "Bond")
                         .WithMany("Coupons")
                         .HasForeignKey("BondId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -238,9 +234,9 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                     b.Navigation("Bond");
                 });
 
-            modelBuilder.Entity("StockMarketAssistant.StockCardService.Models.Dividend", b =>
+            modelBuilder.Entity("StockMarketAssistant.StockCardService.Domain.Entities.Dividend", b =>
                 {
-                    b.HasOne("StockMarketAssistant.StockCardService.Models.ShareCard", "ShareCard")
+                    b.HasOne("StockMarketAssistant.StockCardService.Domain.Entities.ShareCard", "ShareCard")
                         .WithMany("Dividends")
                         .HasForeignKey("ShareCardId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -249,9 +245,9 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                     b.Navigation("ShareCard");
                 });
 
-            modelBuilder.Entity("StockMarketAssistant.StockCardService.Models.FinancialReport", b =>
+            modelBuilder.Entity("StockMarketAssistant.StockCardService.Domain.Entities.FinancialReport", b =>
                 {
-                    b.HasOne("StockMarketAssistant.StockCardService.Models.ShareCard", "ShareCard")
+                    b.HasOne("StockMarketAssistant.StockCardService.Domain.Entities.ShareCard", "ShareCard")
                         .WithMany("FinancialReports")
                         .HasForeignKey("ShareCardId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -260,9 +256,9 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                     b.Navigation("ShareCard");
                 });
 
-            modelBuilder.Entity("StockMarketAssistant.StockCardService.Models.Multiplier", b =>
+            modelBuilder.Entity("StockMarketAssistant.StockCardService.Domain.Entities.Multiplier", b =>
                 {
-                    b.HasOne("StockMarketAssistant.StockCardService.Models.ShareCard", "ShareCard")
+                    b.HasOne("StockMarketAssistant.StockCardService.Domain.Entities.ShareCard", "ShareCard")
                         .WithMany("Multipliers")
                         .HasForeignKey("ShareCardId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -271,12 +267,12 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                     b.Navigation("ShareCard");
                 });
 
-            modelBuilder.Entity("StockMarketAssistant.StockCardService.Models.BondCard", b =>
+            modelBuilder.Entity("StockMarketAssistant.StockCardService.Domain.Entities.BondCard", b =>
                 {
                     b.Navigation("Coupons");
                 });
 
-            modelBuilder.Entity("StockMarketAssistant.StockCardService.Models.ShareCard", b =>
+            modelBuilder.Entity("StockMarketAssistant.StockCardService.Domain.Entities.ShareCard", b =>
                 {
                     b.Navigation("Dividends");
 

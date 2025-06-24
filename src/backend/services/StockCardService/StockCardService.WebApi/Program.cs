@@ -20,7 +20,7 @@ namespace StockMarketAssistant.StockCardService.WebApi
             builder.Services.AddDbContext<StockCardDbContext>(options =>
             {
                 options.UseNpgsql(builder.Configuration.GetConnectionString("StockCardDb"),
-                    optionsBuilder => optionsBuilder.MigrationsAssembly("Infrastructure.EntityFramework"));
+                    optionsBuilder => optionsBuilder.MigrationsAssembly("StockCardService.Infrastructure.EntityFramework"));
                 options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
             });
 
@@ -30,13 +30,17 @@ namespace StockMarketAssistant.StockCardService.WebApi
             builder.Services.AddScoped(typeof(IRepository<BondCard, Guid>), typeof(BondCardRepository));
             builder.Services.AddScoped(typeof(IRepository<CryptoCard, Guid>), typeof(CryptoCardRepository));
 
+            builder.Services.AddEndpointsApiExplorer(); // Для генерации OpenAPI spec
+            builder.Services.AddSwaggerGen();           // Добавляет Swagger-сервисы
 
             var app = builder.Build();
 
-            //app.MapGet("/", () => "Hello World!");
+            app.MapGet("/", () => Results.Redirect("/swagger"));
 
-            //var StockCardServisConnectionString = builder.Configuration.GetConnectionString("StockCardDb");
-            //DbInitializer.Initialize(StockCardServisConnectionString);
+            var StockCardServisConnectionString = builder.Configuration.GetConnectionString("StockCardDb");
+            DbInitializer.Initialize(StockCardServisConnectionString);
+
+
 
             // Configure the HTTP request pipeline.
 
@@ -45,8 +49,7 @@ namespace StockMarketAssistant.StockCardService.WebApi
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
-
-            //app.UseHttpsRedirection();
+            app.UseHttpsRedirection();
 
 
             app.UseRouting();
@@ -55,7 +58,6 @@ namespace StockMarketAssistant.StockCardService.WebApi
             app.MapControllers();
 
             app.MigrateDatabase<StockCardDbContext>();
-
             app.Run();
         }
     }

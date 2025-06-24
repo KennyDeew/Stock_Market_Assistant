@@ -19,7 +19,7 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                     Ticker = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
                     Name = table.Column<string>(type: "text", nullable: false),
                     Description = table.Column<string>(type: "text", nullable: false),
-                    MaturityPeriod = table.Column<string>(type: "text", nullable: false)
+                    MaturityPeriod = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -60,7 +60,7 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     BondId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Period = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    Period = table.Column<DateTime>(type: "timestamp with time zone", maxLength: 50, nullable: false),
                     Currency = table.Column<string>(type: "text", nullable: false),
                     Value = table.Column<decimal>(type: "numeric", nullable: false)
                 },
@@ -81,7 +81,7 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     ShareCardId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Period = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    Period = table.Column<DateTime>(type: "timestamp with time zone", maxLength: 50, nullable: false),
                     Currency = table.Column<string>(type: "text", nullable: false),
                     Value = table.Column<decimal>(type: "numeric", nullable: false)
                 },
@@ -104,7 +104,7 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                     ShareCardId = table.Column<Guid>(type: "uuid", nullable: false),
                     Name = table.Column<string>(type: "text", nullable: false),
                     Description = table.Column<string>(type: "text", nullable: false),
-                    Period = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    Period = table.Column<DateTime>(type: "timestamp with time zone", maxLength: 50, nullable: false),
                     Revenue = table.Column<decimal>(type: "numeric", nullable: false),
                     EBITDA = table.Column<decimal>(type: "numeric", nullable: false),
                     NetProfit = table.Column<decimal>(type: "numeric", nullable: false),
