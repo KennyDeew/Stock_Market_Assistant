@@ -50,7 +50,7 @@ namespace StockCardService.WebApi.Controllers
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(CryptoCardModel))]
         [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(Guid))]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
-        public async Task<ActionResult<CryptoCardModel>> GetCustomerAsync(Guid id)
+        public async Task<ActionResult<CryptoCardModel>> GetCryptoCardAsync(Guid id)
         {
             var cryptoCard = await _cryptoCardRepository.GetByIdAsync(id, CancellationToken.None);
 
@@ -106,7 +106,7 @@ namespace StockCardService.WebApi.Controllers
         [HttpGet("Model/{id:guid}", Name = "GetCryptoCardModel")]
         [ProducesResponseType(typeof(CryptoCardModel), 200)]
         [ProducesResponseType(404)]
-        public async Task<ActionResult<CryptoCardModel>> GetShortCustomerByIdAsync(Guid id)
+        public async Task<ActionResult<CryptoCardModel>> GetCryptoCardModelAsync(Guid id)
         {
             var customer = await _cryptoCardRepository.GetByIdAsync(id, CancellationToken.None);
 
@@ -133,7 +133,7 @@ namespace StockCardService.WebApi.Controllers
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
-        public async Task<IActionResult> EditCustomersAsync(UpdatingShareCardModel request)
+        public async Task<IActionResult> EditCryptoCardAsync(UpdatingShareCardModel request)
         {
             var shareCard = await _cryptoCardRepository.GetByIdAsync(request.Id, CancellationToken.None);
             if (shareCard == null)
@@ -144,6 +144,22 @@ namespace StockCardService.WebApi.Controllers
             shareCard.Description = request.Description;
             await _cryptoCardRepository.UpdateAsync(shareCard);
             return Ok();
+        }
+
+        /// <summary>
+        /// Удалить карточку криптовалюты
+        /// </summary>
+        /// <param name="id"> Id карточки криптовалюты </param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        [HttpDelete("{id:guid}")]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> DeleteCryptoCard(Guid id)
+        {
+            await _cryptoCardRepository.DeleteAsync(id);
+            return NoContent();
         }
     }
 }

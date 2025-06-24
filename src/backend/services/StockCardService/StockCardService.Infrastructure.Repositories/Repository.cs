@@ -66,7 +66,9 @@ namespace StockCardService.Infrastructure.Repositories
         /// <returns> Добавленная сущность. </returns>
         public virtual async Task<T> AddAsync(T entity)
         {
-            return (await _entitySet.AddAsync(entity)).Entity;
+            var createdEntity = await _entitySet.AddAsync(entity);
+            await Context.SaveChangesAsync();
+            return createdEntity.Entity;
         }
 
         /// <summary>
@@ -78,6 +80,21 @@ namespace StockCardService.Infrastructure.Repositories
         public async Task UpdateAsync(T entity)
         {
             Context.Update(entity);
+            await Context.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// Удалить в базе одну сущность.
+        /// </summary>
+        /// <param name="id"> Id удаляемой сущности. </param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public async Task DeleteAsync(TPrimaryKey id)
+        {
+            var entity = await GetByIdAsync(id, CancellationToken.None);
+            if (entity == null)
+                return;
+            Context.Remove(entity);
             await Context.SaveChangesAsync();
         }
     }

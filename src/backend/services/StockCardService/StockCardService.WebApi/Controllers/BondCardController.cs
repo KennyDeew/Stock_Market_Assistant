@@ -52,7 +52,7 @@ namespace StockCardService.WebApi.Controllers
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(BondCardModel))]
         [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(Guid))]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
-        public async Task<ActionResult<BondCardModel>> GetCustomerAsync(Guid id)
+        public async Task<ActionResult<BondCardModel>> GetBondCardAsync(Guid id)
         {
             var bondCard = await _bondCardRepository.GetByIdAsync(id, CancellationToken.None);
 
@@ -108,7 +108,7 @@ namespace StockCardService.WebApi.Controllers
         [HttpGet("short/{id:guid}", Name = "GetBondCardShortModel")]
         [ProducesResponseType(typeof(BondCardShortModel), 200)]
         [ProducesResponseType(404)]
-        public async Task<ActionResult<BondCardShortModel>> GetShortCustomerByIdAsync(Guid id)
+        public async Task<ActionResult<BondCardShortModel>> GetShortBondCardModelAsync(Guid id)
         {
             var customer = await _bondCardRepository.GetByIdAsync(id, CancellationToken.None);
 
@@ -135,7 +135,7 @@ namespace StockCardService.WebApi.Controllers
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
-        public async Task<IActionResult> EditCustomersAsync(UpdatingShareCardModel request)
+        public async Task<IActionResult> EditBondCardAsync(UpdatingShareCardModel request)
         {
             var shareCard = await _bondCardRepository.GetByIdAsync(request.Id, CancellationToken.None);
             if (shareCard == null)
@@ -146,6 +146,22 @@ namespace StockCardService.WebApi.Controllers
             shareCard.Description = request.Description;
             await _bondCardRepository.UpdateAsync(shareCard);
             return Ok();
+        }
+
+        /// <summary>
+        /// Удалить карточку облигации
+        /// </summary>
+        /// <param name="id"> Id карточки облигации </param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        [HttpDelete("{id:guid}")]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> DeleteBondCard(Guid id)
+        {
+            await _bondCardRepository.DeleteAsync(id);
+            return NoContent();
         }
     }
 }

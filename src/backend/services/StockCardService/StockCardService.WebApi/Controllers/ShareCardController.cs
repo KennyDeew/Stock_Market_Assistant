@@ -55,7 +55,7 @@ namespace StockCardService.WebApi.Controllers
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ShareCardModel))]
         [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(Guid))]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
-        public async Task<ActionResult<ShareCardModel>> GetCustomerAsync(Guid id)
+        public async Task<ActionResult<ShareCardModel>> GetShareCardAsync(Guid id)
         {
             var shareCard = await _shareCardRepository.GetByIdAsync(id, CancellationToken.None);
 
@@ -111,7 +111,7 @@ namespace StockCardService.WebApi.Controllers
         [HttpGet("short/{id:guid}", Name = "GetShareCardShortModel")]
         [ProducesResponseType(typeof(ShareCardShortModel), 200)]
         [ProducesResponseType(404)]
-        public async Task<ActionResult<ShareCardShortModel>> GetShortCustomerByIdAsync(Guid id)
+        public async Task<ActionResult<ShareCardShortModel>> GetShortShareCardModelAsync(Guid id)
         {
             var customer = await _shareCardRepository.GetByIdAsync(id, CancellationToken.None);
 
@@ -138,7 +138,7 @@ namespace StockCardService.WebApi.Controllers
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
-        public async Task<IActionResult> EditCustomersAsync(UpdatingShareCardModel request)
+        public async Task<IActionResult> EditShareCardAsync(UpdatingShareCardModel request)
         {
             var shareCard = await _shareCardRepository.GetByIdAsync(request.Id, CancellationToken.None);
             if (shareCard == null)
@@ -149,6 +149,22 @@ namespace StockCardService.WebApi.Controllers
             shareCard.Description = request.Description;
             await _shareCardRepository.UpdateAsync(shareCard);
             return Ok();
+        }
+
+        /// <summary>
+        /// Удалить карточку акции
+        /// </summary>
+        /// <param name="id"> Id карточки акции </param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        [HttpDelete("{id:guid}")]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> DeleteShareCard(Guid id)
+        {
+            await _shareCardRepository.DeleteAsync(id);
+            return NoContent();
         }
     }
 }

@@ -54,5 +54,12 @@ namespace StockCardService.Abstractions.Repositories
         /// <param name="entity"> Обновленная сущность. </param>
         /// <returns></returns>
         Task UpdateAsync(T entity);
+
+        /// <summary>
+        /// Удалить в базе одну сущность.
+        /// </summary>
+        /// <param name="id"> Id удаляемой сущности. </param>
+        /// <returns></returns>
+        Task DeleteAsync(TPrimaryKey id);
     }
 }
