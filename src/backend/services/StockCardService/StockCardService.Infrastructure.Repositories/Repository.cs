@@ -69,5 +69,16 @@ namespace StockCardService.Infrastructure.Repositories
             return (await _entitySet.AddAsync(entity)).Entity;
         }
 
+        /// <summary>
+        /// Обновить в базе одну сущность.
+        /// </summary>
+        /// <param name="entity"> Обновленная сущность</param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public async Task UpdateAsync(T entity)
+        {
+            Context.Update(entity);
+            await Context.SaveChangesAsync();
+        }
     }
 }

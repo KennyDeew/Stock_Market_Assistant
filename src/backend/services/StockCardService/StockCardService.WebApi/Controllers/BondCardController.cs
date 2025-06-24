@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using StockCardService.Abstractions.Repositories;
 using StockCardService.Domain.Entities;
+using StockCardService.Infrastructure.Repositories;
 using StockCardService.WebApi.Models.BondCard;
+using StockCardService.WebApi.Models.ShareCard;
 using StockMarketAssistant.StockCardService.Domain.Entities;
 
 namespace StockCardService.WebApi.Controllers
@@ -122,6 +124,28 @@ namespace StockCardService.WebApi.Controllers
             };
 
             return Ok(bondCardShortModel);
+        }
+
+        /// <summary>
+        /// Обновить существующую карточку облигации
+        /// </summary>
+        /// <param name="request"> Обновленная карточка облигации. </param>
+        /// <returns></returns>
+        [HttpPut]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> EditCustomersAsync(UpdatingShareCardModel request)
+        {
+            var shareCard = await _bondCardRepository.GetByIdAsync(request.Id, CancellationToken.None);
+            if (shareCard == null)
+                return NotFound();
+            shareCard.Id = request.Id;
+            shareCard.Ticker = request.Ticker;
+            shareCard.Name = request.Name;
+            shareCard.Description = request.Description;
+            await _bondCardRepository.UpdateAsync(shareCard);
+            return Ok();
         }
     }
 }

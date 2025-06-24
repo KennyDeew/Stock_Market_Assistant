@@ -1,4 +1,5 @@
 ﻿using StockCardService.Domain.Entities;
+using System.Security.Cryptography;
 
 namespace StockCardService.Abstractions.Repositories
 {
@@ -46,5 +47,12 @@ namespace StockCardService.Abstractions.Repositories
         /// <param name="entity"> Сущность для добавления. </param>
         /// <returns> Добавленная сущность. </returns>
         Task<T> AddAsync(T entity);
+
+        /// <summary>
+        /// Обновить в базе одну сущность.
+        /// </summary>
+        /// <param name="entity"> Обновленная сущность. </param>
+        /// <returns></returns>
+        Task UpdateAsync(T entity);
     }
 }

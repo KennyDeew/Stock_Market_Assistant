@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using StockCardService.Abstractions.Repositories;
+using StockCardService.Infrastructure.Repositories;
 using StockCardService.WebApi.Models.CryptoCard;
+using StockCardService.WebApi.Models.ShareCard;
 using StockMarketAssistant.StockCardService.Domain.Entities;
 
 namespace StockCardService.WebApi.Controllers
@@ -120,6 +122,28 @@ namespace StockCardService.WebApi.Controllers
             };
 
             return Ok(cryptoCardModel);
+        }
+
+        /// <summary>
+        /// Обновить существующую карточку криптовалюты
+        /// </summary>
+        /// <param name="request"> Обновленная карточка криптовалюты. </param>
+        /// <returns></returns>
+        [HttpPut]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> EditCustomersAsync(UpdatingShareCardModel request)
+        {
+            var shareCard = await _cryptoCardRepository.GetByIdAsync(request.Id, CancellationToken.None);
+            if (shareCard == null)
+                return NotFound();
+            shareCard.Id = request.Id;
+            shareCard.Ticker = request.Ticker;
+            shareCard.Name = request.Name;
+            shareCard.Description = request.Description;
+            await _cryptoCardRepository.UpdateAsync(shareCard);
+            return Ok();
         }
     }
 }

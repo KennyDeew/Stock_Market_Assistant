@@ -128,5 +128,27 @@ namespace StockCardService.WebApi.Controllers
 
             return Ok(shareCardShortModel);
         }
+
+        /// <summary>
+        /// Обновить существующую карточку акции
+        /// </summary>
+        /// <param name="request"> Обновленная карточка акции. </param>
+        /// <returns></returns>
+        [HttpPut]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> EditCustomersAsync(UpdatingShareCardModel request)
+        {
+            var shareCard = await _shareCardRepository.GetByIdAsync(request.Id, CancellationToken.None);
+            if (shareCard == null)
+                return NotFound();
+            shareCard.Id = request.Id;
+            shareCard.Ticker = request.Ticker;
+            shareCard.Name = request.Name;
+            shareCard.Description = request.Description;
+            await _shareCardRepository.UpdateAsync(shareCard);
+            return Ok();
+        }
     }
 }
