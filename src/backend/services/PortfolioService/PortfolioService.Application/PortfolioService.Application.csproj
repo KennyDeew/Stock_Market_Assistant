@@ -8,9 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="DTOs\" />
-    <Folder Include="Interfaces\Repositories\" />
-    <Folder Include="Services\" />
+    <ProjectReference Include="..\PortfolioService.Domain\PortfolioService.Domain.csproj" />
   </ItemGroup>
 
 </Project>
