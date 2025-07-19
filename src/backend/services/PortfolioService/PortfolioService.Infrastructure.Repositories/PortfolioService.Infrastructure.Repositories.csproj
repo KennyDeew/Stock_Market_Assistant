@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>$(SolutionName).$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PortfolioService.Application\PortfolioService.Application.csproj" />
+    <ProjectReference Include="..\PortfolioService.Infrastructure.EntityFramework\PortfolioService.Infrastructure.EntityFramework.csproj" />
+  </ItemGroup>
+
+</Project>
