@@ -9,8 +9,9 @@ namespace StockMarketAssistant.AuthService.Domain.Entities
     public class Permission
     {
         public int Id { get; set; }
-        public string Action { get; set; }
-        public string Resource { get; set; }
-        public ICollection<RolePermission> RolePermissions { get; set; }
+        public string Action { get; set; } = default!;
+        public string Resource { get; set; } = default!;
+
+        public ICollection<RolePermission> RolePermissions { get; set; } = new List<RolePermission>();
     }
 }

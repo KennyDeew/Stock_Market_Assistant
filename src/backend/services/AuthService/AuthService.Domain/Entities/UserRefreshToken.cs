@@ -8,14 +8,15 @@ namespace StockMarketAssistant.AuthService.Domain.Entities
 {
     public class UserRefreshToken
     {
-        public Guid Id { get; set; }
+        public Guid Id { get; set; } = Guid.NewGuid();
         public Guid UserId { get; set; }
-        public User User { get; set; }
-        public string TokenHash { get; set; }
-        public string Fingerprint { get; set; }
-        public string UserAgent { get; set; }
-        public DateTimeOffset IssuedAt { get; set; }
-        public DateTimeOffset ExpiresAt { get; set; }
-        public bool Revoked { get; set; }
+        public string TokenHash { get; set; } = default!;
+        public string Fingerprint { get; set; } = default!;
+        public string UserAgent { get; set; } = default!;
+        public DateTime IssuedAt { get; set; } = DateTime.UtcNow;
+        public DateTime ExpiresAt { get; set; }
+        public bool Revoked { get; set; } = false;
+
+        public User User { get; set; } = default!;
     }
 }
