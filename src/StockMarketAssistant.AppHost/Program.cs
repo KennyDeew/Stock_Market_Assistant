@@ -17,7 +17,7 @@ internal class Program
 
         // Добавление ресурсов
         var redis = builder.AddRedis("cache");
-        var postgres = builder.AddPostgres("pg-portfolio-db")
+        var pgPortfolioDb = builder.AddPostgres("pg-portfolio-db")
             //.WithPgAdmin()
             .WithImage("postgres:17.5")
             .WithDataVolume("portfolio-pg-data")
@@ -29,8 +29,8 @@ internal class Program
 
         // Связывание ресурсов с проектами
         apiPortfolioService.WithReference(redis)
-                           .WithReference(postgres)
-                           .WaitFor(postgres);
+                           .WithReference(pgPortfolioDb)
+                           .WaitFor(pgPortfolioDb);
 
 
         builder.Build().Run();
