@@ -59,6 +59,9 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gateway.WebApi", "src\backend\gateway\Gateway.WebApi\Gateway.WebApi.csproj", "{6CEC36BA-6B65-47C5-BF16-B713163A25CC}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AuthService.WebApi", "src\backend\services\AuthService\AuthService.WebApi\AuthService.WebApi.csproj", "{1100EA22-3454-E34D-EDF1-CA20C78FB093}"
+	ProjectSection(ProjectDependencies) = postProject
+		{2E6D50FE-E855-4356-9AC4-F383C0E186E4} = {2E6D50FE-E855-4356-9AC4-F383C0E186E4}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AuthService.Application", "src\backend\services\AuthService\AuthService.Application\AuthService.Application.csproj", "{253A2ECB-0CCB-43B5-96C8-E6626FA2DFAA}"
 EndProject
