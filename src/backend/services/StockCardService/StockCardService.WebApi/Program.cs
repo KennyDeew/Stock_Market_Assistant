@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using StockCardService.Abstractions.Repositories;
 using StockCardService.Infrastructure.EntityFramework;
 using StockCardService.Infrastructure.Repositories;
+using StockMarketAssistant.StockCardService.Application.Interfaces;
+using StockMarketAssistant.StockCardService.Application.Services;
 using StockMarketAssistant.StockCardService.Domain.Entities;
 using StockMarketAssistant.StockCardService.Infrastructure.EntityFramework;
 using StockMarketAssistant.StockCardService.WebApi.Helper;
@@ -29,6 +31,7 @@ namespace StockMarketAssistant.StockCardService.WebApi
             builder.Services.AddScoped(typeof(IRepository<ShareCard, Guid>), typeof(ShareCardRepository));
             builder.Services.AddScoped(typeof(IRepository<BondCard, Guid>), typeof(BondCardRepository));
             builder.Services.AddScoped(typeof(IRepository<CryptoCard, Guid>), typeof(CryptoCardRepository));
+            builder.Services.AddScoped<IShareCardService, ShareCardService>();
 
             builder.Services.AddEndpointsApiExplorer(); // Для генерации OpenAPI spec
             builder.Services.AddSwaggerGen();           // Добавляет Swagger-сервисы
