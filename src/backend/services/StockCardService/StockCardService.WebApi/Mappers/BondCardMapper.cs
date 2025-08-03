@@ -6,7 +6,7 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
     /// <summary>
     /// маппер для карточки облигации Dto/Model
     /// </summary>
-    public class BondCardMapper
+    public static class BondCardMapper
     {
         public static BondCardDto ToDto(BondCardModel model)
         {

@@ -3,7 +3,7 @@
     /// <summary>
     /// Dto изменяемой карточки криптовалюты
     /// </summary>
-    public class UpdatingCryptoCard
+    public class UpdatingCryptoCardDto
     {
         /// <summary>
         /// Id криптовалюты
