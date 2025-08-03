@@ -1,11 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using StockCardService.Abstractions.Repositories;
-using StockCardService.Domain.Entities;
-using StockCardService.WebApi.Models._01sub_Dividend;
-using StockCardService.WebApi.Models._01sub_FinancialReport;
-using StockCardService.WebApi.Models._01sub_Multiplier;
 using StockCardService.WebApi.Models.ShareCard;
-using StockMarketAssistant.StockCardService.Domain.Entities;
+using StockMarketAssistant.StockCardService.Application.Interfaces;
+using StockMarketAssistant.StockCardService.WebApi.Mappers;
 
 namespace StockCardService.WebApi.Controllers
 {
@@ -15,11 +11,11 @@ namespace StockCardService.WebApi.Controllers
     [Route("api/v1/[controller]")]
     public class ShareCardController : ControllerBase
     {
-        private readonly IRepository<ShareCard, Guid> _shareCardRepository;
+        private readonly IShareCardService _shareCardService;
 
-        public ShareCardController(IRepository<ShareCard, Guid> shareCardRepository)
+        public ShareCardController(IShareCardService shareCardService)
         {
-            _shareCardRepository = shareCardRepository;
+            _shareCardService = shareCardService;
         }
 
         /// <summary>
@@ -29,21 +25,8 @@ namespace StockCardService.WebApi.Controllers
         [HttpGet]
         public async Task<ActionResult<List<ShareCardModel>>> GetShareCardsAsync()
         {
-            var shareCards = await _shareCardRepository.GetAllAsync(CancellationToken.None);
-
-            var shareCardModelList = shareCards.Select(x =>
-                new ShareCardModel()
-                {
-                    Id = x.Id,
-                    Ticker = x.Ticker,
-                    Name = x.Name,
-                    Description = x.Description,
-                    FinancialReports = new List<FinancialReportModel>(),
-                    Multipliers = new List<MultiplierModel>(),
-                    Dividends = new List<DividendModel>()
-                }).ToList();
-
-            return shareCardModelList;
+            var shareCards = (await _shareCardService.GetAllAsync()).Select(ShareCardMapper.ToModel).ToList();
+            return shareCards;
         }
 
         /// <summary>
@@ -57,20 +40,32 @@ namespace StockCardService.WebApi.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
         public async Task<ActionResult<ShareCardModel>> GetShareCardAsync(Guid id)
         {
-            var shareCard = await _shareCardRepository.GetByIdAsync(id, CancellationToken.None);
+            var shareCard = await _shareCardService.GetByIdAsync(id);
 
             if (shareCard == null)
                 return NotFound();
-            //var customersPreferencesList = (await _shareCardRepository.GetByIdWithPreferenceAsync(id)).CustomerPreferences.Select(cp => cp.Preference).ToList();
-
-            var shareCardModel = new ShareCardModel()
-            {
-                Id = shareCard.Id,
-                Ticker = shareCard.Ticker,
-                Name = shareCard.Name,
-                Description = shareCard.Description
-            };
+            
+            var shareCardModel = ShareCardMapper.ToModel(shareCard);
             return shareCardModel;
+        }
+
+        /// <summary>
+        /// Получить неполные данные карточки акции
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("short/{id:guid}", Name = "GetShareCardShortModel")]
+        [ProducesResponseType(typeof(ShareCardShortModel), 200)]
+        [ProducesResponseType(404)]
+        public async Task<ActionResult<ShareCardShortModel>> GetShortShareCardModelAsync(Guid id)
+        {
+            var shareCard = await _shareCardService.GetShortByIdAsync(id);
+
+            if (shareCard == null)
+                return NotFound();
+
+            var shareCardShortModel = ShareCardMapper.ToModel(shareCard);
+
+            return Ok(shareCardShortModel);
         }
 
         /// <summary>
@@ -83,50 +78,18 @@ namespace StockCardService.WebApi.Controllers
         [ProducesResponseType(400)]
         public async Task<IActionResult> CreateShareCard(CreatingShareCardModel request)
         {
-            var shareCard = new ShareCard()
+            var newShareCardId = await _shareCardService.CreateAsync(ShareCardMapper.ToDto(request));
+            if (newShareCardId == Guid.Empty) return Problem("Не удалось создать карточку акции");
+            //Проверяем созданную карточку
+            var shareCardShortModelForChecking = new ShareCardShortModel()
             {
-                Id = Guid.NewGuid(),
+                Id = newShareCardId,
                 Ticker = request.Ticker,
                 Name = request.Name,
                 Description = request.Description
             };
-            
-            var createdShareCard = await _shareCardRepository.AddAsync(shareCard);
-            if (createdShareCard == null) return Problem("Не удалось создать клиента");
-            var shareCardShortModel = new ShareCardShortModel()
-            {
-                Id = createdShareCard.Id,
-                Ticker = createdShareCard.Ticker,
-                Name = createdShareCard.Name,
-                Description = createdShareCard.Description
-            };
 
-            return CreatedAtRoute("GetShareCardShortModel", new { id = createdShareCard.Id }, shareCardShortModel);
-        }
-
-        /// <summary>
-        /// Получить неполные данные карточки акции
-        /// </summary>
-        /// <returns></returns>
-        [HttpGet("short/{id:guid}", Name = "GetShareCardShortModel")]
-        [ProducesResponseType(typeof(ShareCardShortModel), 200)]
-        [ProducesResponseType(404)]
-        public async Task<ActionResult<ShareCardShortModel>> GetShortShareCardModelAsync(Guid id)
-        {
-            var customer = await _shareCardRepository.GetByIdAsync(id, CancellationToken.None);
-
-            if (customer == null)
-                return NotFound();
-
-            var shareCardShortModel = new ShareCardShortModel()
-            {
-                Id = customer.Id,
-                Ticker = customer.Ticker,
-                Name = customer.Name,
-                Description = customer.Description
-            };
-
-            return Ok(shareCardShortModel);
+            return CreatedAtRoute("GetShareCardShortModel", new { id = newShareCardId }, shareCardShortModelForChecking);
         }
 
         /// <summary>
@@ -140,14 +103,7 @@ namespace StockCardService.WebApi.Controllers
         [ProducesResponseType(404)]
         public async Task<IActionResult> EditShareCardAsync(UpdatingShareCardModel request)
         {
-            var shareCard = await _shareCardRepository.GetByIdAsync(request.Id, CancellationToken.None);
-            if (shareCard == null)
-                return NotFound();
-            shareCard.Id = request.Id;
-            shareCard.Ticker = request.Ticker;
-            shareCard.Name = request.Name;
-            shareCard.Description = request.Description;
-            await _shareCardRepository.UpdateAsync(shareCard);
+            await _shareCardService.UpdateAsync(ShareCardMapper.ToDto(request));
             return Ok();
         }
 
@@ -163,7 +119,7 @@ namespace StockCardService.WebApi.Controllers
         [ProducesResponseType(404)]
         public async Task<IActionResult> DeleteShareCard(Guid id)
         {
-            await _shareCardRepository.DeleteAsync(id);
+            await _shareCardService.DeleteAsync(id);
             return NoContent();
         }
     }

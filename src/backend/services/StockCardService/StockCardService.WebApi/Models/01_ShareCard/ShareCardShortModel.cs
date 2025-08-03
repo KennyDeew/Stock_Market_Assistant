@@ -1,9 +1,4 @@
-﻿using StockCardService.WebApi.Models._01sub_Dividend;
-using StockCardService.WebApi.Models._01sub_FinancialReport;
-using StockCardService.WebApi.Models._01sub_Multiplier;
-using StockMarketAssistant.StockCardService.Domain.Entities;
-
-namespace StockCardService.WebApi.Models.ShareCard
+﻿namespace StockCardService.WebApi.Models.ShareCard
 {
     /// <summary>
     /// Модель карточки акции

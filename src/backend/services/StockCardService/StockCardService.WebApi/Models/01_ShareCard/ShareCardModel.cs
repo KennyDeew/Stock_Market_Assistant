@@ -33,16 +33,16 @@ namespace StockCardService.WebApi.Models.ShareCard
         /// <summary>
         /// Финансовые отчеты по акции
         /// </summary>
-        public List<FinancialReportModel> FinancialReports { get; set; }
+        public List<FinancialReportModel>? FinancialReports { get; set; }
 
         /// <summary>
         /// Мультипликаторы акции
         /// </summary>
-        public List<MultiplierModel> Multipliers { get; set; }
+        public List<MultiplierModel>? Multipliers { get; set; }
 
         /// <summary>
         /// Дивиденды акции
         /// </summary>
-        public List<DividendModel> Dividends { get; set; }
+        public List<DividendModel>? Dividends { get; set; }
     }
 }
