@@ -32,6 +32,7 @@ namespace StockMarketAssistant.StockCardService.WebApi
             builder.Services.AddScoped(typeof(IRepository<BondCard, Guid>), typeof(BondCardRepository));
             builder.Services.AddScoped(typeof(IRepository<CryptoCard, Guid>), typeof(CryptoCardRepository));
             builder.Services.AddScoped<IShareCardService, ShareCardService>();
+            builder.Services.AddScoped<IBondCardService, BondCardservice>();
 
             builder.Services.AddEndpointsApiExplorer(); // Для генерации OpenAPI spec
             builder.Services.AddSwaggerGen();           // Добавляет Swagger-сервисы
