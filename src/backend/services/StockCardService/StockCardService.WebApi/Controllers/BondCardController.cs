@@ -1,10 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using StockCardService.Abstractions.Repositories;
-using StockCardService.Domain.Entities;
-using StockCardService.Infrastructure.Repositories;
 using StockCardService.WebApi.Models.BondCard;
-using StockCardService.WebApi.Models.ShareCard;
-using StockMarketAssistant.StockCardService.Domain.Entities;
+using StockMarketAssistant.StockCardService.Application.Interfaces;
+using StockMarketAssistant.StockCardService.WebApi.Mappers;
 
 namespace StockCardService.WebApi.Controllers
 {
@@ -14,11 +11,11 @@ namespace StockCardService.WebApi.Controllers
     [Route("api/v1/[controller]")]
     public class BondCardController : ControllerBase
     {
-        private readonly IRepository<BondCard, Guid> _bondCardRepository;
+        private readonly IBondCardService _bondCardService;
 
-        public BondCardController(IRepository<BondCard, Guid> bondCardRepository)
+        public BondCardController(IBondCardService bondCardService)
         {
-            _bondCardRepository = bondCardRepository;
+            _bondCardService = bondCardService;
         }
 
         /// <summary>
@@ -28,19 +25,8 @@ namespace StockCardService.WebApi.Controllers
         [HttpGet]
         public async Task<ActionResult<List<BondCardModel>>> GetBondCardsAsync()
         {
-            var bondCards = await _bondCardRepository.GetAllAsync(CancellationToken.None);
-
-            var bondCardModelList = bondCards.Select(x =>
-                new BondCardModel()
-                {
-                    Id = x.Id,
-                    Ticker = x.Ticker,
-                    Name = x.Name,
-                    Description = x.Description,
-                    Coupons = new List<Coupon>()
-                }).ToList();
-
-            return bondCardModelList;
+            var bondCards = (await _bondCardService.GetAllAsync()).Select(BondCardMapper.ToModel).ToList();
+            return bondCards;
         }
 
         /// <summary>
@@ -54,20 +40,32 @@ namespace StockCardService.WebApi.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
         public async Task<ActionResult<BondCardModel>> GetBondCardAsync(Guid id)
         {
-            var bondCard = await _bondCardRepository.GetByIdAsync(id, CancellationToken.None);
+            var bondCardDto = await _bondCardService.GetByIdAsync(id);
 
-            if (bondCard == null)
+            if (bondCardDto == null)
                 return NotFound();
-            //var customersPreferencesList = (await _bondCardRepository.GetByIdWithPreferenceAsync(id)).CustomerPreferences.Select(cp => cp.Preference).ToList();
-
-            var bondCardModel = new BondCardModel()
-            {
-                Id = bondCard.Id,
-                Ticker = bondCard.Ticker,
-                Name = bondCard.Name,
-                Description = bondCard.Description
-            };
+            
+            var bondCardModel = BondCardMapper.ToModel(bondCardDto);
             return bondCardModel;
+        }
+
+        /// <summary>
+        /// Получить неполные данные карточки облигации
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("short/{id:guid}", Name = "GetBondCardShortModel")]
+        [ProducesResponseType(typeof(BondCardShortModel), 200)]
+        [ProducesResponseType(404)]
+        public async Task<ActionResult<BondCardShortModel>> GetShortBondCardModelAsync(Guid id)
+        {
+            var bondCardShortDto = await _bondCardService.GetShortByIdAsync(id);
+
+            if (bondCardShortDto == null)
+                return NotFound();
+
+            var bondCardShortModel = BondCardMapper.ToModel(bondCardShortDto); ;
+
+            return Ok(bondCardShortModel);
         }
 
         /// <summary>
@@ -80,78 +78,41 @@ namespace StockCardService.WebApi.Controllers
         [ProducesResponseType(400)]
         public async Task<IActionResult> CreateBondCard(CreatingBondCardModel request)
         {
-            var bondCard = new BondCard()
+            var newBondCardId = await _bondCardService.CreateAsync(BondCardMapper.ToDto(request));
+            if (newBondCardId == Guid.Empty) return Problem("Не удалось создать клиента");
+
+            var bondCardShortModel = new BondCardShortModel()
             {
-                Id = Guid.NewGuid(),
+                Id = newBondCardId,
                 Ticker = request.Ticker,
                 Name = request.Name,
-                Description = request.Description
-            };
-            
-            var createdBondCard = await _bondCardRepository.AddAsync(bondCard);
-            if (createdBondCard == null) return Problem("Не удалось создать клиента");
-            var bondCardShortModel = new BondCardShortModel()
-            {
-                Id = createdBondCard.Id,
-                Ticker = createdBondCard.Ticker,
-                Name = createdBondCard.Name,
-                Description = createdBondCard.Description
+                Description = request.Description,
+                MaturityPeriod = request.MaturityPeriod.ToString()
             };
 
-            return CreatedAtRoute("GetBondCardShortModel", new { id = createdBondCard.Id }, bondCardShortModel);
-        }
-
-        /// <summary>
-        /// Получить неполные данные карточки облигации
-        /// </summary>
-        /// <returns></returns>
-        [HttpGet("short/{id:guid}", Name = "GetBondCardShortModel")]
-        [ProducesResponseType(typeof(BondCardShortModel), 200)]
-        [ProducesResponseType(404)]
-        public async Task<ActionResult<BondCardShortModel>> GetShortBondCardModelAsync(Guid id)
-        {
-            var customer = await _bondCardRepository.GetByIdAsync(id, CancellationToken.None);
-
-            if (customer == null)
-                return NotFound();
-
-            var bondCardShortModel = new BondCardShortModel()
-            {
-                Id = customer.Id,
-                Ticker = customer.Ticker,
-                Name = customer.Name,
-                Description = customer.Description
-            };
-
-            return Ok(bondCardShortModel);
+            return CreatedAtRoute("GetBondCardShortModel", new { id = newBondCardId }, bondCardShortModel);
         }
 
         /// <summary>
         /// Обновить существующую карточку облигации
         /// </summary>
-        /// <param name="request"> Обновленная карточка облигации. </param>
+        /// <param name="request">Обновленная карточка облигации.</param>
         /// <returns></returns>
         [HttpPut]
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
-        public async Task<IActionResult> EditBondCardAsync(UpdatingShareCardModel request)
+        public async Task<IActionResult> EditBondCardAsync(UpdatingBondCardModel request)
         {
-            var shareCard = await _bondCardRepository.GetByIdAsync(request.Id, CancellationToken.None);
-            if (shareCard == null)
-                return NotFound();
-            shareCard.Id = request.Id;
-            shareCard.Ticker = request.Ticker;
-            shareCard.Name = request.Name;
-            shareCard.Description = request.Description;
-            await _bondCardRepository.UpdateAsync(shareCard);
+            var cre = BondCardMapper.ToDto(request);
+            await _bondCardService.UpdateAsync(cre);
             return Ok();
         }
 
         /// <summary>
         /// Удалить карточку облигации
         /// </summary>
-        /// <param name="id"> Id карточки облигации </param>
+        /// <param name="id">Id карточки облигации</param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
         [HttpDelete("{id:guid}")]
@@ -160,7 +121,7 @@ namespace StockCardService.WebApi.Controllers
         [ProducesResponseType(404)]
         public async Task<IActionResult> DeleteBondCard(Guid id)
         {
-            await _bondCardRepository.DeleteAsync(id);
+            await _bondCardService.DeleteAsync(id);
             return NoContent();
         }
     }
