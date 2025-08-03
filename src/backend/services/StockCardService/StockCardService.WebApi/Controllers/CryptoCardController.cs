@@ -3,7 +3,10 @@ using StockCardService.Abstractions.Repositories;
 using StockCardService.Infrastructure.Repositories;
 using StockCardService.WebApi.Models.CryptoCard;
 using StockCardService.WebApi.Models.ShareCard;
+using StockMarketAssistant.StockCardService.Application.DTOs._03_CryptoCard;
+using StockMarketAssistant.StockCardService.Application.Interfaces;
 using StockMarketAssistant.StockCardService.Domain.Entities;
+using StockMarketAssistant.StockCardService.WebApi.Mappers;
 
 namespace StockCardService.WebApi.Controllers
 {
@@ -13,11 +16,11 @@ namespace StockCardService.WebApi.Controllers
     [Route("api/v1/[controller]")]
     public class CryptoCardController : ControllerBase
     {
-        private readonly IRepository<CryptoCard, Guid> _cryptoCardRepository;
+        private readonly ICryptoCardService _cryptoCardService;
 
-        public CryptoCardController(IRepository<CryptoCard, Guid> cryptoCardRepository)
+        public CryptoCardController(ICryptoCardService cryptoCardService)
         {
-            _cryptoCardRepository = cryptoCardRepository;
+            _cryptoCardService = cryptoCardService;
         }
 
         /// <summary>
@@ -27,18 +30,8 @@ namespace StockCardService.WebApi.Controllers
         [HttpGet]
         public async Task<ActionResult<List<CryptoCardModel>>> GetCryptoCardsAsync()
         {
-            var cryptoCards = await _cryptoCardRepository.GetAllAsync(CancellationToken.None);
-
-            var cryptoCardModelList = cryptoCards.Select(x =>
-                new CryptoCardModel()
-                {
-                    Id = x.Id,
-                    Ticker = x.Ticker,
-                    Name = x.Name,
-                    Description = x.Description
-                }).ToList();
-
-            return cryptoCardModelList;
+            var cryptoCards = (await _cryptoCardService.GetAllAsync()).Select(CryptoCardMapper.ToModel).ToList();
+            return cryptoCards;
         }
 
         /// <summary>
@@ -52,19 +45,13 @@ namespace StockCardService.WebApi.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
         public async Task<ActionResult<CryptoCardModel>> GetCryptoCardAsync(Guid id)
         {
-            var cryptoCard = await _cryptoCardRepository.GetByIdAsync(id, CancellationToken.None);
+            var cryptoCardDto = await _cryptoCardService.GetByIdAsync(id);
 
-            if (cryptoCard == null)
+            if (cryptoCardDto == null)
                 return NotFound();
             //var customersPreferencesList = (await _cryptoCardRepository.GetByIdWithPreferenceAsync(id)).CustomerPreferences.Select(cp => cp.Preference).ToList();
 
-            var cryptoCardModel = new CryptoCardModel()
-            {
-                Id = cryptoCard.Id,
-                Ticker = cryptoCard.Ticker,
-                Name = cryptoCard.Name,
-                Description = cryptoCard.Description
-            };
+            var cryptoCardModel = CryptoCardMapper.ToModel(cryptoCardDto);
             return cryptoCardModel;
         }
 
@@ -78,25 +65,18 @@ namespace StockCardService.WebApi.Controllers
         [ProducesResponseType(400)]
         public async Task<IActionResult> CreateCryptoCard(CreatingCryptoCardModel request)
         {
-            var cryptoCard = new CryptoCard()
+            var createdCryptoCardId = await _cryptoCardService.CreateAsync(CryptoCardMapper.ToDto(request));
+            if (createdCryptoCardId == Guid.Empty) return Problem("Не удалось создать клиента");
+
+            var cryptoCardModel = new CryptoCardModel()
             {
-                Id = Guid.NewGuid(),
+                Id = createdCryptoCardId,
                 Ticker = request.Ticker,
                 Name = request.Name,
                 Description = request.Description
             };
-            
-            var createdCryptoCard = await _cryptoCardRepository.AddAsync(cryptoCard);
-            if (createdCryptoCard == null) return Problem("Не удалось создать клиента");
-            var cryptoCardModel = new CryptoCardModel()
-            {
-                Id = createdCryptoCard.Id,
-                Ticker = createdCryptoCard.Ticker,
-                Name = createdCryptoCard.Name,
-                Description = createdCryptoCard.Description
-            };
 
-            return CreatedAtRoute("GetCryptoCardModel", new { id = createdCryptoCard.Id }, cryptoCardModel);
+            return CreatedAtRoute("GetCryptoCardModel", new { id = createdCryptoCardId }, cryptoCardModel);
         }
 
         /// <summary>
@@ -108,20 +88,13 @@ namespace StockCardService.WebApi.Controllers
         [ProducesResponseType(404)]
         public async Task<ActionResult<CryptoCardModel>> GetCryptoCardModelAsync(Guid id)
         {
-            var customer = await _cryptoCardRepository.GetByIdAsync(id, CancellationToken.None);
+            var cryptoCardDto = await _cryptoCardService.GetByIdAsync(id);
 
-            if (customer == null)
+            if (cryptoCardDto == null)
                 return NotFound();
 
-            var cryptoCardModel = new CryptoCardModel()
-            {
-                Id = customer.Id,
-                Ticker = customer.Ticker,
-                Name = customer.Name,
-                Description = customer.Description
-            };
-
-            return Ok(cryptoCardModel);
+            var cryptoCardModel = CryptoCardMapper.ToModel(cryptoCardDto);
+            return cryptoCardModel;
         }
 
         /// <summary>
@@ -133,16 +106,9 @@ namespace StockCardService.WebApi.Controllers
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
-        public async Task<IActionResult> EditCryptoCardAsync(UpdatingShareCardModel request)
+        public async Task<IActionResult> EditCryptoCardAsync(UpdatingCryptoCardModel request)
         {
-            var shareCard = await _cryptoCardRepository.GetByIdAsync(request.Id, CancellationToken.None);
-            if (shareCard == null)
-                return NotFound();
-            shareCard.Id = request.Id;
-            shareCard.Ticker = request.Ticker;
-            shareCard.Name = request.Name;
-            shareCard.Description = request.Description;
-            await _cryptoCardRepository.UpdateAsync(shareCard);
+            await _cryptoCardService.UpdateAsync(CryptoCardMapper.ToDto(request));
             return Ok();
         }
 
@@ -158,7 +124,7 @@ namespace StockCardService.WebApi.Controllers
         [ProducesResponseType(404)]
         public async Task<IActionResult> DeleteCryptoCard(Guid id)
         {
-            await _cryptoCardRepository.DeleteAsync(id);
+            await _cryptoCardService.DeleteAsync(id);
             return NoContent();
         }
     }
