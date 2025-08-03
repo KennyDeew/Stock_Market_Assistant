@@ -1,15 +1,10 @@
-﻿namespace StockCardService.WebApi.Models.CryptoCard
+﻿namespace StockMarketAssistant.StockCardService.Application.DTOs._03_CryptoCard
 {
     /// <summary>
-    /// Модель изменяемой карточки криптовалюты
+    /// Dto создаваемой карточки криптовалюты
     /// </summary>
-    public class UpdatingCryptoCardModel
+    public class CreatingCryptoCardDto
     {
-        /// <summary>
-        /// Id криптовалюты
-        /// </summary>
-        public Guid Id { get; set; }
-
         /// <summary>
         /// Тикер криптовалюты
         /// </summary>
