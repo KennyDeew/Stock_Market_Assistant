@@ -1,15 +1,15 @@
-﻿namespace StockCardService.WebApi.Models.BondCard
+﻿namespace StockMarketAssistant.StockCardService.Application.DTOs._02_BondCard
 {
     /// <summary>
-    /// Модель измененной карточки облигации
+    /// Dto неполной карточки облигации
     /// </summary>
-    public class UpdatingBondCardModel
+    public class BondCardShortDto
     {
         /// <summary>
         /// Id облигации
         /// </summary>
         public Guid Id { get; set; }
-        
+
         /// <summary>
         /// Тикер облигации
         /// </summary>
@@ -28,6 +28,6 @@
         /// <summary>
         /// дата погашения облигации
         /// </summary>
-        public DateTime MaturityPeriod { get; set; }
+        public string MaturityPeriod { get; set; }
     }
 }

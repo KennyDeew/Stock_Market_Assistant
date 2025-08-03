@@ -1,15 +1,17 @@
-﻿namespace StockCardService.WebApi.Models.BondCard
+﻿using StockMarketAssistant.StockCardService.Application.DTOs._02sub_Coupon;
+
+namespace StockMarketAssistant.StockCardService.Application.DTOs._02_BondCard
 {
     /// <summary>
-    /// Модель измененной карточки облигации
+    /// Dto неполной карточки облигации
     /// </summary>
-    public class UpdatingBondCardModel
+    public class BondCardDto
     {
         /// <summary>
         /// Id облигации
         /// </summary>
         public Guid Id { get; set; }
-        
+
         /// <summary>
         /// Тикер облигации
         /// </summary>
@@ -29,5 +31,10 @@
         /// дата погашения облигации
         /// </summary>
         public DateTime MaturityPeriod { get; set; }
+
+        /// <summary>
+        /// Купоны облигации
+        /// </summary>
+        public List<CouponDto>? Coupons { get; set; }
     }
 }

@@ -1,4 +1,4 @@
-﻿using StockMarketAssistant.StockCardService.Domain.Entities;
+﻿using StockMarketAssistant.StockCardService.WebApi.Models._02sub_Coupon;
 
 namespace StockCardService.WebApi.Models.BondCard
 {
@@ -35,6 +35,6 @@ namespace StockCardService.WebApi.Models.BondCard
         /// <summary>
         /// Купоны облигации
         /// </summary>
-        public ICollection<Coupon> Coupons { get; set; }
+        public List<CouponModel>? Coupons { get; set; }
     }
 }

@@ -1,15 +1,15 @@
-﻿namespace StockCardService.WebApi.Models.BondCard
+﻿namespace StockMarketAssistant.StockCardService.Application.DTOs._02_BondCard
 {
     /// <summary>
-    /// Модель измененной карточки облигации
+    /// Dto измененной карточки облигации
     /// </summary>
-    public class UpdatingBondCardModel
+    public class UpdatingBondCardDto
     {
         /// <summary>
         /// Id облигации
         /// </summary>
         public Guid Id { get; set; }
-        
+
         /// <summary>
         /// Тикер облигации
         /// </summary>
