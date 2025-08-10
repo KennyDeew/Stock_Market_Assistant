@@ -1,15 +1,10 @@
 ﻿namespace StockCardService.WebApi.Models._01sub_Dividend
 {
     /// <summary>
-    /// Модель дивиденда акции
+    /// Модель создаваемого дивиденда акции
     /// </summary>
-    public class DividendModel
+    public class CreatingDividendModel
     {
-        /// <summary>
-        /// Id дивиденда акции
-        /// </summary>
-        public Guid Id { get; set; }
-
         /// <summary>
         /// Id акции
         /// </summary>
