@@ -5,9 +5,9 @@ internal class Program
     private static void Main(string[] args)
     {
         var builder = DistributedApplication.CreateBuilder(args);
-        
+
         // Добавление проектов
-        
+
         var apiGatewayService = builder.AddProject<Projects.Gateway_WebApi>("gateway-api");
         var apiAuthService = builder.AddProject<Projects.AuthService_WebApi>("authservice-api");
         var apiStockCardService = builder.AddProject<Projects.StockCardService_WebApi>("stockcardservice-api");
@@ -24,6 +24,12 @@ internal class Program
             .WithHostPort(14050)
             .AddDatabase("portfolio-db");
 
+        var pgAnalyticsDb = builder.AddPostgres("pg-analytics-db")
+            .WithImage("postgres:17.5")
+            .WithDataVolume("analytics-pg-data")
+            .WithHostPort(14051)
+            .AddDatabase("analytics-db");
+
         //var postgres = builder.AddPostgres("postgres").AddDatabase("stockcarddb");
         //var container = builder.AddDockerfile("gateway", "../backend/gateway/");
 
@@ -32,6 +38,9 @@ internal class Program
                            .WithReference(pgPortfolioDb)
                            .WaitFor(pgPortfolioDb);
 
+        apiAnalyticsService.WithReference(redis)
+                          .WithReference(pgAnalyticsDb)
+                          .WaitFor(pgAnalyticsDb);
 
         builder.Build().Run();
     }
