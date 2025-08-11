@@ -7,4 +7,13 @@
     <RootNamespace>$(SolutionName).$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\StockCardService.Abstractions.Repositories\StockCardService.Abstractions.Repositories.csproj" />
+    <ProjectReference Include="..\StockCardService.Infrastructure.EntityFramework\StockCardService.Infrastructure.EntityFramework.csproj" />
+  </ItemGroup>
+
 </Project>
