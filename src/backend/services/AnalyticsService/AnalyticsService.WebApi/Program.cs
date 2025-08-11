@@ -1,5 +1,6 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.OpenApi.Models;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi;
+//using Microsoft.OpenApi.Models;
 using StockMarketAssistant.AnalyticsService.Application.Interfaces;
 using StockMarketAssistant.AnalyticsService.Application.Interfaces.Repositories;
 using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Context;
@@ -12,7 +13,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
-// Настройка Swagger
+
+
+/*// Настройка Swagger
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo
@@ -37,7 +40,7 @@ builder.Services.AddSwaggerGen(c =>
 
     // Настройка схемы для enum
     c.SchemaFilter<EnumSchemaFilter>();
-});
+});*/
 
 // Настройка Entity Framework
 builder.Services.AddDbContext<AnalyticsDbContext>(options =>
@@ -78,12 +81,8 @@ var app = builder.Build();
 // Настройка middleware
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Analytics Service API v1");
-        c.RoutePrefix = string.Empty; // Swagger UI будет доступен по корневому пути
-    });
+    app.MapOpenApi();
+    app.UseSwaggerUI(options => options.SwaggerEndpoint("/openapi/v1.json", "AuthService API"));
 }
 
 app.UseHttpsRedirection();
@@ -123,3 +122,5 @@ public class EnumSchemaFilter : Microsoft.OpenApi.Any.OpenApiSchemaFilter
         }
     }
 }
+
+
