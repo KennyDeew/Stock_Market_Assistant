@@ -1,6 +1,8 @@
+using Microsoft.Extensions.Logging;
 using StockMarketAssistant.AnalyticsService.Application.DTOs;
 using StockMarketAssistant.AnalyticsService.Application.Interfaces;
 using StockMarketAssistant.AnalyticsService.Application.Interfaces.Repositories;
+using StockMarketAssistant.AnalyticsService.Domain.Entities;
 
 namespace StockMarketAssistant.AnalyticsService.Application.Services
 {
