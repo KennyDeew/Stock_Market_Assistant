@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
-//using Microsoft.OpenApi.Models;
 using StockMarketAssistant.AnalyticsService.Application.Interfaces;
 using StockMarketAssistant.AnalyticsService.Application.Interfaces.Repositories;
 using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Context;
@@ -108,16 +107,16 @@ using (var scope = app.Services.CreateScope())
 app.Run();
 
 // Фильтр схемы для enum
-public class EnumSchemaFilter : Microsoft.OpenApi.Any.OpenApiSchemaFilter
+public class EnumSchemaFilter : Microsoft.OpenApi.Models.OpenApiSchemaFilter
 {
-    public void Apply(Microsoft.OpenApi.Any.OpenApiSchema schema, Microsoft.OpenApi.Any.OpenApiSchemaFilterContext context)
+    public void Apply(Microsoft.OpenApi.Models.OpenApiSchema schema, Microsoft.OpenApi.Models.OpenApiSchemaFilterContext context)
     {
         if (context.Type.IsEnum)
         {
             schema.Enum.Clear();
             foreach (var enumName in Enum.GetNames(context.Type))
             {
-                schema.Enum.Add(new Microsoft.OpenApi.Any.OpenApiString(enumName));
+                schema.Enum.Add(new Microsoft.OpenApi.Models.OpenApiString(enumName));
             }
         }
     }
