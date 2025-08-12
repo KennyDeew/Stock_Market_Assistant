@@ -31,12 +31,20 @@ namespace StockMarketAssistant.StockCardService.WebApi
             builder.Services.AddScoped(typeof(IRepository<ShareCard, Guid>), typeof(ShareCardRepository));
             builder.Services.AddScoped(typeof(IRepository<BondCard, Guid>), typeof(BondCardRepository));
             builder.Services.AddScoped(typeof(IRepository<CryptoCard, Guid>), typeof(CryptoCardRepository));
+            builder.Services.AddScoped(typeof(ISubRepository<Dividend, Guid>), typeof(DividendRepository));
             builder.Services.AddScoped<IShareCardService, ShareCardService>();
             builder.Services.AddScoped<IBondCardService, BondCardservice>();
             builder.Services.AddScoped<ICryptoCardService, CryptoCardService>();
+            builder.Services.AddScoped<IDividendService, DividendService>();
 
             builder.Services.AddEndpointsApiExplorer(); // Для генерации OpenAPI spec
-            builder.Services.AddSwaggerGen();           // Добавляет Swagger-сервисы
+            // Добавляет Swagger-сервисы. Настраиваем xml разметку
+            builder.Services.AddSwaggerGen(c =>
+            {
+                var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+                c.IncludeXmlComments(xmlPath);
+            });
 
             var app = builder.Build();
 
