@@ -1,7 +1,6 @@
 ﻿using StockCardService.Abstractions.Repositories;
 using StockMarketAssistant.StockCardService.Application.DTOs._01_ShareCard;
 using StockMarketAssistant.StockCardService.Application.DTOs._01sub_Dividend;
-using StockMarketAssistant.StockCardService.Application.DTOs._01sub_FinancialReport;
 using StockMarketAssistant.StockCardService.Application.DTOs._01sub_Multiplier;
 using StockMarketAssistant.StockCardService.Application.Interfaces;
 using StockMarketAssistant.StockCardService.Domain.Entities;
@@ -34,14 +33,6 @@ namespace StockMarketAssistant.StockCardService.Application.Services
                     Ticker = x.Ticker,
                     Name = x.Name,
                     Description = x.Description,
-                    FinancialReports = x.FinancialReports != null ?
-                        x.FinancialReports.Select(fr => new FinancialReportDto
-                        {
-                            Id = fr.Id,
-                            Name = fr.Name,
-                            Description = fr.Description
-                        }).ToList()
-                        : new List<FinancialReportDto>(),
                     Multipliers = x.Multipliers != null ?
                         x.Multipliers.Select(m => new MultiplierDto
                         {
@@ -79,14 +70,6 @@ namespace StockMarketAssistant.StockCardService.Application.Services
                 Ticker = shareCard.Ticker,
                 Name = shareCard.Name,
                 Description = shareCard.Description,
-                FinancialReports = shareCard.FinancialReports != null ?
-                    shareCard.FinancialReports.Select(fr => new FinancialReportDto
-                    {
-                        Id = fr.Id,
-                        Name = fr.Name,
-                        Description = fr.Description
-                    }).ToList()
-                    : new List<FinancialReportDto>(),
                 Multipliers = shareCard.Multipliers != null ?
                     shareCard.Multipliers.Select(m => new MultiplierDto
                     {

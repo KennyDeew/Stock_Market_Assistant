@@ -1,11 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using StockCardService.Abstractions.Repositories;
-using StockCardService.Infrastructure.Repositories;
 using StockCardService.WebApi.Models.CryptoCard;
-using StockCardService.WebApi.Models.ShareCard;
-using StockMarketAssistant.StockCardService.Application.DTOs._03_CryptoCard;
 using StockMarketAssistant.StockCardService.Application.Interfaces;
-using StockMarketAssistant.StockCardService.Domain.Entities;
 using StockMarketAssistant.StockCardService.WebApi.Mappers;
 
 namespace StockCardService.WebApi.Controllers

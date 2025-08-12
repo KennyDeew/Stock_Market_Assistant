@@ -39,8 +39,7 @@ namespace StockMarketAssistant.StockCardService.Application.Services
                         x.Coupons.Select(d => new CouponDto
                         {
                             Id = d.Id,
-                            BondId = d.BondId,
-                            Period = d.Period,
+                            BondId = d.ParentId,
                             Currency = d.Currency,
                             Value = d.Value
                         }).ToList()
@@ -74,8 +73,7 @@ namespace StockMarketAssistant.StockCardService.Application.Services
                         bondCard.Coupons.Select(d => new CouponDto
                         {
                             Id = d.Id,
-                            BondId = d.BondId,
-                            Period = d.Period,
+                            BondId = d.ParentId,
                             Currency = d.Currency,
                             Value = d.Value
                         }).ToList()
