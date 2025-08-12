@@ -81,13 +81,13 @@ namespace StockMarketAssistant.StockCardService.Application.Services
         /// <returns></returns>
         public async Task UpdateAsync(UpdatingCryptoCardDto updatingCryptoCardDto)
         {
-            var shareCard = await _cryptoCardRepository.GetByIdAsync(updatingCryptoCardDto.Id, CancellationToken.None);
-            if (shareCard == null)
+            var cryptoCard = await _cryptoCardRepository.GetByIdAsync(updatingCryptoCardDto.Id, CancellationToken.None);
+            if (cryptoCard == null)
                 return;
-            shareCard.Ticker = updatingCryptoCardDto.Ticker;
-            shareCard.Name = updatingCryptoCardDto.Name;
-            shareCard.Description = updatingCryptoCardDto.Description;
-            await _cryptoCardRepository.UpdateAsync(shareCard);
+            cryptoCard.Ticker = updatingCryptoCardDto.Ticker;
+            cryptoCard.Name = updatingCryptoCardDto.Name;
+            cryptoCard.Description = updatingCryptoCardDto.Description;
+            await _cryptoCardRepository.UpdateAsync(cryptoCard);
         }
 
         /// <summary>
