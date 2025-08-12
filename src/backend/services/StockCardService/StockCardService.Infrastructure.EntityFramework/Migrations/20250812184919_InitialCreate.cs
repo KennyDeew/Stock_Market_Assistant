@@ -19,7 +19,8 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                     Ticker = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
                     Name = table.Column<string>(type: "text", nullable: false),
                     Description = table.Column<string>(type: "text", nullable: false),
-                    MaturityPeriod = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    MaturityPeriod = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    Currency = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -41,13 +42,35 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "FinancialReports",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    ParentId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "text", nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: false),
+                    Period = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    Revenue = table.Column<decimal>(type: "numeric", nullable: false),
+                    EBITDA = table.Column<decimal>(type: "numeric", nullable: false),
+                    NetProfit = table.Column<decimal>(type: "numeric", nullable: false),
+                    CAPEX = table.Column<decimal>(type: "numeric", nullable: false),
+                    FCF = table.Column<decimal>(type: "numeric", nullable: false),
+                    Debt = table.Column<decimal>(type: "numeric", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_FinancialReports", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "ShareCards",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Ticker = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
                     Name = table.Column<string>(type: "text", nullable: false),
-                    Description = table.Column<string>(type: "text", nullable: false)
+                    Description = table.Column<string>(type: "text", nullable: false),
+                    Currency = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -59,8 +82,8 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    BondId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Period = table.Column<DateTime>(type: "timestamp with time zone", maxLength: 50, nullable: false),
+                    ParentId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CuttOffDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Currency = table.Column<string>(type: "text", nullable: false),
                     Value = table.Column<decimal>(type: "numeric", nullable: false)
                 },
@@ -68,8 +91,8 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                 {
                     table.PrimaryKey("PK_Coupons", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Coupons_BondCards_BondId",
-                        column: x => x.BondId,
+                        name: "FK_Coupons_BondCards_ParentId",
+                        column: x => x.ParentId,
                         principalTable: "BondCards",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -80,8 +103,9 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    ShareCardId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Period = table.Column<DateTime>(type: "timestamp with time zone", maxLength: 50, nullable: false),
+                    ParentId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CuttOffDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    Period = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     Currency = table.Column<string>(type: "text", nullable: false),
                     Value = table.Column<decimal>(type: "numeric", nullable: false)
                 },
@@ -89,35 +113,8 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                 {
                     table.PrimaryKey("PK_Dividends", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Dividends_ShareCards_ShareCardId",
-                        column: x => x.ShareCardId,
-                        principalTable: "ShareCards",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "FinancialReports",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    ShareCardId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Name = table.Column<string>(type: "text", nullable: false),
-                    Description = table.Column<string>(type: "text", nullable: false),
-                    Period = table.Column<DateTime>(type: "timestamp with time zone", maxLength: 50, nullable: false),
-                    Revenue = table.Column<decimal>(type: "numeric", nullable: false),
-                    EBITDA = table.Column<decimal>(type: "numeric", nullable: false),
-                    NetProfit = table.Column<decimal>(type: "numeric", nullable: false),
-                    CAPEX = table.Column<decimal>(type: "numeric", nullable: false),
-                    FCF = table.Column<decimal>(type: "numeric", nullable: false),
-                    Debt = table.Column<decimal>(type: "numeric", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_FinancialReports", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_FinancialReports_ShareCards_ShareCardId",
-                        column: x => x.ShareCardId,
+                        name: "FK_Dividends_ShareCards_ParentId",
+                        column: x => x.ParentId,
                         principalTable: "ShareCards",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -128,7 +125,7 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    ShareCardId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ParentId = table.Column<Guid>(type: "uuid", nullable: false),
                     Name = table.Column<string>(type: "text", nullable: false),
                     Value = table.Column<decimal>(type: "numeric", nullable: false)
                 },
@@ -136,32 +133,27 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                 {
                     table.PrimaryKey("PK_Multipliers", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Multipliers_ShareCards_ShareCardId",
-                        column: x => x.ShareCardId,
+                        name: "FK_Multipliers_ShareCards_ParentId",
+                        column: x => x.ParentId,
                         principalTable: "ShareCards",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Coupons_BondId",
+                name: "IX_Coupons_ParentId",
                 table: "Coupons",
-                column: "BondId");
+                column: "ParentId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Dividends_ShareCardId",
+                name: "IX_Dividends_ParentId",
                 table: "Dividends",
-                column: "ShareCardId");
+                column: "ParentId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_FinancialReports_ShareCardId",
-                table: "FinancialReports",
-                column: "ShareCardId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Multipliers_ShareCardId",
+                name: "IX_Multipliers_ParentId",
                 table: "Multipliers",
-                column: "ShareCardId");
+                column: "ParentId");
         }
 
         /// <inheritdoc />

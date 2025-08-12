@@ -12,7 +12,7 @@ using StockMarketAssistant.StockCardService.Infrastructure.EntityFramework;
 namespace StockCardService.Infrastructure.EntityFramework.Migrations
 {
     [DbContext(typeof(StockCardDbContext))]
-    [Migration("20250624190440_InitialCreate")]
+    [Migration("20250812184919_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -30,6 +30,10 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -58,23 +62,22 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("BondId")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("Currency")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<DateTime>("Period")
-                        .HasMaxLength(50)
+                    b.Property<DateTime>("CuttOffDate")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ParentId")
+                        .HasColumnType("uuid");
 
                     b.Property<decimal>("Value")
                         .HasColumnType("numeric");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BondId");
+                    b.HasIndex("ParentId");
 
                     b.ToTable("Coupons");
                 });
@@ -113,19 +116,23 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<DateTime>("Period")
-                        .HasMaxLength(50)
+                    b.Property<DateTime>("CuttOffDate")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("ShareCardId")
+                    b.Property<Guid>("ParentId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("Period")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<decimal>("Value")
                         .HasColumnType("numeric");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ShareCardId");
+                    b.HasIndex("ParentId");
 
                     b.ToTable("Dividends");
                 });
@@ -159,19 +166,18 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                     b.Property<decimal>("NetProfit")
                         .HasColumnType("numeric");
 
-                    b.Property<DateTime>("Period")
+                    b.Property<Guid>("ParentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Period")
+                        .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("character varying(50)");
 
                     b.Property<decimal>("Revenue")
                         .HasColumnType("numeric");
 
-                    b.Property<Guid>("ShareCardId")
-                        .HasColumnType("uuid");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("ShareCardId");
 
                     b.ToTable("FinancialReports");
                 });
@@ -186,7 +192,7 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid>("ShareCardId")
+                    b.Property<Guid>("ParentId")
                         .HasColumnType("uuid");
 
                     b.Property<decimal>("Value")
@@ -194,7 +200,7 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ShareCardId");
+                    b.HasIndex("ParentId");
 
                     b.ToTable("Multipliers");
                 });
@@ -204,6 +210,10 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -227,7 +237,7 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                 {
                     b.HasOne("StockMarketAssistant.StockCardService.Domain.Entities.BondCard", "Bond")
                         .WithMany("Coupons")
-                        .HasForeignKey("BondId")
+                        .HasForeignKey("ParentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -238,18 +248,7 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                 {
                     b.HasOne("StockMarketAssistant.StockCardService.Domain.Entities.ShareCard", "ShareCard")
                         .WithMany("Dividends")
-                        .HasForeignKey("ShareCardId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ShareCard");
-                });
-
-            modelBuilder.Entity("StockMarketAssistant.StockCardService.Domain.Entities.FinancialReport", b =>
-                {
-                    b.HasOne("StockMarketAssistant.StockCardService.Domain.Entities.ShareCard", "ShareCard")
-                        .WithMany("FinancialReports")
-                        .HasForeignKey("ShareCardId")
+                        .HasForeignKey("ParentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -260,7 +259,7 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                 {
                     b.HasOne("StockMarketAssistant.StockCardService.Domain.Entities.ShareCard", "ShareCard")
                         .WithMany("Multipliers")
-                        .HasForeignKey("ShareCardId")
+                        .HasForeignKey("ParentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -275,8 +274,6 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
             modelBuilder.Entity("StockMarketAssistant.StockCardService.Domain.Entities.ShareCard", b =>
                 {
                     b.Navigation("Dividends");
-
-                    b.Navigation("FinancialReports");
 
                     b.Navigation("Multipliers");
                 });

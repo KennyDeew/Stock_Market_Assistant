@@ -1,18 +1,35 @@
 ﻿using StockCardService.Domain.Entities;
-using System;
 
 namespace StockMarketAssistant.StockCardService.Domain.Entities
 
 {
-    public class Coupon : IEntity<Guid>
+    public class Coupon : IEntityWithParent<Guid>, IEntity<Guid>
     {
+        /// <summary>
+        /// Id купона
+        /// </summary>
         public Guid Id { get; set; }
-        public Guid BondId { get; set; }
-        public DateTime Period { get; set; }
 
+        /// <summary>
+        /// Id облигации
+        /// </summary>
+        public Guid ParentId { get; set; }
+
+        /// <summary>
+        /// дата фиксирования владельца облигацией для выплаты дивиденда
+        /// </summary>
+        public DateTime CuttOffDate { get; set; }
+
+        /// <summary>
+        /// Валюта
+        /// </summary>
         public string Currency { get; set; }
+
+        /// <summary>
+        /// Размер дивидендов
+        /// </summary>
         public decimal Value { get; set; }
-        
+
         public BondCard Bond { get; set; }
     }
 }

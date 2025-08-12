@@ -1,19 +1,43 @@
 ﻿using StockCardService.Domain.Entities;
-using System;
-using System.Collections.Generic;
 
 namespace StockMarketAssistant.StockCardService.Domain.Entities
 
 {
     public class BondCard : IEntity<Guid>
     {
+        /// <summary>
+        /// Id облигации
+        /// </summary>
         public Guid Id { get; set; }
+
+        /// <summary>
+        /// Тикер облигации
+        /// </summary>
         public string Ticker { get; set; }
+
+        /// <summary>
+        /// Наименование облигации
+        /// </summary>
         public string Name { get; set; }
+
+        /// <summary>
+        /// Описание облигации
+        /// </summary>
         public string Description { get; set; }
+
+        /// <summary>
+        /// дата погашения облигации
+        /// </summary>
         public DateTime MaturityPeriod { get; set; }
 
-        
+        /// <summary>
+        /// Валюта
+        /// </summary>
+        public string Currency { get; set; }
+
+        /// <summary>
+        /// Массив купонов
+        /// </summary>
         public ICollection<Coupon> Coupons { get; set; }
     }
 }

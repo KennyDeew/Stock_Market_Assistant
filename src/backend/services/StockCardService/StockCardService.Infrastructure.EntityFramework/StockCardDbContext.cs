@@ -22,25 +22,20 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
         {
             // ShareCard relationships
             modelBuilder.Entity<ShareCard>()
-                .HasMany(s => s.FinancialReports)
-                .WithOne(f => f.ShareCard)
-                .HasForeignKey(f => f.ShareCardId);
-
-            modelBuilder.Entity<ShareCard>()
                 .HasMany(s => s.Multipliers)
                 .WithOne(m => m.ShareCard)
-                .HasForeignKey(m => m.ShareCardId);
+                .HasForeignKey(m => m.ParentId);
 
             modelBuilder.Entity<ShareCard>()
                 .HasMany(s => s.Dividends)
                 .WithOne(d => d.ShareCard)
-                .HasForeignKey(d => d.ShareCardId);
+                .HasForeignKey(d => d.ParentId);
 
             // BondCard relationships
             modelBuilder.Entity<BondCard>()
                 .HasMany(b => b.Coupons)
                 .WithOne(c => c.Bond)
-                .HasForeignKey(c => c.BondId);
+                .HasForeignKey(c => c.ParentId);
 
             // Установка первичных ключей
             modelBuilder.Entity<ShareCard>().HasKey(s => s.Id);
@@ -77,10 +72,6 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
                 .IsRequired()
                 .HasMaxLength(50);
 
-            modelBuilder.Entity<Coupon>()
-                .Property(c => c.Period)
-                .IsRequired()
-                .HasMaxLength(50);
         }
     }
 }

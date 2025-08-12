@@ -1,14 +1,28 @@
 ﻿using StockCardService.Domain.Entities;
-using System;
 
 namespace StockMarketAssistant.StockCardService.Domain.Entities
 
 {
-    public class Multiplier : IEntity<Guid>
+    public class Multiplier : IEntityWithParent<Guid>, IEntity<Guid>
     {
+        /// <summary>
+        /// Id мультипликатора
+        /// </summary>
         public Guid Id { get; set; }
-        public Guid ShareCardId { get; set; }
+
+        /// <summary>
+        /// Id акции
+        /// </summary>
+        public Guid ParentId { get; set; }
+
+        /// <summary>
+        /// Наименование мультипликатора
+        /// </summary>
         public string Name { get; set; }
+
+        /// <summary>
+        /// Значение мультипликатора
+        /// </summary>
         public decimal Value { get; set; }
         
         public ShareCard ShareCard { get; set; }

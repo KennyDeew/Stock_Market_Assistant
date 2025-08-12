@@ -5,7 +5,7 @@ namespace StockMarketAssistant.StockCardService.Domain.Entities
     /// <summary>
     /// Класс дивидендов
     /// </summary>
-    public class Dividend : IEntity<Guid>
+    public class Dividend : IEntityWithParent<Guid>, IEntity<Guid>
     {
         /// <summary>
         /// Id дивидендов
@@ -15,7 +15,7 @@ namespace StockMarketAssistant.StockCardService.Domain.Entities
         /// <summary>
         /// Id акции
         /// </summary>
-        public Guid ShareCardId { get; set; }
+        public Guid ParentId { get; set; }
 
         /// <summary>
         /// дата див отсечки
