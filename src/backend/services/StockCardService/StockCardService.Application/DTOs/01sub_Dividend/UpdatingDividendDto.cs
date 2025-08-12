@@ -6,6 +6,11 @@
     public class UpdatingDividendDto
     {
         /// <summary>
+        /// Id дивидендов
+        /// </summary>
+        public Guid Id { get; set; }
+
+        /// <summary>
         /// дата див отсечки
         /// </summary>
         public DateTime CuttOffDate { get; set; }
