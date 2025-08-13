@@ -1,12 +1,13 @@
 ﻿using StockCardService.Abstractions.Repositories;
 using StockMarketAssistant.StockCardService.Application.DTOs._01sub_Dividend;
-using StockMarketAssistant.StockCardService.Application.DTOs._03_CryptoCard;
 using StockMarketAssistant.StockCardService.Application.Interfaces;
 using StockMarketAssistant.StockCardService.Domain.Entities;
-using System.Threading;
 
 namespace StockMarketAssistant.StockCardService.Application.Services
 {
+    /// <summary>
+    /// Сервис работы с дивидендами акций
+    /// </summary>
     public class DividendService : IDividendService
     {
         private readonly ISubRepository<Dividend, Guid> _dividendRepository;

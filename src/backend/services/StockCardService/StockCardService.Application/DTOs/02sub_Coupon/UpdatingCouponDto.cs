@@ -18,7 +18,7 @@
         /// <summary>
         /// дата фиксирования владельца облигацией для выплаты купона
         /// </summary>
-        public DateTime Period { get; set; }
+        public DateTime CutOffDate { get; set; }
 
         /// <summary>
         /// Размер купона
