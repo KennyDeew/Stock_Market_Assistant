@@ -1,0 +1,12 @@
+{
+  "sdk": {
+    "version": "9.0.100",
+    "rollForward": "latestFeature"
+  },
+  "runtimeOptions": {
+    "configProperties": {
+      "System.Reflection.Metadata.MetadataUpdater.IsSupported": false,
+      "System.Reflection.Metadata.MetadataUpdater.IsSupportedInAppHost": false
+    }
+  }
+}

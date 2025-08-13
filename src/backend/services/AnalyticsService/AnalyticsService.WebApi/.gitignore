@@ -1,0 +1,28 @@
+# Временные файлы
+*.tmp
+*.temp
+*.log
+
+# Папки сборки
+bin/
+obj/
+
+# Файлы пользователя
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Файлы Visual Studio
+.vs/
+*.ncrunch*
+*.ncrunchsolution
+
+# Файлы .NET
+*.dll
+*.exe
+*.pdb
+*.cache
+
+# Файлы конфигурации runtime
+runtimeconfig.template.json

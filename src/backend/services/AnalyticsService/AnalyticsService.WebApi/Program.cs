@@ -1,9 +1,14 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Design;
 using StockMarketAssistant.AnalyticsService.Application.Interfaces;
 using StockMarketAssistant.AnalyticsService.Application.Interfaces.Repositories;
 using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Context;
 using StockMarketAssistant.AnalyticsService.Infrastructure.Repositories;
 using StockMarketAssistant.AnalyticsService.Application.Services;
+
+// Настройки для отключения проблемных функций рефлексии в .NET 9
+AppContext.SetSwitch("System.Reflection.Metadata.MetadataUpdater.IsSupported", false);
+AppContext.SetSwitch("System.Reflection.Metadata.MetadataUpdater.IsSupportedInAppHost", false);
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,43 +16,54 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
-
-
-/*// Настройка Swagger
+// Настройка Swagger с исправлениями для .NET 9
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo
+    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
     {
         Title = "Analytics Service API",
         Version = "v1",
-        Description = "API для анализа рейтинга активов на фондовом рынке",
-        Contact = new OpenApiContact
+        Description = "API для анализа рейтинга активов информационной системы.",
+        Contact = new Microsoft.OpenApi.Models.OpenApiContact
         {
             Name = "Stock Market Assistant Team",
             Email = "support@stockmarketassistant.com"
         }
     });
 
-    // Добавление XML комментариев для автодокументации
-    var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
-    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-    if (File.Exists(xmlPath))
+    // Добавление XML комментариев для автодокументации (с проверкой существования)
+    try
     {
-        c.IncludeXmlComments(xmlPath);
+        var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+        var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+        if (File.Exists(xmlPath))
+        {
+            c.IncludeXmlComments(xmlPath);
+        }
     }
-
-    // Настройка схемы для enum
-    c.SchemaFilter<EnumSchemaFilter>();
-});*/
+    catch (Exception ex)
+    {
+        // Логируем ошибку, но не прерываем работу приложения
+        Console.WriteLine($"Предупреждение: Не удалось загрузить XML комментарии: {ex.Message}");
+    }
+});
 
 // Настройка Entity Framework
 builder.Services.AddDbContext<AnalyticsDbContext>(options =>
 {
     var connectionString = builder.Configuration.GetConnectionString("AnalyticsDb");
-    options.UseNpgsql(connectionString, npgsqlOptions =>
+    if (!string.IsNullOrEmpty(connectionString))
     {
-        npgsqlOptions.MigrationsAssembly(typeof(AnalyticsDbContext).Assembly.FullName);
-    });
+        options.UseNpgsql(connectionString, npgsqlOptions =>
+        {
+            npgsqlOptions.MigrationsAssembly(typeof(AnalyticsDbContext).Assembly.FullName);
+        });
+    }
+    else
+    {
+        // Fallback для разработки
+        options.UseNpgsql("Host=localhost;Database=analytics_db;Username=postgres;Password=password");
+    }
 });
 
 // Регистрация сервисов
@@ -79,8 +95,8 @@ var app = builder.Build();
 // Настройка middleware
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
-    app.UseSwaggerUI(options => options.SwaggerEndpoint("/openapi/v1.json", "AuthService API"));
+    app.UseSwagger();
+    app.UseSwaggerUI(options => options.SwaggerEndpoint("/swagger/v1/swagger.json", "Analytics Service API"));
 }
 
 app.UseHttpsRedirection();
@@ -88,37 +104,30 @@ app.UseCors("AllowAll");
 app.UseAuthorization();
 app.MapControllers();
 
-// Миграция базы данных
+// Миграция базы данных с улучшенной обработкой ошибок
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AnalyticsDbContext>();
     try
     {
-        context.Database.Migrate();
-        Console.WriteLine("База данных успешно мигрирована");
+        // Проверяем, доступна ли база данных
+        if (context.Database.CanConnect())
+        {
+            context.Database.Migrate();
+            Console.WriteLine("База данных успешно мигрирована");
+        }
+        else
+        {
+            Console.WriteLine("Предупреждение: База данных недоступна для подключения");
+        }
     }
     catch (Exception ex)
     {
         Console.WriteLine($"Ошибка при миграции базы данных: {ex.Message}");
+        // В продакшене можно добавить более детальное логирование
     }
 }
 
 app.Run();
-
-// Фильтр схемы для enum
-public class EnumSchemaFilter : Microsoft.OpenApi.Models.OpenApiSchemaFilter
-{
-    public void Apply(Microsoft.OpenApi.Models.OpenApiSchema schema, Microsoft.OpenApi.Models.OpenApiSchemaFilterContext context)
-    {
-        if (context.Type.IsEnum)
-        {
-            schema.Enum.Clear();
-            foreach (var enumName in Enum.GetNames(context.Type))
-            {
-                schema.Enum.Add(new Microsoft.OpenApi.Models.OpenApiString(enumName));
-            }
-        }
-    }
-}
 
 
