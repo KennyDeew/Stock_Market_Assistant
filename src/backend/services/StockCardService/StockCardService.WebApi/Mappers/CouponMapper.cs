@@ -16,13 +16,34 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
             {
                 Id = model.Id,
                 BondId = model.BondId,
-                Period = model.Period,
                 Currency = model.Currency,
                 Value = model.Value
-                
             };
         }
 
+        public static CreatingCouponDto ToDto(CreatingCouponModel model)
+        {
+            if (model == null) return null;
+
+            return new CreatingCouponDto
+            {
+                BondId = model.BondId,
+                CutOffDate = model.CutOffDate,
+                Currency = model.Currency,
+                Value = model.Value
+            };
+        }
+
+        public static UpdatingCouponDto ToDto(UpdatingCouponModel model)
+        {
+            if (model == null) return null;
+
+            return new UpdatingCouponDto
+            {
+                CutOffDate = model.CutOffDate,
+                Value = model.Value
+            };
+        }
         public static CouponModel ToModel(CouponDto dto)
         {
             if (dto == null) return null;
@@ -31,8 +52,31 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
             {
                 Id = dto.Id,
                 BondId = dto.BondId,
-                Period = dto.Period,
                 Currency = dto.Currency,
+                Value = dto.Value
+            };
+        }
+
+        public static CreatingCouponModel ToDto(CreatingCouponDto dto)
+        {
+            if (dto == null) return null;
+
+            return new CreatingCouponModel
+            {
+                BondId = dto.BondId,
+                CutOffDate = dto.CutOffDate,
+                Currency = dto.Currency,
+                Value = dto.Value
+            };
+        }
+
+        public static UpdatingCouponModel ToDto(UpdatingCouponDto dto)
+        {
+            if (dto == null) return null;
+
+            return new UpdatingCouponModel
+            {
+                CutOffDate = dto.CutOffDate,
                 Value = dto.Value
             };
         }

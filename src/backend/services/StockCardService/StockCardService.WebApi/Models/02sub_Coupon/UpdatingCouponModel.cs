@@ -1,15 +1,10 @@
 ﻿namespace StockMarketAssistant.StockCardService.WebApi.Models._02sub_Coupon
 {
     /// <summary>
-    /// Модель купона облигации
+    /// Модель измененного купона облигации
     /// </summary>
-    public class CouponModel
+    public class UpdatingCouponModel
     {
-        /// <summary>
-        /// Id купона
-        /// </summary>
-        public Guid Id { get; set; }
-
         /// <summary>
         /// Id облигации
         /// </summary>
