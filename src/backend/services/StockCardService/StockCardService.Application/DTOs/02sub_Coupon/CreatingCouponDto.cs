@@ -1,15 +1,10 @@
 ﻿namespace StockMarketAssistant.StockCardService.Application.DTOs._02sub_Coupon
 {
     /// <summary>
-    /// Dto купона облигации
+    /// Dto создаваемого купона облигации
     /// </summary>
-    public class CouponDto
+    public class CreatingCouponDto
     {
-        /// <summary>
-        /// Id купона
-        /// </summary>
-        public Guid Id { get; set; }
-
         /// <summary>
         /// Id облигации
         /// </summary>

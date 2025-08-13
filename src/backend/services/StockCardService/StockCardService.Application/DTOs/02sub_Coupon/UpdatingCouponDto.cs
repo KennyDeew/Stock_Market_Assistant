@@ -1,15 +1,15 @@
 ﻿namespace StockMarketAssistant.StockCardService.Application.DTOs._02sub_Coupon
 {
     /// <summary>
-    /// Dto купона облигации
+    /// Dto измененного купона облигации
     /// </summary>
-    public class CouponDto
+    public class UpdatingCouponDto
     {
         /// <summary>
         /// Id купона
         /// </summary>
         public Guid Id { get; set; }
-
+        
         /// <summary>
         /// Id облигации
         /// </summary>
@@ -19,11 +19,6 @@
         /// дата фиксирования владельца облигацией для выплаты купона
         /// </summary>
         public DateTime Period { get; set; }
-
-        /// <summary>
-        /// Валюта
-        /// </summary>
-        public string Currency { get; set; }
 
         /// <summary>
         /// Размер купона

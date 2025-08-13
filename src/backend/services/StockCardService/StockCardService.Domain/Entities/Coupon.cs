@@ -26,7 +26,7 @@ namespace StockMarketAssistant.StockCardService.Domain.Entities
         public string Currency { get; set; }
 
         /// <summary>
-        /// Размер дивидендов
+        /// Размер купона
         /// </summary>
         public decimal Value { get; set; }
 
