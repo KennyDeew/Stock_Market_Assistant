@@ -8,9 +8,9 @@
 			"save-password": true,
 			"configuration": {
 				"host": "localhost",
-				"port": "14051",
+				"port": "15432",
 				"database": "postgres",
-				"url": "jdbc:postgresql://localhost:14051/postgres",
+				"url": "jdbc:postgresql://localhost:15432/postgres",
 				"configurationType": "MANUAL",
 				"home": "postgresql_client",
 				"type": "dev",
@@ -43,9 +43,9 @@
 			"save-password": true,
 			"configuration": {
 				"host": "localhost",
-				"port": "14051",
+				"port": "15432",
 				"database": "postgres",
-				"url": "jdbc:postgresql://localhost:14051/postgres",
+				"url": "jdbc:postgresql://localhost:15432/postgres",
 				"configurationType": "MANUAL",
 				"home": "postgresql_client",
 				"type": "dev",

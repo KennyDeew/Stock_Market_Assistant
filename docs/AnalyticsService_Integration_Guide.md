@@ -158,8 +158,8 @@
 ```bash
 # База данных
 ANALYTICS_DB_HOST=localhost
-ANALYTICS_DB_PORT=5432
-ANALYTICS_DB_NAME=analytics_db
+ANALYTICS_DB_PORT=15432
+ANALYTICS_DB_NAME=analytics-db
 ANALYTICS_DB_USER=postgres
 ANALYTICS_DB_PASSWORD=password
 
@@ -217,7 +217,7 @@ services:
       - "5003:80"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__AnalyticsDb=Host=postgres;Database=analytics_db;Username=postgres;Password=password
+      - ConnectionStrings__AnalyticsDb=Host=postgres;Database=analytics-db;Username=postgres;Password=password
       - Kafka__BootstrapServers=kafka:9092
       - Redis__ConnectionString=redis:6379
     depends_on:
@@ -228,11 +228,11 @@ services:
   postgres:
     image: postgres:17.5
     environment:
-      POSTGRES_DB: analytics_db
+      POSTGRES_DB: analytics-db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
     ports:
-      - "5433:5432"
+      - "15432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 

@@ -27,7 +27,7 @@ internal class Program
         var pgAnalyticsDb = builder.AddPostgres("pg-analytics-db")
             .WithImage("postgres:17.5")
             .WithDataVolume("analytics-pg-data")
-            .WithHostPort(14051)
+            .WithHostPort(15432)
             .AddDatabase("analytics-db");
 
         //var postgres = builder.AddPostgres("postgres").AddDatabase("stockcarddb");

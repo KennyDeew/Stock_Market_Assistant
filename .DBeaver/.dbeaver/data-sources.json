@@ -8,9 +8,9 @@
 			"save-password": true,
 			"configuration": {
 				"host": "localhost",
-				"port": "14051",
+				"port": "15432",
 				"database": "postgres",
-				"url": "jdbc:postgresql://localhost:14051/postgres",
+				"url": "jdbc:postgresql://localhost:15432/postgres",
 				"configurationType": "MANUAL",
 				"home": "postgresql_client",
 				"type": "dev",
@@ -39,13 +39,13 @@
 		"postgres-jdbc-198a837ab0e-b0b685faaec6a51": {
 			"provider": "postgresql",
 			"driver": "postgres-jdbc",
-			"name": "analitics_db",
+			"name": "analytics-db",
 			"save-password": true,
 			"configuration": {
 				"host": "localhost",
-				"port": "14051",
+				"port": "15432",
 				"database": "analytics-db",
-				"url": "jdbc:postgresql://localhost:14051/analytics-db",
+				"url": "jdbc:postgresql://localhost:15432/analytics-db",
 				"configurationType": "MANUAL",
 				"home": "postgresql_client",
 				"type": "dev",

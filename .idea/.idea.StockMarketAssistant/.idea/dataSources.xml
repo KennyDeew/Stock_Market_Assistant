@@ -19,7 +19,7 @@
       <driver-ref>postgresql</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>
-      <jdbc-url>jdbc:postgresql://localhost:14051/analytics-db?password=kDJwna%28PRu5-SdtGmzA%21SC&amp;user=postgres</jdbc-url>
+      <jdbc-url>jdbc:postgresql://localhost:15432/analytics-db?password=kDJwna%28PRu5-SdtGmzA%21SC&amp;user=postgres</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
   </component>

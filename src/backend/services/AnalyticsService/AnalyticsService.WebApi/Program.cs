@@ -62,7 +62,7 @@ builder.Services.AddDbContext<AnalyticsDbContext>(options =>
     else
     {
         // Fallback для разработки
-        options.UseNpgsql("Host=localhost;Database=analytics_db;Username=postgres;Password=password");
+        options.UseNpgsql("Host=localhost;Database=analytics-db;Username=postgres;Password=password");
     }
 });
 
