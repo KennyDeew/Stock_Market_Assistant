@@ -15,7 +15,7 @@
 
 ### База данных
 
-- **PostgreSQL** с схемой `analytics`
+- **PostgreSQL** с схемой `public` (по умолчанию)
 - **Таблицы:**
   - `asset_transactions` - транзакции с активами
   - `asset_ratings` - рейтинги активов

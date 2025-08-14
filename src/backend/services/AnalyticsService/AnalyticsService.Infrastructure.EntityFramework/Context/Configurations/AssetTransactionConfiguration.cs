@@ -11,7 +11,7 @@ namespace StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.C
     {
         public void Configure(EntityTypeBuilder<AssetTransaction> builder)
         {
-            builder.ToTable("asset_transactions");
+            builder.ToTable("asset_transactions", "public");
 
             builder.HasKey(x => x.Id);
             builder.Property(x => x.Id).HasColumnName("id");

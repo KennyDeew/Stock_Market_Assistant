@@ -31,8 +31,7 @@ namespace StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.C
             modelBuilder.ApplyConfiguration(new AssetTransactionConfiguration());
             modelBuilder.ApplyConfiguration(new AssetRatingConfiguration());
 
-            // Настройка схемы
-            modelBuilder.HasDefaultSchema("analytics");
+            // Схема по умолчанию - public (не указываем явно)
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
