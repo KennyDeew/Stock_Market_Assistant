@@ -51,7 +51,7 @@ builder.Services.AddSwaggerGen(c =>
 // Настройка Entity Framework
 builder.Services.AddDbContext<AnalyticsDbContext>(options =>
 {
-    var connectionString = builder.Configuration.GetConnectionString("AnalyticsDb");
+    var connectionString = builder.Configuration.GetConnectionString("analytics-db");
     if (!string.IsNullOrEmpty(connectionString))
     {
         options.UseNpgsql(connectionString, npgsqlOptions =>

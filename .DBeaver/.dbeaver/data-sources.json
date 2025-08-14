@@ -44,8 +44,8 @@
 			"configuration": {
 				"host": "localhost",
 				"port": "14051",
-				"database": "postgres",
-				"url": "jdbc:postgresql://localhost:14051/postgres",
+				"database": "analytics-db",
+				"url": "jdbc:postgresql://localhost:14051/analytics-db",
 				"configurationType": "MANUAL",
 				"home": "postgresql_client",
 				"type": "dev",

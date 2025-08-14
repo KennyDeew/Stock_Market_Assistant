@@ -136,7 +136,7 @@
 ```json
 {
   "ConnectionStrings": {
-    "AnalyticsDb": "Host=localhost;Database=analytics_db;Username=postgres;Password=password;Port=5432"
+    "analytics-db": ""
   },
   "Kafka": {
     "BootstrapServers": "localhost:9092",

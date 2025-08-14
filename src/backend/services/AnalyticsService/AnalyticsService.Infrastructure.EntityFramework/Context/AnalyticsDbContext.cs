@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using StockMarketAssistant.AnalyticsService.Domain.Entities;
 using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Context.Configurations;
 
@@ -39,7 +39,7 @@ namespace StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.C
         {
             if (!optionsBuilder.IsConfigured)
             {
-                optionsBuilder.UseNpgsql("Host=localhost;Database=analytics_db;Username=postgres;Password=password");
+                optionsBuilder.UseNpgsql("analytics-db");
             }
         }
     }

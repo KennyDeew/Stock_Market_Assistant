@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using StockMarketAssistant.AnalyticsService.Application.DTOs;
 using StockMarketAssistant.AnalyticsService.Application.Interfaces;
 
