@@ -12,7 +12,7 @@ namespace StockCardService.Infrastructure.EntityFramework
             
             using (var context = new StockCardDbContext(optionsBuilder.Options))
             {
-                context.Database.Migrate();
+                //context.Database.Migrate();
             }
         }
     }

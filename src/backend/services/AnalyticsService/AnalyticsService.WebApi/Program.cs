@@ -5,6 +5,8 @@ using StockMarketAssistant.AnalyticsService.Application.Interfaces.Repositories;
 using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Context;
 using StockMarketAssistant.AnalyticsService.Infrastructure.Repositories;
 using StockMarketAssistant.AnalyticsService.Application.Services;
+using StockMarketAssistant.AnalyticsService.WebApi.Services;
+using StockMarketAssistant.AnalyticsService.WebApi.Configuration;
 
 // Настройки для отключения проблемных функций рефлексии в .NET 9
 AppContext.SetSwitch("System.Reflection.Metadata.MetadataUpdater.IsSupported", false);
@@ -48,10 +50,18 @@ builder.Services.AddSwaggerGen(c =>
     }
 });
 
-// Настройка Entity Framework
+// Настройка Entity Framework с поддержкой секретов
 builder.Services.AddDbContext<AnalyticsDbContext>(options =>
 {
-    var connectionString = builder.Configuration.GetConnectionString("analytics-db");
+    // Получаем конфигурацию напрямую из IConfiguration
+    var dbConfig = new DatabaseConfiguration();
+    builder.Configuration.GetSection("Database").Bind(dbConfig);
+    
+    // Приоритет: переменные окружения > appsettings
+    var password = Environment.GetEnvironmentVariable("ANALYTICS_DB_PASSWORD") ?? dbConfig.Password;
+    dbConfig.Password = password;
+    
+    var connectionString = dbConfig.GetConnectionString();
     if (!string.IsNullOrEmpty(connectionString))
     {
         options.UseNpgsql(connectionString, npgsqlOptions =>
@@ -72,6 +82,9 @@ builder.Services.AddScoped<IAssetTransactionRepository, AssetTransactionReposito
 builder.Services.AddScoped<IAssetRatingService, AssetRatingService>();
 builder.Services.AddScoped<ITransactionConsumerService, TransactionConsumerService>();
 
+// Регистрация сервиса секретов
+builder.Services.AddScoped<SecretsService>();
+
 // Настройка CORS
 builder.Services.AddCors(options =>
 {
@@ -91,6 +104,18 @@ builder.Services.AddLogging(logging =>
 });
 
 var app = builder.Build();
+
+// Валидация секретов
+using (var scope = app.Services.CreateScope())
+{
+    var secretsService = scope.ServiceProvider.GetRequiredService<SecretsService>();
+    var secretsValid = secretsService.ValidateSecrets();
+    
+    if (!secretsValid)
+    {
+        Console.WriteLine("Предупреждение: Некоторые секреты не настроены. Проверьте конфигурацию.");
+    }
+}
 
 // Настройка middleware
 if (app.Environment.IsDevelopment())

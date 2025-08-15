@@ -8,7 +8,7 @@ namespace StockMarketAssistant.StockCardService.WebApi.Helper
         {
             var scope = host.Services.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<TDbContext>();
-            context.Database.Migrate();
+            //context.Database.Migrate();
         }
     }
 }
