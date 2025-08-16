@@ -28,6 +28,11 @@ namespace StockMarketAssistant.StockCardService.Application.DTOs._02_BondCard
         public string Description { get; set; }
 
         /// <summary>
+        /// Валюта
+        /// </summary>
+        public string Currency { get; set; }
+
+        /// <summary>
         /// дата погашения облигации
         /// </summary>
         public DateTime MaturityPeriod { get; set; }

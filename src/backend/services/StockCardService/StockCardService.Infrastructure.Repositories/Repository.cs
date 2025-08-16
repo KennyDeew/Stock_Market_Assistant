@@ -2,6 +2,7 @@
 using StockCardService.Abstractions.Repositories;
 using StockCardService.Domain.Entities;
 using StockMarketAssistant.StockCardService.Infrastructure.EntityFramework;
+using System.Linq.Expressions;
 
 namespace StockCardService.Infrastructure.Repositories
 {
@@ -57,6 +58,24 @@ namespace StockCardService.Infrastructure.Repositories
         public virtual async Task<T> GetByIdAsync(TPrimaryKey id, CancellationToken cancellationToken)
         {
             return await _entitySet.FindAsync((object)id);
+        }
+
+        /// <summary>
+        /// Получить сущность по Id со связанными объектами.
+        /// </summary>
+        /// <param name="id">Id сущности.</param>
+        /// <param name="cancellationToken"></param>
+        /// <param name="includeProperties">массив делегатов для связанных объектов</param>
+        /// <returns></returns>
+        public virtual async Task<T> GetByIdWithLinkedItemsAsync(TPrimaryKey id, CancellationToken cancellationToken, params Expression<Func<T, object>>[] includeProperties)
+        {
+            IQueryable<T> query = _entitySet;
+            foreach (var includeProperty in includeProperties)
+            {
+                query = query.Include(includeProperty);
+            }
+            var entity = await query.FirstOrDefaultAsync(e => e.Id.Equals(id), cancellationToken);
+            return entity;
         }
 
         /// <summary>

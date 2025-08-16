@@ -35,6 +35,7 @@ namespace StockMarketAssistant.StockCardService.Application.Services
                     Name = x.Name,
                     Description = x.Description,
                     MaturityPeriod = x.MaturityPeriod,
+                    Currency = x.Currency,
                     Coupons = x.Coupons != null ?
                         x.Coupons.Select(d => new CouponDto
                         {
@@ -68,6 +69,41 @@ namespace StockMarketAssistant.StockCardService.Application.Services
                 Ticker = bondCard.Ticker,
                 Name = bondCard.Name,
                 Description = bondCard.Description,
+                Currency = bondCard.Currency,
+                MaturityPeriod = bondCard.MaturityPeriod,
+                Coupons = bondCard.Coupons != null ?
+                        bondCard.Coupons.Select(d => new CouponDto
+                        {
+                            Id = d.Id,
+                            BondId = d.ParentId,
+                            Currency = d.Currency,
+                            Value = d.Value
+                        }).ToList()
+                        : new List<CouponDto>()
+            };
+            return bondCardDto;
+        }
+
+        /// <summary>
+        /// Получить карточку облигации по Id со связанными объектами
+        /// </summary>
+        /// <param name="id"> ID карточки облигации</param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public async Task<BondCardDto?> GetByIdWithLinkedItemsAsync(Guid id)
+        {
+            var bondCard = await _bondCardRepository.GetByIdWithLinkedItemsAsync(id, CancellationToken.None, b => b.Coupons);
+
+            if (bondCard == null)
+                return null;
+
+            var bondCardDto = new BondCardDto()
+            {
+                Id = bondCard.Id,
+                Ticker = bondCard.Ticker,
+                Name = bondCard.Name,
+                Description = bondCard.Description,
+                Currency = bondCard.Currency,
                 MaturityPeriod = bondCard.MaturityPeriod,
                 Coupons = bondCard.Coupons != null ?
                         bondCard.Coupons.Select(d => new CouponDto
@@ -90,18 +126,19 @@ namespace StockMarketAssistant.StockCardService.Application.Services
         /// <exception cref="NotImplementedException"></exception>
         public async Task<BondCardShortDto?> GetShortByIdAsync(Guid id)
         {
-            var BondCard = await _bondCardRepository.GetByIdAsync(id, CancellationToken.None);
+            var bondCard = await _bondCardRepository.GetByIdAsync(id, CancellationToken.None);
 
-            if (BondCard == null)
+            if (bondCard == null)
                 return null;
 
             var bondCardShortDto = new BondCardShortDto()
             {
-                Id = BondCard.Id,
-                Ticker = BondCard.Ticker,
-                Name = BondCard.Name,
-                Description = BondCard.Description,
-                MaturityPeriod = BondCard.MaturityPeriod.ToString(),
+                Id = bondCard.Id,
+                Ticker = bondCard.Ticker,
+                Name = bondCard.Name,
+                Description = bondCard.Description,
+                MaturityPeriod = bondCard.MaturityPeriod.ToString(),
+                Currency = bondCard.Currency
             };
             return bondCardShortDto;
         }
@@ -119,6 +156,7 @@ namespace StockMarketAssistant.StockCardService.Application.Services
                 Ticker = creatingBondCardDto.Ticker,
                 Name = creatingBondCardDto.Name,
                 Description = creatingBondCardDto.Description,
+                Currency = creatingBondCardDto.Currency,
                 MaturityPeriod = creatingBondCardDto.MaturityPeriod
             };
 

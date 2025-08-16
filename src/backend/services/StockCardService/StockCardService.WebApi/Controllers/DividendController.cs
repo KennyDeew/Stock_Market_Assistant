@@ -37,9 +37,9 @@ namespace StockCardService.WebApi.Controllers
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(List<DividendModel>))]
         [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(Guid))]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
-        public async Task<ActionResult<List<DividendModel>>> GetAllDividendsByParentIdAsync(Guid id)
+        public async Task<ActionResult<List<DividendModel>>> GetAllDividendsByParentIdAsync(Guid shareCardId)
         {
-            var dividends = (await _dividendService.GetAllByShareCardIdAsync(id)).Select(DividendMapper.ToModel).ToList();
+            var dividends = (await _dividendService.GetAllByShareCardIdAsync(shareCardId)).Select(DividendMapper.ToModel).ToList();
             return dividends;
         }
 

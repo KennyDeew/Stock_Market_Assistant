@@ -21,6 +21,13 @@ namespace StockMarketAssistant.StockCardService.Application.Interfaces
         Task<BondCardDto?> GetByIdAsync(Guid id);
 
         /// <summary>
+        /// Получить карточку облигации по Id со связанными объектами
+        /// </summary>
+        /// <param name="id">Идентификатор карточки облигации</param>
+        /// <returns>DTO карточки облигации</returns>
+        Task<BondCardDto?> GetByIdWithLinkedItemsAsync(Guid id);
+
+        /// <summary>
         /// Получить неполные данные карточки облигации по Id
         /// </summary>
         /// <param name="id">Идентификатор карточки облигации</param>

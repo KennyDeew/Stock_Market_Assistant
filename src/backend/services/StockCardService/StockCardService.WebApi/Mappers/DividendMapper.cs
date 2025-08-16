@@ -13,7 +13,7 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
             {
                 Id = model.Id,
                 ShareCardId = model.ShareCardId,
-                CuttOffDate = model.CuttOffDate,
+                CuttOffDate = DateTime.SpecifyKind(model.CuttOffDate, DateTimeKind.Utc),
                 Period = model.Period,
                 Currency = model.Currency,
                 Value = model.Value
@@ -27,7 +27,7 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
             return new CreatingDividendDto
             {
                 ShareCardId = model.ShareCardId,
-                CuttOffDate = model.CuttOffDate,
+                CuttOffDate = DateTime.SpecifyKind(model.CuttOffDate, DateTimeKind.Utc),
                 Period = model.Period,
                 Currency = model.Currency,
                 Value = model.Value
@@ -40,7 +40,7 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
 
             return new UpdatingDividendDto
             {
-                CuttOffDate = model.CuttOffDate,
+                CuttOffDate = DateTime.SpecifyKind(model.CuttOffDate, DateTimeKind.Utc),
                 Value = model.Value
             };
         }

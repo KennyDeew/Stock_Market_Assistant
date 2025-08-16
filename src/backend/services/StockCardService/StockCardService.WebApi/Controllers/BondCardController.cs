@@ -40,7 +40,7 @@ namespace StockCardService.WebApi.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
         public async Task<ActionResult<BondCardModel>> GetBondCardAsync(Guid id)
         {
-            var bondCardDto = await _bondCardService.GetByIdAsync(id);
+            var bondCardDto = await _bondCardService.GetByIdWithLinkedItemsAsync(id);
 
             if (bondCardDto == null)
                 return NotFound();
@@ -87,6 +87,7 @@ namespace StockCardService.WebApi.Controllers
                 Ticker = request.Ticker,
                 Name = request.Name,
                 Description = request.Description,
+                Currency = request.Currency,
                 MaturityPeriod = request.MaturityPeriod.ToString()
             };
 

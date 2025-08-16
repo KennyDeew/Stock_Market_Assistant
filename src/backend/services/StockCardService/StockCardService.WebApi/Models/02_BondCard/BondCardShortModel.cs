@@ -32,5 +32,9 @@ namespace StockCardService.WebApi.Models.BondCard
         /// </summary>
         public string MaturityPeriod { get; set; }
 
+        /// <summary>
+        /// Валюта
+        /// </summary>
+        public string Currency { get; set; }
     }
 }

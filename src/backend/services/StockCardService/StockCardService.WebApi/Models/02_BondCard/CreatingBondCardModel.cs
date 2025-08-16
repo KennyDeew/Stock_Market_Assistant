@@ -24,5 +24,10 @@
         /// дата погашения облигации
         /// </summary>
         public DateTime MaturityPeriod { get; set; }
+
+        /// <summary>
+        /// Валюта
+        /// </summary>
+        public string Currency { get; set; }
     }
 }

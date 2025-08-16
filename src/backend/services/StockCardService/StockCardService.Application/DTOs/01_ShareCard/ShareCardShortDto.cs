@@ -24,5 +24,10 @@
         /// Описание акции
         /// </summary>
         public string Description { get; set; }
+
+        /// <summary>
+        /// Валюта
+        /// </summary>
+        public string Currency { get; set; }
     }
 }

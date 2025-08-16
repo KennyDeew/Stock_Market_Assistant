@@ -31,6 +31,11 @@ namespace StockCardService.WebApi.Models.ShareCard
         public string Description { get; set; }
 
         /// <summary>
+        /// Валюта
+        /// </summary>
+        public string Currency { get; set; }
+
+        /// <summary>
         /// Финансовые отчеты по акции
         /// </summary>
         public List<FinancialReportModel>? FinancialReports { get; set; }

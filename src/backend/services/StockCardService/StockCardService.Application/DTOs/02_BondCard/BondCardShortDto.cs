@@ -26,6 +26,11 @@
         public string Description { get; set; }
 
         /// <summary>
+        /// Валюта
+        /// </summary>
+        public string Currency { get; set; }
+
+        /// <summary>
         /// дата погашения облигации
         /// </summary>
         public string MaturityPeriod { get; set; }

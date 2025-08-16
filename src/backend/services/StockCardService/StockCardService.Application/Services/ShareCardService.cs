@@ -33,6 +33,7 @@ namespace StockMarketAssistant.StockCardService.Application.Services
                     Ticker = x.Ticker,
                     Name = x.Name,
                     Description = x.Description,
+                    Currency = x.Currency,
                     Multipliers = x.Multipliers != null ?
                         x.Multipliers.Select(m => new MultiplierDto
                         {
@@ -43,7 +44,12 @@ namespace StockMarketAssistant.StockCardService.Application.Services
                     Dividends = x.Dividends != null ? 
                         x.Dividends.Select(d => new DividendDto
                         {
-                            Id = d.Id
+                            Id = d.Id,
+                            ShareCardId = d.ParentId,
+                            Currency = d.Currency,
+                            CuttOffDate = d.CuttOffDate,
+                            Period = d.Period,
+                            Value = d.Value
                         }).ToList()
                         : new List<DividendDto>()
                 }).ToList();
@@ -70,6 +76,7 @@ namespace StockMarketAssistant.StockCardService.Application.Services
                 Ticker = shareCard.Ticker,
                 Name = shareCard.Name,
                 Description = shareCard.Description,
+                Currency = shareCard.Currency,
                 Multipliers = shareCard.Multipliers != null ?
                     shareCard.Multipliers.Select(m => new MultiplierDto
                     {
@@ -80,7 +87,48 @@ namespace StockMarketAssistant.StockCardService.Application.Services
                 Dividends = shareCard.Dividends != null ?
                     shareCard.Dividends.Select(d => new DividendDto
                     {
-                        Id = d.Id
+                        Id = d.Id,
+                        ShareCardId = d.Id,
+                        CuttOffDate = d.CuttOffDate,
+                        Currency = d.Currency,
+                        Period = d.Period,
+                        Value = d.Value
+                    }).ToList()
+                    : new List<DividendDto>()
+            };
+            return shareCardDto;
+        }
+
+        public async Task<ShareCardDto?> GetByIdWithLinkedItemsAsync(Guid id)
+        {
+            var shareCard = await _shareCardRepository.GetByIdWithLinkedItemsAsync(id, CancellationToken.None);
+
+            if (shareCard == null)
+                return null;
+
+            var shareCardDto = new ShareCardDto()
+            {
+                Id = shareCard.Id,
+                Ticker = shareCard.Ticker,
+                Name = shareCard.Name,
+                Description = shareCard.Description,
+                Currency = shareCard.Currency,
+                Multipliers = shareCard.Multipliers != null ?
+                    shareCard.Multipliers.Select(m => new MultiplierDto
+                    {
+                        Id = m.Id,
+                        Name = m.Name
+                    }).ToList()
+                    : new List<MultiplierDto>(),
+                Dividends = shareCard.Dividends != null ?
+                    shareCard.Dividends.Select(d => new DividendDto
+                    {
+                        Id = d.Id,
+                        ShareCardId = d.Id,
+                        CuttOffDate = d.CuttOffDate,
+                        Currency = d.Currency,
+                        Period = d.Period,
+                        Value = d.Value
                     }).ToList()
                     : new List<DividendDto>()
             };
@@ -105,7 +153,8 @@ namespace StockMarketAssistant.StockCardService.Application.Services
                 Id = shareCard.Id,
                 Ticker = shareCard.Ticker,
                 Name = shareCard.Name,
-                Description = shareCard.Description
+                Description = shareCard.Description,
+                Currency = shareCard.Currency
             };
             return shareCardDto;
         }
@@ -122,7 +171,8 @@ namespace StockMarketAssistant.StockCardService.Application.Services
                 Id = Guid.NewGuid(),
                 Ticker = creatingShareCardDto.Ticker,
                 Name = creatingShareCardDto.Name,
-                Description = creatingShareCardDto.Description
+                Description = creatingShareCardDto.Description,
+                Currency = creatingShareCardDto.Currency
             };
 
             var createdShareCard = await _shareCardRepository.AddAsync(shareCard);

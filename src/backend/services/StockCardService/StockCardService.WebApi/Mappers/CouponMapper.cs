@@ -16,6 +16,7 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
             {
                 Id = model.Id,
                 BondId = model.BondId,
+                CutOffDate = DateTime.SpecifyKind(model.CutOffDate, DateTimeKind.Utc),
                 Currency = model.Currency,
                 Value = model.Value
             };
@@ -28,7 +29,7 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
             return new CreatingCouponDto
             {
                 BondId = model.BondId,
-                CutOffDate = model.CutOffDate,
+                CutOffDate = DateTime.SpecifyKind(model.CutOffDate, DateTimeKind.Utc),
                 Currency = model.Currency,
                 Value = model.Value
             };
@@ -40,7 +41,7 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
 
             return new UpdatingCouponDto
             {
-                CutOffDate = model.CutOffDate,
+                CutOffDate = DateTime.SpecifyKind(model.CutOffDate, DateTimeKind.Utc),
                 Value = model.Value
             };
         }
@@ -52,6 +53,7 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
             {
                 Id = dto.Id,
                 BondId = dto.BondId,
+                CutOffDate = dto.CutOffDate,
                 Currency = dto.Currency,
                 Value = dto.Value
             };

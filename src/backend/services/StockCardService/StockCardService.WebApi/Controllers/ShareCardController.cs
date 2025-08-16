@@ -40,7 +40,7 @@ namespace StockCardService.WebApi.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
         public async Task<ActionResult<ShareCardModel>> GetShareCardAsync(Guid id)
         {
-            var shareCard = await _shareCardService.GetByIdAsync(id);
+            var shareCard = await _shareCardService.GetByIdWithLinkedItemsAsync(id);
 
             if (shareCard == null)
                 return NotFound();
@@ -86,7 +86,8 @@ namespace StockCardService.WebApi.Controllers
                 Id = newShareCardId,
                 Ticker = request.Ticker,
                 Name = request.Name,
-                Description = request.Description
+                Description = request.Description,
+                Currency = request.Currency
             };
 
             return CreatedAtRoute("GetShareCardShortModel", new { id = newShareCardId }, shareCardShortModelForChecking);

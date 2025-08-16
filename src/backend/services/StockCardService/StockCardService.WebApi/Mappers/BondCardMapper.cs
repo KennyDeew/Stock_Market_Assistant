@@ -18,6 +18,7 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
                 Name = model.Name,
                 Ticker = model.Ticker,
                 Description = model.Description,
+                Currency = model.Currency,
                 MaturityPeriod = DateTime.SpecifyKind(model.MaturityPeriod, DateTimeKind.Utc),
                 Coupons = model.Coupons?.Select(CouponMapper.ToDto).ToList()
             };
@@ -32,6 +33,7 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
                 Name = model.Name,
                 Ticker = model.Ticker,
                 Description = model.Description,
+                Currency = model.Currency,
                 MaturityPeriod = DateTime.SpecifyKind(model.MaturityPeriod, DateTimeKind.Utc)
             };
         }
@@ -60,6 +62,7 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
                 Name = model.Name,
                 Ticker = model.Ticker,
                 Description = model.Description,
+                Currency = model.Currency,
                 MaturityPeriod = model.MaturityPeriod.ToString()
             };
         }
@@ -74,6 +77,7 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
                 Name = dto.Name,
                 Ticker = dto.Ticker,
                 Description = dto.Description,
+                Currency = dto.Currency,
                 MaturityPeriod = dto.MaturityPeriod,
                 Coupons = dto.Coupons?.Select(CouponMapper.ToModel).ToList()
             };
@@ -88,6 +92,7 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
                 Name = dto.Name,
                 Ticker = dto.Ticker,
                 Description = dto.Description,
+                Currency = dto.Currency,
                 MaturityPeriod = dto.MaturityPeriod
             };
         }
@@ -116,6 +121,7 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
                 Name = dto.Name,
                 Ticker = dto.Ticker,
                 Description = dto.Description,
+                Currency = dto.Currency,
                 MaturityPeriod = dto.MaturityPeriod
             };
         }

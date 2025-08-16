@@ -30,6 +30,11 @@ namespace StockMarketAssistant.StockCardService.Application.DTOs._01_ShareCard
         public string Description { get; set; }
 
         /// <summary>
+        /// Валюта
+        /// </summary>
+        public string Currency { get; set; }
+
+        /// <summary>
         /// Финансовые отчеты по акции
         /// </summary>
         public List<FinancialReportDto>? FinancialReports { get; set; }
