@@ -1,28 +1,17 @@
-# Временные файлы
-*.tmp
-*.temp
-*.log
+# DBeaver database tool
+.DBeaver/
 
-# Папки сборки
-bin/
-obj/
+# Docker secrets (файлы с паролями)
+secrets/
+secrets/*
 
-# Файлы пользователя
+# Локальные настройки
 *.user
 *.suo
 *.userosscache
 *.sln.docstates
 
-# Файлы Visual Studio
-.vs/
-*.ncrunch*
-*.ncrunchsolution
-
-# Файлы .NET
-*.dll
-*.exe
-*.pdb
-*.cache
-
-# Файлы конфигурации runtime
-runtimeconfig.template.json
+# Временные файлы
+*.tmp
+*.temp
+*.log
