@@ -27,11 +27,33 @@ namespace StockMarketAssistant.AnalyticsService.WebApi.Services
             var dbConfig = new DatabaseConfiguration();
             _configuration.GetSection("Database").Bind(dbConfig);
 
-            // Приоритет: секреты > переменные окружения > appsettings
+            // Приоритет: Docker секреты > переменные окружения > appsettings
             var password = GetSecret("Database:Password") ??
                           Environment.GetEnvironmentVariable("ANALYTICS_DB_PASSWORD") ??
+                          Environment.GetEnvironmentVariable("POSTGRES_PASSWORD") ??
                           dbConfig.Password;
 
+            // Получаем настройки из переменных окружения Docker
+            var host = Environment.GetEnvironmentVariable("ANALYTICS_DB_HOST") ??
+                      Environment.GetEnvironmentVariable("POSTGRES_HOST") ??
+                      dbConfig.Host;
+
+            var port = int.TryParse(Environment.GetEnvironmentVariable("ANALYTICS_DB_PORT") ??
+                                   Environment.GetEnvironmentVariable("POSTGRES_PORT"), out var envPort)
+                      ? envPort : dbConfig.Port;
+
+            var name = Environment.GetEnvironmentVariable("ANALYTICS_DB_NAME") ??
+                      Environment.GetEnvironmentVariable("POSTGRES_DB") ??
+                      dbConfig.Name;
+
+            var username = Environment.GetEnvironmentVariable("ANALYTICS_DB_USERNAME") ??
+                          Environment.GetEnvironmentVariable("POSTGRES_USER") ??
+                          dbConfig.Username;
+
+            dbConfig.Host = host;
+            dbConfig.Port = port;
+            dbConfig.Name = name;
+            dbConfig.Username = username;
             dbConfig.Password = password;
 
             _logger.LogInformation("Конфигурация базы данных загружена: {ConnectionString}",
@@ -49,15 +71,31 @@ namespace StockMarketAssistant.AnalyticsService.WebApi.Services
             var kafkaConfig = new KafkaConfiguration();
             _configuration.GetSection("Kafka").Bind(kafkaConfig);
 
-            // Приоритет: секреты > переменные окружения > appsettings
+            // Приоритет: Docker секреты > переменные окружения > appsettings
             var username = GetSecret("Kafka:SaslUsername") ??
                           Environment.GetEnvironmentVariable("KAFKA_SASL_USERNAME") ??
+                          Environment.GetEnvironmentVariable("KAFKA_USERNAME") ??
                           kafkaConfig.SaslUsername;
 
             var password = GetSecret("Kafka:SaslPassword") ??
                           Environment.GetEnvironmentVariable("KAFKA_SASL_PASSWORD") ??
+                          Environment.GetEnvironmentVariable("KAFKA_PASSWORD") ??
                           kafkaConfig.SaslPassword;
 
+            // Получаем настройки из переменных окружения Docker
+            var bootstrapServers = Environment.GetEnvironmentVariable("KAFKA_BOOTSTRAP_SERVERS") ??
+                                  Environment.GetEnvironmentVariable("KAFKA_SERVERS") ??
+                                  kafkaConfig.BootstrapServers;
+
+            var groupId = Environment.GetEnvironmentVariable("KAFKA_GROUP_ID") ??
+                         kafkaConfig.GroupId;
+
+            var topic = Environment.GetEnvironmentVariable("KAFKA_TOPIC") ??
+                       kafkaConfig.Topic;
+
+            kafkaConfig.BootstrapServers = bootstrapServers;
+            kafkaConfig.GroupId = groupId;
+            kafkaConfig.Topic = topic;
             kafkaConfig.SaslUsername = username;
             kafkaConfig.SaslPassword = password;
 
@@ -76,11 +114,26 @@ namespace StockMarketAssistant.AnalyticsService.WebApi.Services
             var redisConfig = new RedisConfiguration();
             _configuration.GetSection("Redis").Bind(redisConfig);
 
-            // Приоритет: секреты > переменные окружения > appsettings
+            // Приоритет: Docker секреты > переменные окружения > appsettings
             var password = GetSecret("Redis:Password") ??
                           Environment.GetEnvironmentVariable("REDIS_PASSWORD") ??
+                          Environment.GetEnvironmentVariable("REDIS_AUTH") ??
                           redisConfig.Password;
 
+            // Получаем настройки из переменных окружения Docker
+            var host = Environment.GetEnvironmentVariable("REDIS_HOST") ??
+                      Environment.GetEnvironmentVariable("REDIS_SERVER") ??
+                      redisConfig.Host;
+
+            var port = int.TryParse(Environment.GetEnvironmentVariable("REDIS_PORT"), out var envPort)
+                      ? envPort : redisConfig.Port;
+
+            var database = int.TryParse(Environment.GetEnvironmentVariable("REDIS_DATABASE"), out var envDatabase)
+                          ? envDatabase : redisConfig.Database;
+
+            redisConfig.Host = host;
+            redisConfig.Port = port;
+            redisConfig.Database = database;
             redisConfig.Password = password;
 
             _logger.LogInformation("Конфигурация Redis загружена: {ConnectionString}",
@@ -98,11 +151,33 @@ namespace StockMarketAssistant.AnalyticsService.WebApi.Services
         {
             try
             {
-                var secret = _configuration[key];
-                if (!string.IsNullOrEmpty(secret))
+                // Приоритет 1: Docker секреты (файлы в /run/secrets/)
+                var dockerSecretPath = $"/run/secrets/{key.Replace(":", "_").ToLower()}";
+                if (File.Exists(dockerSecretPath))
                 {
-                    _logger.LogDebug("Секрет найден для ключа: {Key}", key);
-                    return secret;
+                    var secret = File.ReadAllText(dockerSecretPath).Trim();
+                    if (!string.IsNullOrEmpty(secret))
+                    {
+                        _logger.LogDebug("Docker секрет найден для ключа: {Key}", key);
+                        return secret;
+                    }
+                }
+
+                // Приоритет 2: Переменные окружения Docker
+                var envKey = key.Replace(":", "_").ToUpper();
+                var envValue = Environment.GetEnvironmentVariable(envKey);
+                if (!string.IsNullOrEmpty(envValue))
+                {
+                    _logger.LogDebug("Переменная окружения найдена для ключа: {Key}", key);
+                    return envValue;
+                }
+
+                // Приоритет 3: Конфигурация приложения
+                var configValue = _configuration[key];
+                if (!string.IsNullOrEmpty(configValue))
+                {
+                    _logger.LogDebug("Конфигурация найдена для ключа: {Key}", key);
+                    return configValue;
                 }
             }
             catch (Exception ex)

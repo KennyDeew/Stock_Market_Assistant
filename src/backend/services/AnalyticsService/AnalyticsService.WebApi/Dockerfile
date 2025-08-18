@@ -7,6 +7,8 @@ WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
 
+# Создаем директорию для секретов
+RUN mkdir -p /run/secrets && chmod 700 /run/secrets
 
 # This stage is used to build the service project
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
@@ -27,4 +29,16 @@ RUN dotnet publish "./AnalyticsService.WebApi.csproj" -c $BUILD_CONFIGURATION -o
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+
+# Устанавливаем права на секреты
+RUN chown -R $APP_UID:$APP_UID /run/secrets
+
+# Переменные окружения по умолчанию
+ENV ASPNETCORE_URLS=http://+:8080
+ENV ASPNETCORE_ENVIRONMENT=Production
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8080/health || exit 1
+
 ENTRYPOINT ["dotnet", "AnalyticsService.WebApi.dll"]

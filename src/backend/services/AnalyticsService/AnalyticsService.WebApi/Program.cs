@@ -53,14 +53,11 @@ builder.Services.AddSwaggerGen(c =>
 // Настройка Entity Framework с поддержкой секретов
 builder.Services.AddDbContext<AnalyticsDbContext>(options =>
 {
-    // Получаем конфигурацию напрямую из IConfiguration
-    var dbConfig = new DatabaseConfiguration();
-    builder.Configuration.GetSection("Database").Bind(dbConfig);
-    
-    // Приоритет: переменные окружения > appsettings
-    var password = Environment.GetEnvironmentVariable("ANALYTICS_DB_PASSWORD") ?? dbConfig.Password;
-    dbConfig.Password = password;
-    
+    // Получаем конфигурацию через SecretsService
+    var dbConfig = builder.Services.BuildServiceProvider()
+        .GetRequiredService<SecretsService>()
+        .GetDatabaseConfiguration();
+
     var connectionString = dbConfig.GetConnectionString();
     if (!string.IsNullOrEmpty(connectionString))
     {
@@ -110,7 +107,7 @@ using (var scope = app.Services.CreateScope())
 {
     var secretsService = scope.ServiceProvider.GetRequiredService<SecretsService>();
     var secretsValid = secretsService.ValidateSecrets();
-    
+
     if (!secretsValid)
     {
         Console.WriteLine("Предупреждение: Некоторые секреты не настроены. Проверьте конфигурацию.");

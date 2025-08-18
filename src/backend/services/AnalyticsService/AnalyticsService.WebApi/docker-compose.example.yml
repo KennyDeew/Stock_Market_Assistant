@@ -1,0 +1,140 @@
+version: '3.8'
+
+services:
+  analytics-service:
+    build:
+      context: ../../../
+      dockerfile: src/backend/services/AnalyticsService/AnalyticsService.WebApi/Dockerfile
+    container_name: analytics-service
+    ports:
+      - "5001:8080"
+    environment:
+      # База данных
+      - ANALYTICS_DB_HOST=postgres
+      - ANALYTICS_DB_PORT=5432
+      - ANALYTICS_DB_NAME=analytics-db
+      - ANALYTICS_DB_USERNAME=postgres
+      # Пароль будет получен из секрета
+
+      # Kafka
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - KAFKA_GROUP_ID=analytics-service-group
+      - KAFKA_TOPIC=portfolio-transactions
+      # SASL учетные данные будут получены из секретов
+
+      # Redis
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DATABASE=0
+      # Пароль будет получен из секрета
+
+      # Настройки приложения
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+    secrets:
+      - analytics_db_password
+      - kafka_sasl_password
+      - redis_password
+    depends_on:
+      - postgres
+      - kafka
+      - redis
+    networks:
+      - analytics-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  postgres:
+    image: postgres:17.5
+    container_name: analytics-postgres
+    environment:
+      - POSTGRES_DB=analytics-db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD_FILE=/run/secrets/analytics_db_password
+    secrets:
+      - analytics_db_password
+    volumes:
+      - analytics-postgres-data:/var/lib/postgresql/data
+    ports:
+      - "15432:5432"
+    networks:
+      - analytics-network
+    restart: unless-stopped
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: analytics-kafka
+    environment:
+      - KAFKA_CFG_NODE_ID=0
+      - KAFKA_CFG_PROCESS_ROLES=controller,broker
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
+      - KAFKA_CFG_LOG_DIRS=/var/lib/kafka/data
+      - KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+      - KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1
+      - KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR=1
+      - KAFKA_CFG_LOG_RETENTION_HOURS=168
+      - KAFKA_CFG_LOG_SEGMENT_BYTES=1073741824
+      - KAFKA_CFG_LOG_RETENTION_CHECK_INTERVAL_MS=300000
+    volumes:
+      - analytics-kafka-data:/var/lib/kafka/data
+    ports:
+      - "19092:9092"
+    networks:
+      - analytics-network
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: analytics-redis
+    command: redis-server --requirepass /run/secrets/redis_password
+    secrets:
+      - redis_password
+    volumes:
+      - analytics-redis-data:/data
+    ports:
+      - "16379:6379"
+    networks:
+      - analytics-network
+    restart: unless-stopped
+
+  # Kafka UI для мониторинга
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: analytics-kafka-ui
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=analytics-cluster
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
+    ports:
+      - "8080:8080"
+    depends_on:
+      - kafka
+    networks:
+      - analytics-network
+    restart: unless-stopped
+
+volumes:
+  analytics-postgres-data:
+  analytics-kafka-data:
+  analytics-redis-data:
+
+secrets:
+  analytics_db_password:
+    file: ./secrets/analytics_db_password.txt
+  kafka_sasl_password:
+    file: ./secrets/kafka_sasl_password.txt
+  redis_password:
+    file: ./secrets/redis_password.txt
+
+networks:
+  analytics-network:
+    driver: bridge
