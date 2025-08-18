@@ -1,5 +1,7 @@
-﻿using StockCardService.WebApi.Models.ShareCard;
+﻿using StockCardService.WebApi.Models._01sub_Dividend;
+using StockCardService.WebApi.Models.ShareCard;
 using StockMarketAssistant.StockCardService.Application.DTOs._01_ShareCard;
+using StockMarketAssistant.StockCardService.Application.DTOs._01sub_Dividend;
 
 namespace StockMarketAssistant.StockCardService.WebApi.Mappers
 {
@@ -16,9 +18,9 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
                 Ticker = model.Ticker,
                 Description = model.Description,
                 Currency = model.Currency,
-                Dividends = model.Dividends.Select(DividendMapper.ToDto).ToList(),
-                Multipliers = model.Multipliers.Select(MultiplierMapper.ToDto).ToList(),
-                FinancialReports = model.FinancialReports.Select(FinancialReportMapper.ToDto).ToList()
+                Dividends = model.Dividends?.Select(DividendMapper.ToDto).ToList() ?? new List<DividendDto>(),
+                Multipliers = model.Multipliers?.Select(MultiplierMapper.ToDto).ToList(),
+                FinancialReports = model.FinancialReports?.Select(FinancialReportMapper.ToDto).ToList()
             };
         }
 
@@ -73,9 +75,9 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
                 Ticker = dto.Ticker,
                 Description = dto.Description,
                 Currency = dto.Currency,
-                Dividends = dto.Dividends.Select(DividendMapper.ToModel).ToList(),
-                Multipliers = dto.Multipliers.Select(MultiplierMapper.ToModel).ToList(),
-                FinancialReports = dto.FinancialReports.Select(FinancialReportMapper.ToModel).ToList()
+                Dividends = dto.Dividends?.Select(DividendMapper.ToModel).ToList() ?? new List<DividendModel>(),
+                Multipliers = dto.Multipliers?.Select(MultiplierMapper.ToModel).ToList(),
+                FinancialReports = dto.FinancialReports?.Select(FinancialReportMapper.ToModel).ToList()
             };
         }
 

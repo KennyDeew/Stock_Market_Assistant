@@ -1,5 +1,7 @@
 ﻿using StockCardService.WebApi.Models.BondCard;
 using StockMarketAssistant.StockCardService.Application.DTOs._02_BondCard;
+using StockMarketAssistant.StockCardService.Application.DTOs._02sub_Coupon;
+using StockMarketAssistant.StockCardService.WebApi.Models._02sub_Coupon;
 
 namespace StockMarketAssistant.StockCardService.WebApi.Mappers
 {
@@ -20,7 +22,7 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
                 Description = model.Description,
                 Currency = model.Currency,
                 MaturityPeriod = DateTime.SpecifyKind(model.MaturityPeriod, DateTimeKind.Utc),
-                Coupons = model.Coupons?.Select(CouponMapper.ToDto).ToList()
+                Coupons = model.Coupons?.Select(CouponMapper.ToDto).ToList() ?? new List<CouponDto>()
             };
         }
 
@@ -79,7 +81,7 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
                 Description = dto.Description,
                 Currency = dto.Currency,
                 MaturityPeriod = dto.MaturityPeriod,
-                Coupons = dto.Coupons?.Select(CouponMapper.ToModel).ToList()
+                Coupons = dto.Coupons?.Select(CouponMapper.ToModel).ToList() ?? new List<CouponModel>()
             };
         }
 
