@@ -50,7 +50,7 @@ namespace StockMarketAssistant.AnalyticsService.WebApi.Configuration
             {
                 return $"{Host}:{Port},password={Password},defaultDatabase={Database}";
             }
-            
+
             return $"{Host}:{Port},defaultDatabase={Database}";
         }
 
@@ -62,9 +62,9 @@ namespace StockMarketAssistant.AnalyticsService.WebApi.Configuration
         {
             if (!string.IsNullOrEmpty(Password))
             {
-                return $"{Host}:{Port},password=***,defaultDatabase={Database}";
+                return $"{Host}:{Port},password=...,defaultDatabase={Database}";
             }
-            
+
             return $"{Host}:{Port},defaultDatabase={Database}";
         }
     }

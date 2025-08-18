@@ -51,7 +51,7 @@ namespace StockMarketAssistant.AnalyticsService.WebApi.Configuration
         /// <returns>Строка подключения без пароля</returns>
         public string GetConnectionStringForLogging()
         {
-            return $"Host={Host};Port={Port};Database={Name};Username={Username};Password=***";
+            return $"Host={Host};Port={Port};Database={Name};Username={Username};Password=...";
         }
     }
 }

@@ -28,13 +28,13 @@ namespace StockMarketAssistant.AnalyticsService.WebApi.Services
             _configuration.GetSection("Database").Bind(dbConfig);
 
             // Приоритет: секреты > переменные окружения > appsettings
-            var password = GetSecret("Database:Password") ?? 
-                          Environment.GetEnvironmentVariable("ANALYTICS_DB_PASSWORD") ?? 
+            var password = GetSecret("Database:Password") ??
+                          Environment.GetEnvironmentVariable("ANALYTICS_DB_PASSWORD") ??
                           dbConfig.Password;
 
             dbConfig.Password = password;
 
-            _logger.LogInformation("Конфигурация базы данных загружена: {ConnectionString}", 
+            _logger.LogInformation("Конфигурация базы данных загружена: {ConnectionString}",
                 dbConfig.GetConnectionStringForLogging());
 
             return dbConfig;
@@ -50,18 +50,18 @@ namespace StockMarketAssistant.AnalyticsService.WebApi.Services
             _configuration.GetSection("Kafka").Bind(kafkaConfig);
 
             // Приоритет: секреты > переменные окружения > appsettings
-            var username = GetSecret("Kafka:SaslUsername") ?? 
-                          Environment.GetEnvironmentVariable("KAFKA_SASL_USERNAME") ?? 
+            var username = GetSecret("Kafka:SaslUsername") ??
+                          Environment.GetEnvironmentVariable("KAFKA_SASL_USERNAME") ??
                           kafkaConfig.SaslUsername;
 
-            var password = GetSecret("Kafka:SaslPassword") ?? 
-                          Environment.GetEnvironmentVariable("KAFKA_SASL_PASSWORD") ?? 
+            var password = GetSecret("Kafka:SaslPassword") ??
+                          Environment.GetEnvironmentVariable("KAFKA_SASL_PASSWORD") ??
                           kafkaConfig.SaslPassword;
 
             kafkaConfig.SaslUsername = username;
             kafkaConfig.SaslPassword = password;
 
-            _logger.LogInformation("Конфигурация Kafka загружена: {BootstrapServers}, SASL: {SaslEnabled}", 
+            _logger.LogInformation("Конфигурация Kafka загружена: {BootstrapServers}, SASL: {SaslEnabled}",
                 kafkaConfig.BootstrapServers, kafkaConfig.IsSaslEnabled());
 
             return kafkaConfig;
@@ -77,13 +77,13 @@ namespace StockMarketAssistant.AnalyticsService.WebApi.Services
             _configuration.GetSection("Redis").Bind(redisConfig);
 
             // Приоритет: секреты > переменные окружения > appsettings
-            var password = GetSecret("Redis:Password") ?? 
-                          Environment.GetEnvironmentVariable("REDIS_PASSWORD") ?? 
+            var password = GetSecret("Redis:Password") ??
+                          Environment.GetEnvironmentVariable("REDIS_PASSWORD") ??
                           redisConfig.Password;
 
             redisConfig.Password = password;
 
-            _logger.LogInformation("Конфигурация Redis загружена: {ConnectionString}", 
+            _logger.LogInformation("Конфигурация Redis загружена: {ConnectionString}",
                 redisConfig.GetConnectionStringForLogging());
 
             return redisConfig;
@@ -120,7 +120,7 @@ namespace StockMarketAssistant.AnalyticsService.WebApi.Services
         /// <returns>API ключ или null</returns>
         public string? GetApiKey(string keyName)
         {
-            var apiKey = GetSecret($"ApiKeys:{keyName}") ?? 
+            var apiKey = GetSecret($"ApiKeys:{keyName}") ??
                         Environment.GetEnvironmentVariable($"API_KEY_{keyName.ToUpper()}");
 
             if (!string.IsNullOrEmpty(apiKey))
