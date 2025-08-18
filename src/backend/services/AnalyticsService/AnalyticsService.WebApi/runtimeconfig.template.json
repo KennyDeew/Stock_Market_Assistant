@@ -1,0 +1,11 @@
+{
+  "configProperties": {
+    "System.Reflection.Metadata.MetadataUpdater.IsSupported": false,
+    "System.Reflection.Metadata.MetadataUpdater.IsSupportedInAppHost": false
+  },
+  "runtimeOptions": {
+    "configProperties": {
+      "System.Reflection.Metadata.MetadataUpdater.IsSupported": false
+    }
+  }
+}
