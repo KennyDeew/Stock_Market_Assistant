@@ -7,4 +7,10 @@
     <RootNamespace>$(SolutionName).$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\PortfolioService.Application\PortfolioService.Application.csproj" />
+    <ProjectReference Include="..\PortfolioService.Domain\PortfolioService.Domain.csproj" />
+    <ProjectReference Include="..\PortfolioService.Infrastructure.EntityFramework\PortfolioService.Infrastructure.EntityFramework.csproj" />
+  </ItemGroup>
+
 </Project>
