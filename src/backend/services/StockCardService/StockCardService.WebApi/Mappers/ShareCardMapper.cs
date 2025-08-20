@@ -18,6 +18,7 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
                 Ticker = model.Ticker,
                 Description = model.Description,
                 Currency = model.Currency,
+                CurrentPrice = model.CurrentPrice,
                 Dividends = model.Dividends?.Select(DividendMapper.ToDto).ToList() ?? new List<DividendDto>(),
                 Multipliers = model.Multipliers?.Select(MultiplierMapper.ToDto).ToList(),
                 FinancialReports = model.FinancialReports?.Select(FinancialReportMapper.ToDto).ToList()
@@ -46,6 +47,7 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
                 Id = model.Id,
                 Name = model.Name,
                 Ticker = model.Ticker,
+                CurrentPrice = model.CurrentPrice,
                 Description = model.Description
             };
         }
@@ -60,6 +62,7 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
                 Name = model.Name,
                 Ticker = model.Ticker,
                 Description = model.Description,
+                CurrentPrice = model.CurrentPrice,
                 Currency = model.Currency
             };
         }
@@ -75,6 +78,7 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
                 Ticker = dto.Ticker,
                 Description = dto.Description,
                 Currency = dto.Currency,
+                CurrentPrice = dto.CurrentPrice,
                 Dividends = dto.Dividends?.Select(DividendMapper.ToModel).ToList() ?? new List<DividendModel>(),
                 Multipliers = dto.Multipliers?.Select(MultiplierMapper.ToModel).ToList(),
                 FinancialReports = dto.FinancialReports?.Select(FinancialReportMapper.ToModel).ToList()
@@ -103,6 +107,7 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
                 Id = dto.Id,
                 Name = dto.Name,
                 Ticker = dto.Ticker,
+                CurrentPrice = dto.CurrentPrice,
                 Description = dto.Description
             };
         }
@@ -117,6 +122,7 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
                 Name = dto.Name,
                 Ticker = dto.Ticker,
                 Description = dto.Description,
+                CurrentPrice = dto.CurrentPrice,
                 Currency = dto.Currency
             };
         }

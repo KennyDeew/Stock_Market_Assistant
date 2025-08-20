@@ -29,7 +29,7 @@ namespace StockMarketAssistant.StockCardService.Application.Services
                 {
                     Id = x.Id,
                     ShareCardId = x.ParentId,
-                    CuttOffDate = x.CuttOffDate,
+                    CutOffDate = x.CutOffDate,
                     Period = x.Period,
                     Currency = x.Currency,
                     Value = x.Value
@@ -51,7 +51,7 @@ namespace StockMarketAssistant.StockCardService.Application.Services
                 {
                     Id = x.Id,
                     ShareCardId = x.ParentId,
-                    CuttOffDate = x.CuttOffDate,
+                    CutOffDate = x.CutOffDate,
                     Period = x.Period,
                     Currency = x.Currency,
                     Value = x.Value
@@ -76,7 +76,7 @@ namespace StockMarketAssistant.StockCardService.Application.Services
             {
                 Id = dividend.Id,
                 ShareCardId = dividend.ParentId,
-                CuttOffDate = dividend.CuttOffDate,
+                CutOffDate = dividend.CutOffDate,
                 Period = dividend.Period,
                 Currency = dividend.Currency,
                 Value = dividend.Value
@@ -95,7 +95,7 @@ namespace StockMarketAssistant.StockCardService.Application.Services
             {
                 Id = Guid.NewGuid(),
                 ParentId = creatingDividendDto.ShareCardId,
-                CuttOffDate = creatingDividendDto.CuttOffDate,
+                CutOffDate = creatingDividendDto.CutOffDate,
                 Period = creatingDividendDto.Period,
                 Currency = creatingDividendDto.Currency,
                 Value = creatingDividendDto.Value
@@ -115,7 +115,7 @@ namespace StockMarketAssistant.StockCardService.Application.Services
             var dividend = await _dividendRepository.GetByIdAsync(updatingDividendDto.Id, CancellationToken.None);
             if (dividend == null)
                 return;
-            dividend.CuttOffDate = updatingDividendDto.CuttOffDate;
+            dividend.CutOffDate = updatingDividendDto.CutOffDate;
             dividend.Value = updatingDividendDto.Value;
             await _dividendRepository.UpdateAsync(dividend);
         }

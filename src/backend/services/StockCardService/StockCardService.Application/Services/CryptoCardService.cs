@@ -27,6 +27,7 @@ namespace StockMarketAssistant.StockCardService.Application.Services
                     Id = x.Id,
                     Ticker = x.Ticker,
                     Name = x.Name,
+                    CurrentPrice = x.CurrentPrice,
                     Description = x.Description
                 }).ToList();
 
@@ -50,6 +51,7 @@ namespace StockMarketAssistant.StockCardService.Application.Services
                 Id = cryptoCard.Id,
                 Ticker = cryptoCard.Ticker,
                 Name = cryptoCard.Name,
+                CurrentPrice = cryptoCard.CurrentPrice,
                 Description = cryptoCard.Description
             };
             return cryptoCardDto;
@@ -67,6 +69,7 @@ namespace StockMarketAssistant.StockCardService.Application.Services
                 Id = Guid.NewGuid(),
                 Ticker = creatingCryptoCardDto.Ticker,
                 Name = creatingCryptoCardDto.Name,
+                CurrentPrice = 0m,
                 Description = creatingCryptoCardDto.Description
             };
 
@@ -87,6 +90,7 @@ namespace StockMarketAssistant.StockCardService.Application.Services
             cryptoCard.Ticker = updatingCryptoCardDto.Ticker;
             cryptoCard.Name = updatingCryptoCardDto.Name;
             cryptoCard.Description = updatingCryptoCardDto.Description;
+            cryptoCard.CurrentPrice = updatingCryptoCardDto.CurrentPrice;
             await _cryptoCardRepository.UpdateAsync(cryptoCard);
         }
 

@@ -21,6 +21,9 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
                 Ticker = model.Ticker,
                 Description = model.Description,
                 Currency = model.Currency,
+                CurrentPrice = model.CurrentPrice,
+                FaceValue = model.FaceValue,
+                Rating = model.Rating,
                 MaturityPeriod = DateTime.SpecifyKind(model.MaturityPeriod, DateTimeKind.Utc),
                 Coupons = model.Coupons?.Select(CouponMapper.ToDto).ToList() ?? new List<CouponDto>()
             };
@@ -36,6 +39,8 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
                 Ticker = model.Ticker,
                 Description = model.Description,
                 Currency = model.Currency,
+                FaceValue = model.FaceValue,
+                Rating = model.Rating,
                 MaturityPeriod = DateTime.SpecifyKind(model.MaturityPeriod, DateTimeKind.Utc)
             };
         }
@@ -50,6 +55,7 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
                 Name = model.Name,
                 Ticker = model.Ticker,
                 Description = model.Description,
+                Rating = model.Rating,
                 MaturityPeriod = DateTime.SpecifyKind(model.MaturityPeriod, DateTimeKind.Utc)
             };
         }
@@ -65,6 +71,9 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
                 Ticker = model.Ticker,
                 Description = model.Description,
                 Currency = model.Currency,
+                CurrentPrice = model.CurrentPrice,
+                FaceValue = model.FaceValue,
+                Rating = model.Rating,
                 MaturityPeriod = model.MaturityPeriod.ToString()
             };
         }
@@ -80,6 +89,9 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
                 Ticker = dto.Ticker,
                 Description = dto.Description,
                 Currency = dto.Currency,
+                CurrentPrice = dto.CurrentPrice,
+                FaceValue = dto.FaceValue,
+                Rating = dto.Rating,
                 MaturityPeriod = dto.MaturityPeriod,
                 Coupons = dto.Coupons?.Select(CouponMapper.ToModel).ToList() ?? new List<CouponModel>()
             };
@@ -95,6 +107,8 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
                 Ticker = dto.Ticker,
                 Description = dto.Description,
                 Currency = dto.Currency,
+                FaceValue = dto.FaceValue,
+                Rating = dto.Rating,
                 MaturityPeriod = dto.MaturityPeriod
             };
         }
@@ -109,6 +123,7 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
                 Name = dto.Name,
                 Ticker = dto.Ticker,
                 Description = dto.Description,
+                Rating = dto.Rating,
                 MaturityPeriod = dto.MaturityPeriod
             };
         }
@@ -124,6 +139,9 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
                 Ticker = dto.Ticker,
                 Description = dto.Description,
                 Currency = dto.Currency,
+                CurrentPrice = dto.CurrentPrice,
+                FaceValue = dto.FaceValue,
+                Rating = dto.Rating,
                 MaturityPeriod = dto.MaturityPeriod
             };
         }

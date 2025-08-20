@@ -29,5 +29,15 @@
         /// дата погашения облигации
         /// </summary>
         public DateTime MaturityPeriod { get; set; }
+
+        /// <summary>
+        /// Рейтинг
+        /// </summary>
+        public string Rating { get; set; }
+
+        /// <summary>
+        /// Номинальная стоимость
+        /// </summary>
+        public decimal FaceValue { get; set; }
     }
 }

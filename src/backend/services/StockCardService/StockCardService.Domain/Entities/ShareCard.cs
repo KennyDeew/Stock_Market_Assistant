@@ -31,6 +31,11 @@ namespace StockMarketAssistant.StockCardService.Domain.Entities
         public string Currency { get; set; }
 
         /// <summary>
+        /// Текущая цена
+        /// </summary>
+        public decimal CurrentPrice { get; set; }
+
+        /// <summary>
         /// Массив мультипликаторов
         /// </summary>
         public ICollection<Multiplier> Multipliers { get; set; }

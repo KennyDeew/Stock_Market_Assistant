@@ -29,5 +29,10 @@
         /// Валюта
         /// </summary>
         public string Currency { get; set; }
+
+        /// <summary>
+        /// Текущая цена
+        /// </summary>
+        public decimal CurrentPrice { get; set; }
     }
 }

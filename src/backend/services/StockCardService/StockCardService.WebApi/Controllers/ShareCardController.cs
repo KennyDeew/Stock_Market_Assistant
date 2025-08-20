@@ -87,7 +87,7 @@ namespace StockCardService.WebApi.Controllers
                 Ticker = request.Ticker,
                 Name = request.Name,
                 Description = request.Description,
-                Currency = request.Currency
+                Currency = request.Currency,
             };
 
             return CreatedAtRoute("GetShareCardShortModel", new { id = newShareCardId }, shareCardShortModelForChecking);

@@ -34,6 +34,7 @@ namespace StockMarketAssistant.StockCardService.Application.Services
                     Name = x.Name,
                     Description = x.Description,
                     Currency = x.Currency,
+                    CurrentPrice = x.CurrentPrice,
                     Multipliers = x.Multipliers != null ?
                         x.Multipliers.Select(m => new MultiplierDto
                         {
@@ -47,7 +48,7 @@ namespace StockMarketAssistant.StockCardService.Application.Services
                             Id = d.Id,
                             ShareCardId = d.ParentId,
                             Currency = d.Currency,
-                            CuttOffDate = d.CuttOffDate,
+                            CutOffDate = d.CutOffDate,
                             Period = d.Period,
                             Value = d.Value
                         }).ToList()
@@ -77,6 +78,7 @@ namespace StockMarketAssistant.StockCardService.Application.Services
                 Name = shareCard.Name,
                 Description = shareCard.Description,
                 Currency = shareCard.Currency,
+                CurrentPrice = shareCard.CurrentPrice,
                 Multipliers = shareCard.Multipliers != null ?
                     shareCard.Multipliers.Select(m => new MultiplierDto
                     {
@@ -89,7 +91,7 @@ namespace StockMarketAssistant.StockCardService.Application.Services
                     {
                         Id = d.Id,
                         ShareCardId = d.Id,
-                        CuttOffDate = d.CuttOffDate,
+                        CutOffDate = d.CutOffDate,
                         Currency = d.Currency,
                         Period = d.Period,
                         Value = d.Value
@@ -113,6 +115,7 @@ namespace StockMarketAssistant.StockCardService.Application.Services
                 Name = shareCard.Name,
                 Description = shareCard.Description,
                 Currency = shareCard.Currency,
+                CurrentPrice = shareCard.CurrentPrice,
                 Multipliers = shareCard.Multipliers != null ?
                     shareCard.Multipliers.Select(m => new MultiplierDto
                     {
@@ -125,7 +128,7 @@ namespace StockMarketAssistant.StockCardService.Application.Services
                     {
                         Id = d.Id,
                         ShareCardId = d.Id,
-                        CuttOffDate = d.CuttOffDate,
+                        CutOffDate = d.CutOffDate,
                         Currency = d.Currency,
                         Period = d.Period,
                         Value = d.Value
@@ -154,6 +157,7 @@ namespace StockMarketAssistant.StockCardService.Application.Services
                 Ticker = shareCard.Ticker,
                 Name = shareCard.Name,
                 Description = shareCard.Description,
+                CurrentPrice = shareCard.CurrentPrice,
                 Currency = shareCard.Currency
             };
             return shareCardDto;
@@ -172,6 +176,7 @@ namespace StockMarketAssistant.StockCardService.Application.Services
                 Ticker = creatingShareCardDto.Ticker,
                 Name = creatingShareCardDto.Name,
                 Description = creatingShareCardDto.Description,
+                CurrentPrice = 0m,
                 Currency = creatingShareCardDto.Currency
             };
 
@@ -203,6 +208,7 @@ namespace StockMarketAssistant.StockCardService.Application.Services
             shareCard.Ticker = updatingShareCardDto.Ticker;
             shareCard.Name = updatingShareCardDto.Name;
             shareCard.Description = updatingShareCardDto.Description;
+            shareCard.CurrentPrice = updatingShareCardDto.CurrentPrice;
             await _shareCardRepository.UpdateAsync(shareCard);
         }
     }

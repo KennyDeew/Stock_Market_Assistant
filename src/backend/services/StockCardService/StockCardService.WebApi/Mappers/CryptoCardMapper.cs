@@ -17,6 +17,7 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
                 Id = model.Id,
                 Name = model.Name,
                 Ticker = model.Ticker,
+                CurrentPrice = model.CurrentPrice,
                 Description = model.Description
             };
         }
@@ -42,6 +43,7 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
                 Id = model.Id,
                 Name = model.Name,
                 Ticker = model.Ticker,
+                CurrentPrice = model.CurrentPrice,
                 Description = model.Description
             };
         }
@@ -55,6 +57,7 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
                 Id = dto.Id,
                 Name = dto.Name,
                 Ticker = dto.Ticker,
+                CurrentPrice = dto.CurrentPrice,
                 Description = dto.Description
             };
         }
@@ -80,6 +83,7 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
                 Id = dto.Id,
                 Name = dto.Name,
                 Ticker = dto.Ticker,
+                CurrentPrice = dto.CurrentPrice,
                 Description = dto.Description
             };
         }

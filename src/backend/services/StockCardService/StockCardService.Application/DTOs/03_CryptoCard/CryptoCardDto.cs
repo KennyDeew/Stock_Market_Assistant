@@ -24,5 +24,10 @@
         /// Описание криптовалюты
         /// </summary>
         public string Description { get; set; }
+
+        /// <summary>
+        /// Текущая цена
+        /// </summary>
+        public decimal CurrentPrice { get; set; }
     }
 }

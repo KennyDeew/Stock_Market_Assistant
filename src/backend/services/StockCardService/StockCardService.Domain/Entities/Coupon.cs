@@ -18,7 +18,7 @@ namespace StockMarketAssistant.StockCardService.Domain.Entities
         /// <summary>
         /// дата фиксирования владельца облигацией для выплаты дивиденда
         /// </summary>
-        public DateTime CuttOffDate { get; set; }
+        public DateTime CutOffDate { get; set; }
 
         /// <summary>
         /// Валюта

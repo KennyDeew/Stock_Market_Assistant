@@ -12,6 +12,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
                 Ticker = "GAZP",
                 Name = "Газпром (ПАО) - обыкн.",
                 Description = "ПАО «Газпром» — транснациональная энергетическая компания",
+                CurrentPrice = 0m,
                 Currency = "RUB"
             }            ,
             new ShareCard()
@@ -20,6 +21,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
                 Ticker = "SBER",
                 Name = "Сбербанк России ПАО - обыкн.",
                 Description = "ПАО «СберБанк России» занимается оказанием банковских и финансовых услуг",
+                CurrentPrice = 0m,
                 Currency = "RUB"
             },
             new ShareCard()
@@ -28,6 +30,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
                 Ticker = "NVTK",
                 Name = "ПАО НОВАТЭК - обыкн.",
                 Description = "ПАО «НОВАТЭК» занимается исследованием, добычей, переработкой и сбытом природного газа и жидких углеводородов",
+                CurrentPrice = 0m,
                 Currency = "RUB"
             },
             new ShareCard()
@@ -36,6 +39,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
                 Ticker = "ROSN",
                 Name = "ПАО НК Роснефть",
                 Description = "ПАО НК «Роснефть» занимается исследованием, освоением, добычей и продажей нефти и газа",
+                CurrentPrice = 0m,
                 Currency = "RUB"
             },
             new ShareCard()
@@ -44,6 +48,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
                 Ticker = "T",
                 Name = "Т-Технологии МКПАО - обыкн.",
                 Description = "ПАО «Т-Технологии» оказывает банковские и финансовые услуги",
+                CurrentPrice = 0m,
                 Currency = "RUB"
             },
             new ShareCard()
@@ -52,6 +57,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
                 Ticker = "LKOH",
                 Name = "ЛУКОЙЛ",
                 Description = "ПАО «ЛУКОЙЛ» занимается исследованием, добычей, переработкой и сбытом нефти",
+                CurrentPrice = 0m,
                 Currency = "RUB"
             },
             new ShareCard()
@@ -60,6 +66,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
                 Ticker = "VTBR",
                 Name = "ПАО Банк ВТБ - обыкн.",
                 Description = "ПАО «Банк ВТБ» — финансовое учреждение, предоставляющее целый спектр банковских услуг и продуктов",
+                CurrentPrice = 0m,
                 Currency = "RUB"
             },
             new ShareCard()
@@ -68,6 +75,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
                 Ticker = "AFLT",
                 Name = "ПАО Аэрофлот",
                 Description = "ПАО «Аэрофлот — Российские авиалинии» осуществляет полёты и коммерческую деятельность на воздушных линиях",
+                CurrentPrice = 0m,
                 Currency = "RUB"
             },
             new ShareCard()
@@ -76,6 +84,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
                 Ticker = "GMKN",
                 Name = "ГМК Нор.Никель ПАО - обыкн.",
                 Description = "ПАО ГМК Норильский Никель занимается исследованием, добычей и переработкой руды и неметаллических минерало",
+                CurrentPrice = 0m,
                 Currency = "RUB"
             }
         };
@@ -89,6 +98,9 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
                 Name = "БИННОФАРМ ГРУПП-001Р-03",
                 Description = "Российская фармацевтическая компания",
                 Currency = "RUB",
+                CurrentPrice = 0m,
+                FaceValue = 1000m,
+                Rating = string.Empty,
                 MaturityPeriod = DateTime.SpecifyKind(DateTime.Parse("2026-12-14T00:00:00Z"), DateTimeKind.Utc)
             },
             new BondCard()
@@ -98,6 +110,9 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
                 Name = "ГТЛК 002P-07",
                 Description = "Российская лизинговая компания, принадлежащая государству",
                 Currency = "RUB",
+                CurrentPrice = 0m,
+                FaceValue = 1000m,
+                Rating = string.Empty,
                 MaturityPeriod = DateTime.SpecifyKind(DateTime.Parse("2026-08-04T00:00:00Z"), DateTimeKind.Utc)
             },
             new BondCard()
@@ -107,6 +122,9 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
                 Name = "Совкомбанк ООО БО-04",
                 Description = "Российский частный коммерческий банк",
                 Currency = "RUB",
+                CurrentPrice = 0m,
+                FaceValue = 1000m,
+                Rating = string.Empty,
                 MaturityPeriod = DateTime.SpecifyKind(DateTime.Parse("2026-06-01T00:00:00Z"), DateTimeKind.Utc)
             },
             new BondCard()
@@ -116,6 +134,9 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
                 Name = "Аэрофлот-росс.авиалин.ПАО БО-1",
                 Description = "ПАО «Аэрофлот — Российские авиалинии» осуществляет полёты и коммерческую деятельность на воздушных линиях",
                 Currency = "RUB",
+                CurrentPrice = 0m,
+                FaceValue = 1000m,
+                Rating = string.Empty,
                 MaturityPeriod = DateTime.SpecifyKind(DateTime.Parse("2026-06-11T00:00:00Z"), DateTimeKind.Utc)
             },
             new BondCard()
@@ -125,6 +146,9 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
                 Name = "Газпром нефть БО 003P-15R",
                 Description = "Российская вертикально-интегрированная нефтяная компания",
                 Currency = "RUB",
+                CurrentPrice = 0m,
+                FaceValue = 1000m,
+                Rating = string.Empty,
                 MaturityPeriod = DateTime.SpecifyKind(DateTime.Parse("2030-04-11T00:00:00Z"), DateTimeKind.Utc)
             },
             new BondCard()
@@ -134,6 +158,9 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
                 Name = "ИНАРКТИКА 002Р-02",
                 Description = "Крупнейший российский производитель аквакультурного лосося и форели",
                 Currency = "RUB",
+                CurrentPrice = 0m,
+                FaceValue = 1000m,
+                Rating = string.Empty,
                 MaturityPeriod = DateTime.SpecifyKind(DateTime.Parse("2028-04-03T00:00:00Z"), DateTimeKind.Utc)
             },
             new BondCard()
@@ -143,6 +170,9 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
                 Name = "ОФЗ-ПД 26248 16/05/40",
                 Description = "Государственная облигация с постоянным купоном",
                 Currency = "RUB",
+                CurrentPrice = 0m,
+                FaceValue = 1000m,
+                Rating = string.Empty,
                 MaturityPeriod = DateTime.SpecifyKind(DateTime.Parse("2040-05-16T00:00:00Z"), DateTimeKind.Utc)
             }
         };
@@ -153,7 +183,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("01075a5d-e01f-4ab8-a639-ea2534a7b045"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2025-09-15T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2025-09-15T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Value = 47.32m
             },
@@ -161,7 +191,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("01075a5d-e01f-4ab8-a639-ea2534a7b045"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2025-12-15T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2025-12-15T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Value = 47.32m
             },
@@ -169,7 +199,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("01075a5d-e01f-4ab8-a639-ea2534a7b045"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2026-03-15T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2026-03-15T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Value = 47.32m
             },
@@ -177,7 +207,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("ac7f1af8-4556-4535-bba9-a121c55babcd"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2025-09-08T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2025-09-08T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Value = 19.73m
             },
@@ -185,7 +215,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("ac7f1af8-4556-4535-bba9-a121c55babcd"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2025-10-08T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2025-10-08T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Value = 19.73m
             },
@@ -193,7 +223,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("ac7f1af8-4556-4535-bba9-a121c55babcd"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2025-11-07T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2025-11-07T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Value = 19.73m
             },
@@ -201,7 +231,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("ac7f1af8-4556-4535-bba9-a121c55babcd"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2025-12-07T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2025-12-07T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Value = 19.73m
             },
@@ -209,7 +239,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("fd74ff80-8cb1-4327-80c8-1c4cafc978c4"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2025-12-01T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2025-12-01T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Value = 20m
             },
@@ -217,7 +247,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("fd74ff80-8cb1-4327-80c8-1c4cafc978c4"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2026-03-02T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2026-03-02T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Value = 20m
             },
@@ -225,7 +255,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("fd74ff80-8cb1-4327-80c8-1c4cafc978c4"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2026-06-01T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2026-06-01T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Value = 20m
             },
@@ -233,7 +263,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("5b3c1ed3-7ade-4bde-abfa-4200b48882a8"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2025-12-11T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2025-12-11T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Value = 20.82m
             },
@@ -241,7 +271,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("5b3c1ed3-7ade-4bde-abfa-4200b48882a8"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2026-03-12T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2026-03-12T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Value = 20.82m
             },
@@ -249,7 +279,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("5b3c1ed3-7ade-4bde-abfa-4200b48882a8"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2026-06-11T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2026-06-11T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Value = 20.82m
             },
@@ -257,7 +287,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("0e3af20f-1ddd-4f2b-8265-f70c5fd92938"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2025-08-21T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2025-08-21T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Value = 14.93m
             },
@@ -265,7 +295,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("0e3af20f-1ddd-4f2b-8265-f70c5fd92938"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2025-09-20T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2025-09-20T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Value = 14.93m
             },
@@ -273,7 +303,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("0e3af20f-1ddd-4f2b-8265-f70c5fd92938"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2025-10-20T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2025-10-20T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Value = 14.93m
             },
@@ -281,7 +311,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("0e3af20f-1ddd-4f2b-8265-f70c5fd92938"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2025-11-19T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2025-11-19T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Value = 14.93m
             },
@@ -289,7 +319,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("f4adc1ee-ee24-409a-9d80-58d584a6c3d8"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2025-10-06T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2025-10-06T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Value = 47.37m
             },
@@ -297,7 +327,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("f4adc1ee-ee24-409a-9d80-58d584a6c3d8"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2026-01-05T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2026-01-05T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Value = 47.37m
             },
@@ -305,7 +335,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("f4adc1ee-ee24-409a-9d80-58d584a6c3d8"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2026-04-06T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2026-04-06T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Value = 47.37m
             },
@@ -313,7 +343,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("e0c94b2d-a727-411f-bbdd-fbedd171885a"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2025-12-03T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2025-12-03T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Value = 61.08m
             },
@@ -321,7 +351,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("e0c94b2d-a727-411f-bbdd-fbedd171885a"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2026-06-03T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2026-06-03T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Value = 61.08m
             },
@@ -329,7 +359,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("e0c94b2d-a727-411f-bbdd-fbedd171885a"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2026-12-02T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2026-12-02T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Value = 61.08m
             }
@@ -341,7 +371,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("eb980257-db33-4fe0-80dd-3ddf5277d791"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2022-10-07T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2022-10-07T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Period = "2022",
                 Value = 51.03m
@@ -350,7 +380,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("eb980257-db33-4fe0-80dd-3ddf5277d791"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2021-07-15T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2021-07-15T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Period = "2020",
                 Value = 12.55m
@@ -359,7 +389,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("eb980257-db33-4fe0-80dd-3ddf5277d791"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2020-07-16T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2020-07-16T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Period = "2019",
                 Value = 15.24m
@@ -368,7 +398,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("778e0b49-d17b-4c34-a67a-1a3e6dfd998f"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2025-07-18T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2025-07-18T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Period = "2024",
                 Value = 34.84m
@@ -377,7 +407,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("778e0b49-d17b-4c34-a67a-1a3e6dfd998f"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2024-07-11T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2024-07-11T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Period = "2023",
                 Value = 33.3m
@@ -386,7 +416,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("778e0b49-d17b-4c34-a67a-1a3e6dfd998f"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2023-05-11T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2023-05-11T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Period = "2022",
                 Value = 25m
@@ -395,7 +425,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("3f95da41-6ce4-48e8-8ab1-7b42895b549e"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2025-04-28T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2025-04-28T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Period = "2024",
                 Value = 82.15m
@@ -404,7 +434,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("3f95da41-6ce4-48e8-8ab1-7b42895b549e"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2024-03-26T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2024-03-26T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Period = "2023",
                 Value = 78.59m
@@ -413,7 +443,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("3f95da41-6ce4-48e8-8ab1-7b42895b549e"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2023-05-03T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2023-05-03T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Period = "2022",
                 Value = 105.58m
@@ -422,7 +452,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("36612108-8dc5-4095-a926-73f4ec6f8ab2"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2025-07-20T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2025-07-20T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Period = "2024",
                 Value = 51.15m
@@ -431,7 +461,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("36612108-8dc5-4095-a926-73f4ec6f8ab2"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2024-07-18T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2024-07-18T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Period = "2023",
                 Value = 59.78m
@@ -440,7 +470,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("36612108-8dc5-4095-a926-73f4ec6f8ab2"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2023-07-11T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2023-07-11T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Period = "2022",
                 Value = 38.36m
@@ -449,7 +479,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("3fa8c26a-cfb5-47db-91a9-0d1ee4224c22"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2025-07-17T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2025-07-17T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Period = "2025Q1",
                 Value = 33m
@@ -458,7 +488,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("3fa8c26a-cfb5-47db-91a9-0d1ee4224c22"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2025-05-15T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2025-05-15T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Period = "2024",
                 Value = 32m
@@ -467,7 +497,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("3fa8c26a-cfb5-47db-91a9-0d1ee4224c22"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2024-11-25T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2024-11-25T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Period = "2024Q3",
                 Value = 92.5m
@@ -476,7 +506,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("7d7bc5fd-6f44-4c25-baa1-17c7196a1ff6"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2025-06-03T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2025-06-03T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Period = "2024",
                 Value = 541m
@@ -485,7 +515,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("7d7bc5fd-6f44-4c25-baa1-17c7196a1ff6"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2024-12-24T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2024-12-24T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Period = "2024Q3",
                 Value = 514m
@@ -494,7 +524,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("7d7bc5fd-6f44-4c25-baa1-17c7196a1ff6"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2024-07-05T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2024-07-05T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Period = "2023",
                 Value = 498m
@@ -503,7 +533,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("b18fc5a1-5787-4f20-86c8-24a84bb84d5b"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2025-07-11T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2025-07-11T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Period = "2024",
                 Value = 25.58m
@@ -512,7 +542,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("b18fc5a1-5787-4f20-86c8-24a84bb84d5b"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2021-07-17T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2021-07-17T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Period = "2020",
                 Value = 4m
@@ -521,7 +551,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("b18fc5a1-5787-4f20-86c8-24a84bb84d5b"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2020-10-05T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2020-10-05T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Period = "2019",
                 Value = 7m
@@ -530,7 +560,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("e907de0d-4d35-4e00-99af-74dfa2956852"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2025-07-18T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2025-07-18T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Period = "2024",
                 Value = 5.27m
@@ -539,7 +569,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("e907de0d-4d35-4e00-99af-74dfa2956852"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2019-07-05T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2019-07-05T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Period = "2018",
                 Value = 2.68m
@@ -548,7 +578,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("e907de0d-4d35-4e00-99af-74dfa2956852"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2018-07-06T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2018-07-06T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Period = "2017",
                 Value = 12.8m
@@ -557,7 +587,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("4fb1b866-cc54-477e-96ac-63ea39c58507"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2023-12-26T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2023-12-26T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Period = "2023Q3",
                 Value = 915.33m
@@ -566,7 +596,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("4fb1b866-cc54-477e-96ac-63ea39c58507"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2022-06-14T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2022-06-14T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Period = "2021",
                 Value = 11666.22m
@@ -575,7 +605,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("4fb1b866-cc54-477e-96ac-63ea39c58507"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2022-01-14T00:00:00Z"), DateTimeKind.Utc),
+                CutOffDate = DateTime.SpecifyKind(DateTime.Parse("2022-01-14T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Period = "2021Q3",
                 Value = 1523.17m

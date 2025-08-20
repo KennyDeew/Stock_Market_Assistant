@@ -88,6 +88,8 @@ namespace StockCardService.WebApi.Controllers
                 Name = request.Name,
                 Description = request.Description,
                 Currency = request.Currency,
+                FaceValue = request.FaceValue,
+                Rating = request.Rating,
                 MaturityPeriod = request.MaturityPeriod.ToString()
             };
 

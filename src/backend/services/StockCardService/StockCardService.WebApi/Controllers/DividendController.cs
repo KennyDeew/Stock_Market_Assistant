@@ -81,7 +81,7 @@ namespace StockCardService.WebApi.Controllers
                 Id = createdDividendId,
                 ShareCardId = request.ShareCardId,
                 Currency = request.Currency,
-                CuttOffDate = request.CuttOffDate,
+                CutOffDate = request.CutOffDate,
                 Period = request.Period,
                 Value = request.Value
             };

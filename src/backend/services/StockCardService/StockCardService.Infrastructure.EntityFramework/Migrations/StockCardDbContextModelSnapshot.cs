@@ -32,14 +32,24 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<decimal>("CurrentPrice")
+                        .HasColumnType("numeric");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<decimal>("FaceValue")
+                        .HasColumnType("numeric");
 
                     b.Property<DateTime>("MaturityPeriod")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Rating")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -63,7 +73,7 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<DateTime>("CuttOffDate")
+                    b.Property<DateTime>("CutOffDate")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("ParentId")
@@ -84,6 +94,9 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<decimal>("CurrentPrice")
+                        .HasColumnType("numeric");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -113,7 +126,7 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<DateTime>("CuttOffDate")
+                    b.Property<DateTime>("CutOffDate")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("ParentId")
@@ -211,6 +224,9 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                     b.Property<string>("Currency")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<decimal>("CurrentPrice")
+                        .HasColumnType("numeric");
 
                     b.Property<string>("Description")
                         .IsRequired()

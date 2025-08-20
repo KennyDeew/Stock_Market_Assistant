@@ -38,6 +38,21 @@ namespace StockMarketAssistant.StockCardService.Application.DTOs._02_BondCard
         public DateTime MaturityPeriod { get; set; }
 
         /// <summary>
+        /// Рейтинг
+        /// </summary>
+        public string Rating { get; set; }
+
+        /// <summary>
+        /// Номинальная стоимость
+        /// </summary>
+        public decimal FaceValue { get; set; }
+
+        /// <summary>
+        /// Текущая цена
+        /// </summary>
+        public decimal CurrentPrice { get; set; }
+
+        /// <summary>
         /// Купоны облигации
         /// </summary>
         public List<CouponDto>? Coupons { get; set; }

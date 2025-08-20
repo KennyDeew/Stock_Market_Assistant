@@ -35,6 +35,9 @@ namespace StockMarketAssistant.StockCardService.Application.Services
                     Name = x.Name,
                     Description = x.Description,
                     MaturityPeriod = x.MaturityPeriod,
+                    CurrentPrice = x.CurrentPrice,
+                    FaceValue = x.FaceValue,
+                    Rating = x.Rating,
                     Currency = x.Currency,
                     Coupons = x.Coupons != null ?
                         x.Coupons.Select(d => new CouponDto
@@ -71,6 +74,9 @@ namespace StockMarketAssistant.StockCardService.Application.Services
                 Description = bondCard.Description,
                 Currency = bondCard.Currency,
                 MaturityPeriod = bondCard.MaturityPeriod,
+                CurrentPrice = bondCard.CurrentPrice,
+                FaceValue = bondCard.FaceValue,
+                Rating = bondCard.Rating,
                 Coupons = bondCard.Coupons != null ?
                         bondCard.Coupons.Select(d => new CouponDto
                         {
@@ -105,6 +111,9 @@ namespace StockMarketAssistant.StockCardService.Application.Services
                 Description = bondCard.Description,
                 Currency = bondCard.Currency,
                 MaturityPeriod = bondCard.MaturityPeriod,
+                CurrentPrice = bondCard.CurrentPrice,
+                FaceValue = bondCard.FaceValue,
+                Rating = bondCard.Rating,
                 Coupons = bondCard.Coupons != null ?
                         bondCard.Coupons.Select(d => new CouponDto
                         {
@@ -138,7 +147,10 @@ namespace StockMarketAssistant.StockCardService.Application.Services
                 Name = bondCard.Name,
                 Description = bondCard.Description,
                 MaturityPeriod = bondCard.MaturityPeriod.ToString(),
-                Currency = bondCard.Currency
+                Currency = bondCard.Currency,
+                CurrentPrice = bondCard.CurrentPrice,
+                FaceValue = bondCard.FaceValue,
+                Rating = bondCard.Rating
             };
             return bondCardShortDto;
         }
@@ -157,7 +169,10 @@ namespace StockMarketAssistant.StockCardService.Application.Services
                 Name = creatingBondCardDto.Name,
                 Description = creatingBondCardDto.Description,
                 Currency = creatingBondCardDto.Currency,
-                MaturityPeriod = creatingBondCardDto.MaturityPeriod
+                MaturityPeriod = creatingBondCardDto.MaturityPeriod,
+                CurrentPrice = 0m,
+                FaceValue = creatingBondCardDto.FaceValue,
+                Rating = creatingBondCardDto.Rating,
             };
 
             var createdBondCard = await _bondCardRepository.AddAsync(bondCard);
@@ -178,6 +193,7 @@ namespace StockMarketAssistant.StockCardService.Application.Services
             bondCard.Name = updatingBondCardDto.Name;
             bondCard.Description = updatingBondCardDto.Description;
             bondCard.MaturityPeriod = updatingBondCardDto.MaturityPeriod;
+            bondCard.Rating = updatingBondCardDto.Rating;
             await _bondCardRepository.UpdateAsync(bondCard);
         }
 

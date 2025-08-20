@@ -20,7 +20,10 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                     Name = table.Column<string>(type: "text", nullable: false),
                     Description = table.Column<string>(type: "text", nullable: false),
                     MaturityPeriod = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    Currency = table.Column<string>(type: "text", nullable: false)
+                    Currency = table.Column<string>(type: "text", nullable: false),
+                    Rating = table.Column<string>(type: "text", nullable: false),
+                    FaceValue = table.Column<decimal>(type: "numeric", nullable: false),
+                    CurrentPrice = table.Column<decimal>(type: "numeric", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -34,7 +37,8 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Ticker = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
                     Name = table.Column<string>(type: "text", nullable: false),
-                    Description = table.Column<string>(type: "text", nullable: false)
+                    Description = table.Column<string>(type: "text", nullable: false),
+                    CurrentPrice = table.Column<decimal>(type: "numeric", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -70,7 +74,8 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                     Ticker = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
                     Name = table.Column<string>(type: "text", nullable: false),
                     Description = table.Column<string>(type: "text", nullable: false),
-                    Currency = table.Column<string>(type: "text", nullable: false)
+                    Currency = table.Column<string>(type: "text", nullable: false),
+                    CurrentPrice = table.Column<decimal>(type: "numeric", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -83,7 +88,7 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     ParentId = table.Column<Guid>(type: "uuid", nullable: false),
-                    CuttOffDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CutOffDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Currency = table.Column<string>(type: "text", nullable: false),
                     Value = table.Column<decimal>(type: "numeric", nullable: false)
                 },
@@ -104,7 +109,7 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     ParentId = table.Column<Guid>(type: "uuid", nullable: false),
-                    CuttOffDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CutOffDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Period = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     Currency = table.Column<string>(type: "text", nullable: false),
                     Value = table.Column<decimal>(type: "numeric", nullable: false)

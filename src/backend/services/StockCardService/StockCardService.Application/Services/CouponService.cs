@@ -29,7 +29,7 @@ namespace StockMarketAssistant.StockCardService.Application.Services
                 {
                     Id = x.Id,
                     BondId = x.ParentId,
-                    CutOffDate = x.CuttOffDate,
+                    CutOffDate = x.CutOffDate,
                     Currency = x.Currency,
                     Value = x.Value
                 }).ToList();
@@ -50,7 +50,7 @@ namespace StockMarketAssistant.StockCardService.Application.Services
                 {
                     Id = x.Id,
                     BondId = x.ParentId,
-                    CutOffDate = x.CuttOffDate,
+                    CutOffDate = x.CutOffDate,
                     Currency = x.Currency,
                     Value = x.Value
                 }).ToList();
@@ -74,7 +74,7 @@ namespace StockMarketAssistant.StockCardService.Application.Services
             {
                 Id = coupon.Id,
                 BondId = coupon.ParentId,
-                CutOffDate = coupon.CuttOffDate,
+                CutOffDate = coupon.CutOffDate,
                 Currency = coupon.Currency,
                 Value = coupon.Value
             };
@@ -92,7 +92,7 @@ namespace StockMarketAssistant.StockCardService.Application.Services
             {
                 Id = Guid.NewGuid(),
                 ParentId = creatingCouponDto.BondId,
-                CuttOffDate = creatingCouponDto.CutOffDate,
+                CutOffDate = creatingCouponDto.CutOffDate,
                 Currency = creatingCouponDto.Currency,
                 Value = creatingCouponDto.Value
             };
@@ -111,7 +111,7 @@ namespace StockMarketAssistant.StockCardService.Application.Services
             var coupon = await _couponRepository.GetByIdAsync(updatingCouponDto.Id, CancellationToken.None);
             if (coupon == null)
                 return;
-            coupon.CuttOffDate = updatingCouponDto.CutOffDate;
+            coupon.CutOffDate = updatingCouponDto.CutOffDate;
             coupon.Value = updatingCouponDto.Value;
             await _couponRepository.UpdateAsync(coupon);
         }

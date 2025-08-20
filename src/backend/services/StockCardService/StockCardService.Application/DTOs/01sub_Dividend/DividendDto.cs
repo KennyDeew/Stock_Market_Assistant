@@ -18,7 +18,7 @@
         /// <summary>
         /// дата див отсечки
         /// </summary>
-        public DateTime CuttOffDate { get; set; }
+        public DateTime CutOffDate { get; set; }
 
         /// <summary>
         /// период выплаты

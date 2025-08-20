@@ -36,6 +36,11 @@ namespace StockCardService.WebApi.Models.ShareCard
         public string Currency { get; set; }
 
         /// <summary>
+        /// Текущая цена
+        /// </summary>
+        public decimal CurrentPrice { get; set; }
+
+        /// <summary>
         /// Финансовые отчеты по акции
         /// </summary>
         public List<FinancialReportModel>? FinancialReports { get; set; }
