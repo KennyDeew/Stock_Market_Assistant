@@ -1,19 +1,39 @@
-﻿using Microsoft.EntityFrameworkCore;
-using StockMarketAssistant.StockCardService.Infrastructure.EntityFramework;
+﻿using StockMarketAssistant.StockCardService.Infrastructure.EntityFramework;
 
 namespace StockCardService.Infrastructure.EntityFramework
 {
     public static class DbInitializer
     {
-        public static void Initialize(string connectionString)
+        public static void Initialize(StockCardDbContext context)
         {
-            var optionsBuilder = new DbContextOptionsBuilder<StockCardDbContext>();
-            optionsBuilder.UseNpgsql(connectionString);
-            
-            using (var context = new StockCardDbContext(optionsBuilder.Options))
+            // Применяем миграции (если используются)
+            context.Database.EnsureCreated();
+
+            // ShareCards
+            if (!context.ShareCards.Any())
             {
-                context.Database.Migrate();
+                context.ShareCards.AddRange(FakeDataFactory.ShareCards);
             }
+
+            // BondCards
+            if (!context.BondCards.Any())
+            {
+                context.BondCards.AddRange(FakeDataFactory.BondCards);
+            }
+
+            // Coupons
+            if (!context.Coupons.Any())
+            {
+                context.Coupons.AddRange(FakeDataFactory.Coupons);
+            }
+
+            // Dividends
+            if (!context.Dividends.Any())
+            {
+                context.Dividends.AddRange(FakeDataFactory.Dividends);
+            }
+
+            context.SaveChanges();
         }
     }
 }

@@ -431,7 +431,7 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             {
                 Id = Guid.NewGuid(),
                 ParentId = Guid.Parse("36612108-8dc5-4095-a926-73f4ec6f8ab2"),
-                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2024-07-98T00:00:00Z"), DateTimeKind.Utc),
+                CuttOffDate = DateTime.SpecifyKind(DateTime.Parse("2024-07-18T00:00:00Z"), DateTimeKind.Utc),
                 Currency = "RUB",
                 Period = "2023",
                 Value = 59.78m

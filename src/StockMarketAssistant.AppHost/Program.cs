@@ -23,6 +23,10 @@ internal class Program
             .WithDataVolume("portfolio-pg-data")
             .WithHostPort(14050)
             .AddDatabase("portfolio-db");
+        var pgStockCardDb = builder.AddPostgres("pg-stock-card-db")
+            .WithImage("postgres:17.5")
+            .WithHostPort(14051)
+            .AddDatabase("stock-card-db");
 
         //var postgres = builder.AddPostgres("postgres").AddDatabase("stockcarddb");
         //var container = builder.AddDockerfile("gateway", "../backend/gateway/");
@@ -31,6 +35,10 @@ internal class Program
         apiPortfolioService.WithReference(redis)
                            .WithReference(pgPortfolioDb)
                            .WaitFor(pgPortfolioDb);
+
+        apiStockCardService.WithReference(redis)
+                           .WithReference(pgStockCardDb)
+                           .WaitFor(pgStockCardDb);
 
 
         builder.Build().Run();

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using StockCardService.Abstractions.Repositories;
 using StockCardService.Infrastructure.EntityFramework;
 using StockCardService.Infrastructure.Repositories;
@@ -21,7 +22,7 @@ namespace StockMarketAssistant.StockCardService.WebApi
             //EntityFramework
             builder.Services.AddDbContext<StockCardDbContext>(options =>
             {
-                options.UseNpgsql(builder.Configuration.GetConnectionString("StockCardDb"),
+                options.UseNpgsql(builder.Configuration.GetConnectionString("pg-stock-card-db"),
                     optionsBuilder => optionsBuilder.MigrationsAssembly("StockCardService.Infrastructure.EntityFramework"));
                 options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
             });
@@ -52,8 +53,8 @@ namespace StockMarketAssistant.StockCardService.WebApi
 
             app.MapGet("/", () => Results.Redirect("/swagger"));
 
-            var StockCardServisConnectionString = builder.Configuration.GetConnectionString("StockCardDb");
-            DbInitializer.Initialize(StockCardServisConnectionString);
+            //var StockCardServisConnectionString = builder.Configuration.GetConnectionString("pg-stock-card-db");
+            //DbInitializer.Initialize(StockCardServisConnectionString);
 
 
 
@@ -73,6 +74,12 @@ namespace StockMarketAssistant.StockCardService.WebApi
             app.MapControllers();
 
             app.MigrateDatabase<StockCardDbContext>();
+            //Заполняем БД объектами из FakeDataFactory
+            using (var scope = app.Services.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<StockCardDbContext>();
+                DbInitializer.Initialize(dbContext);
+            }
             app.Run();
         }
     }

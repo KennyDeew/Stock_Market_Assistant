@@ -101,7 +101,7 @@ namespace StockMarketAssistant.StockCardService.Application.Services
 
         public async Task<ShareCardDto?> GetByIdWithLinkedItemsAsync(Guid id)
         {
-            var shareCard = await _shareCardRepository.GetByIdWithLinkedItemsAsync(id, CancellationToken.None);
+            var shareCard = await _shareCardRepository.GetByIdWithLinkedItemsAsync(id, CancellationToken.None, sh => sh.Dividends);
 
             if (shareCard == null)
                 return null;
