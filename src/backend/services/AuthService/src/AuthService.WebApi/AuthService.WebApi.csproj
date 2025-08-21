@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+        <UserSecretsId>215e432e-579c-4ab9-a64f-9687ff04cfed</UserSecretsId>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.8" />
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.6"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.8">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="9.0.3" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="..\..\.dockerignore">
+        <Link>.dockerignore</Link>
+      </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\AuthService.Domain\AuthService.Domain.csproj" />
+      <ProjectReference Include="..\AuthService.Infrastructure.Postgres\AuthService.Infrastructure.Postgres.csproj" />
+      <ProjectReference Include="..\AuthService.Presentation\AuthService.Presentation.csproj" />
+      <ProjectReference Include="..\AuthService.Application\AuthService.Application.csproj" />
+      <ProjectReference Include="..\AuthService.Contracts\AuthService.Contracts.csproj" />
+      <ProjectReference Include="..\SharedKernel\SharedKernel.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Auth\" />
+    </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="etc\accounts.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+</Project>

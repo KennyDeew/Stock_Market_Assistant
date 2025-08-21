@@ -1,0 +1,10 @@
+{
+  "Permissions": {
+    "Users": [ "users.read", "users.write" ],
+    "Auth": [ "auth.refresh", "auth.logout" ]
+  },
+  "Roles": {
+    "ADMIN": [  ],
+    "User":  [  ]
+  }
+}
