@@ -1,4 +1,6 @@
-﻿internal class Program
+﻿using System;
+
+internal class Program
 {
     private static void Main(string[] args)
     {
@@ -15,12 +17,28 @@
 
         // Добавление ресурсов
         var redis = builder.AddRedis("cache");
+        var pgPortfolioDb = builder.AddPostgres("pg-portfolio-db")
+            //.WithPgAdmin()
+            .WithImage("postgres:17.5")
+            .WithDataVolume("portfolio-pg-data")
+            .WithHostPort(14050)
+            .AddDatabase("portfolio-db");
+        var pgStockCardDb = builder.AddPostgres("pg-stock-card-db")
+            .WithImage("postgres:17.5")
+            .WithHostPort(14051)
+            .AddDatabase("stock-card-db");
+
         //var postgres = builder.AddPostgres("postgres").AddDatabase("stockcarddb");
         //var container = builder.AddDockerfile("gateway", "../backend/gateway/");
 
         // Связывание ресурсов с проектами
-        apiPortfolioService.WithReference(redis);
-        //apiPortfolioService.WithReference(postgres);
+        apiPortfolioService.WithReference(redis)
+                           .WithReference(pgPortfolioDb)
+                           .WaitFor(pgPortfolioDb);
+
+        apiStockCardService.WithReference(redis)
+                           .WithReference(pgStockCardDb)
+                           .WaitFor(pgStockCardDb);
 
 
         builder.Build().Run();

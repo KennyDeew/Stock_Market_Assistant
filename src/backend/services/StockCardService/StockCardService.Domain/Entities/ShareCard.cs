@@ -1,0 +1,49 @@
+﻿using StockCardService.Domain.Entities;
+
+namespace StockMarketAssistant.StockCardService.Domain.Entities
+
+{
+    public class ShareCard : IEntity<Guid>
+    {
+        /// <summary>
+        /// Id акции
+        /// </summary>
+        public Guid Id { get; set; }
+
+        /// <summary>
+        /// Тикер акции
+        /// </summary>
+        public string Ticker { get; set; }
+
+        /// <summary>
+        /// Наименование акции
+        /// </summary>
+        public string Name { get; set; }
+
+        /// <summary>
+        /// Описание акции
+        /// </summary>
+        public string Description { get; set; }
+
+        /// <summary>
+        /// Валюта акции
+        /// </summary>
+        public string Currency { get; set; }
+
+        /// <summary>
+        /// Текущая цена
+        /// </summary>
+        public decimal CurrentPrice { get; set; }
+
+        /// <summary>
+        /// Массив мультипликаторов
+        /// </summary>
+        public ICollection<Multiplier> Multipliers { get; set; }
+
+        /// <summary>
+        /// Массив дивидендов
+        /// </summary>
+        public ICollection<Dividend> Dividends { get; set; }
+    }
+}
+
