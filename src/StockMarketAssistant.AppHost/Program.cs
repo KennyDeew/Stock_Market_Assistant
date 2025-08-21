@@ -9,7 +9,7 @@ internal class Program
         // Добавление проектов
         
         var apiGatewayService = builder.AddProject<Projects.Gateway_WebApi>("gateway-api");
-        var apiAuthService = builder.AddProject<Projects.AuthService_WebApi>("authservice-api");
+        //var apiAuthService = builder.AddProject<Projects.AuthService_WebApi>("authservice-api");
         var apiStockCardService = builder.AddProject<Projects.StockCardService_WebApi>("stockcardservice-api");
         var apiPortfolioService = builder.AddProject<Projects.PortfolioService_WebApi>("portfolioservice-api");
         var apiAnalyticsService = builder.AddProject<Projects.AnalyticsService_WebApi>("analyticsservice-api");
