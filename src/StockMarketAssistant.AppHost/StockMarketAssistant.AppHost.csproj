@@ -23,6 +23,7 @@
     <ProjectReference Include="..\backend\services\NotificationService\NotificationService.WebApi\NotificationService.WebApi.csproj" />
     <ProjectReference Include="..\backend\services\PortfolioService\PortfolioService.WebApi\PortfolioService.WebApi.csproj" />
     <ProjectReference Include="..\backend\services\StockCardService\StockCardService.WebApi\StockCardService.WebApi.csproj" />
+      <ProjectReference Include="..\backend\services\AuthService\src\AuthService.WebApi\AuthService.WebApi.csproj" />
   </ItemGroup>
 
 </Project>

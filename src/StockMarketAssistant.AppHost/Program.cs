@@ -9,7 +9,7 @@ internal class Program
         // Добавление проектов
         
         var apiGatewayService = builder.AddProject<Projects.Gateway_WebApi>("gateway-api");
-        //var apiAuthService = builder.AddProject<Projects.AuthService_WebApi>("authservice-api");
+        var apiAuthService = builder.AddProject<Projects.AuthService_WebApi>("authservice-api");
         var apiStockCardService = builder.AddProject<Projects.StockCardService_WebApi>("stockcardservice-api");
         var apiPortfolioService = builder.AddProject<Projects.PortfolioService_WebApi>("portfolioservice-api");
         var apiAnalyticsService = builder.AddProject<Projects.AnalyticsService_WebApi>("analyticsservice-api");
@@ -23,10 +23,16 @@ internal class Program
             .WithDataVolume("portfolio-pg-data")
             .WithHostPort(14050)
             .AddDatabase("portfolio-db");
+        
         var pgStockCardDb = builder.AddPostgres("pg-stock-card-db")
             .WithImage("postgres:17.5")
             .WithHostPort(14051)
             .AddDatabase("stock-card-db");
+        
+        var pgAuthDb = builder.AddPostgres("pg-auth-db")
+            .WithImage("postgres:17.5")
+            .WithHostPort(14052)
+            .AddDatabase("auth-db");
 
         //var postgres = builder.AddPostgres("postgres").AddDatabase("stockcarddb");
         //var container = builder.AddDockerfile("gateway", "../backend/gateway/");
@@ -39,6 +45,9 @@ internal class Program
         apiStockCardService.WithReference(redis)
                            .WithReference(pgStockCardDb)
                            .WaitFor(pgStockCardDb);
+        
+        apiAuthService.WithReference(pgAuthDb)
+            .WaitFor(pgAuthDb);
 
 
         builder.Build().Run();
