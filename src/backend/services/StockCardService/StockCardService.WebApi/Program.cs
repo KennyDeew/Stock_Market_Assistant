@@ -22,7 +22,7 @@ namespace StockMarketAssistant.StockCardService.WebApi
             //EntityFramework
             builder.Services.AddDbContext<StockCardDbContext>(options =>
             {
-                options.UseNpgsql(builder.Configuration.GetConnectionString("pg-stock-card-db"),
+                options.UseNpgsql(builder.Configuration.GetConnectionString("stock-card-db"),
                     optionsBuilder => optionsBuilder.MigrationsAssembly("StockCardService.Infrastructure.EntityFramework"));
                 options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
             });
