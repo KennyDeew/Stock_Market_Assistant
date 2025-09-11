@@ -1,9 +1,9 @@
 ﻿namespace StockCardService.WebApi.Models._01sub_FinancialReport
 {
     /// <summary>
-    /// Модель финансового отчета
+    /// Модель изменяемого финансового отчета
     /// </summary>
-    public class FinancialReportModel
+    public class UpdatingFinancialReportModel
     {
         /// <summary>
         /// Id финансового отчета
