@@ -1,15 +1,10 @@
 ﻿namespace StockMarketAssistant.StockCardService.Application.DTOs._01sub_FinancialReport
 {
     /// <summary>
-    /// Dto финансового отчета
+    /// Dto создаваемого финансового отчета
     /// </summary>
-    public class FinancialReportDto
+    public class CreatingFinancialReportDto
     {
-        /// <summary>
-        /// Id финансового отчета
-        /// </summary>
-        public Guid Id { get; set; }
-
         /// <summary>
         /// Id акции
         /// </summary>

@@ -1,9 +1,9 @@
 ﻿namespace StockMarketAssistant.StockCardService.Application.DTOs._01sub_FinancialReport
 {
     /// <summary>
-    /// Dto финансового отчета
+    /// Dto изменяемого финансового отчета
     /// </summary>
-    public class FinancialReportDto
+    public class UpdatingFinancialReportDto
     {
         /// <summary>
         /// Id финансового отчета
