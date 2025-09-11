@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\NotificationService\NotificationService.Domain\NotificationService.Domain.csproj" />
+    <ProjectReference Include="..\StockCardService.Abstractions.Repositories\StockCardService.Abstractions.Repositories.csproj" />
     <ProjectReference Include="..\StockCardService.Domain\StockCardService.Domain.csproj" />
   </ItemGroup>
 

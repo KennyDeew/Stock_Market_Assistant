@@ -25,6 +25,6 @@ namespace StockCardService.Abstractions.Repositories
 
         Task UpdateAsync(T entity);
 
-        Task DeleteAsync(T entity);
+        Task DeleteAsync(TPrimaryKey id);
     }
 }

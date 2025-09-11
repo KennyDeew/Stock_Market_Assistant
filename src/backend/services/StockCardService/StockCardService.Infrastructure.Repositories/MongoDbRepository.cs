@@ -55,9 +55,9 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.Repositories
             await _collection.ReplaceOneAsync(filter, entity);
         }
 
-        public async Task DeleteAsync(T entity)
+        public async Task DeleteAsync(TPrimaryKey id)
         {
-            var filter = Builders<T>.Filter.Eq(e => e.Id, entity.Id);
+            var filter = Builders<T>.Filter.Eq(e => e.Id, id);
             await _collection.DeleteOneAsync(filter);
         }
     }
