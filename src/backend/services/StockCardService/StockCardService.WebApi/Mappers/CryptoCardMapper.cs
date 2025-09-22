@@ -4,14 +4,17 @@ using StockMarketAssistant.StockCardService.Application.DTOs._03_CryptoCard;
 namespace StockMarketAssistant.StockCardService.WebApi.Mappers
 {
     /// <summary>
-    /// маппер для карточки криптовалюты Dto/Model
+    /// Маппер для карточки криптовалюты model/dto.
     /// </summary>
     public static class CryptoCardMapper
     {
+        /// <summary>
+        /// Конвертирует модель карточки криптовалюты в DTO.
+        /// </summary>
+        /// <param name="model">Исходная модель карточки криптовалюты.</param>
+        /// <returns>DTO карточки криптовалюты.</returns>
         public static CryptoCardDto ToDto(CryptoCardModel model)
         {
-            if (model == null) return null;
-
             return new CryptoCardDto
             {
                 Id = model.Id,
@@ -22,10 +25,13 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
             };
         }
 
+        /// <summary>
+        /// Конвертирует модель создаваемой карточки криптовалюты в DTO.
+        /// </summary>
+        /// <param name="model">Исходная модель создаваемой карточки криптовалюты.</param>
+        /// <returns>DTO создаваемой карточки криптовалюты.</returns>
         public static CreatingCryptoCardDto ToDto(CreatingCryptoCardModel model)
         {
-            if (model == null) return null;
-
             return new CreatingCryptoCardDto
             {
                 Name = model.Name,
@@ -34,10 +40,13 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
             };
         }
 
+        /// <summary>
+        /// Конвертирует модель изменяемой карточки криптовалюты в DTO.
+        /// </summary>
+        /// <param name="model">Исходная модель изменяемой карточки криптовалюты.</param>
+        /// <returns>DTO изменяемой карточки криптовалюты.</returns>
         public static UpdatingCryptoCardDto ToDto(UpdatingCryptoCardModel model)
         {
-            if (model == null) return null;
-
             return new UpdatingCryptoCardDto
             {
                 Id = model.Id,
@@ -48,10 +57,13 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
             };
         }
 
+        /// <summary>
+        /// Конвертирует DTO карточки криптовалюты в модель.
+        /// </summary>
+        /// <param name="dto">Исходный DTO карточки криптовалюты.</param>
+        /// <returns>Модель карточки криптовалюты.</returns>
         public static CryptoCardModel ToModel(CryptoCardDto dto)
         {
-            if (dto == null) return null;
-
             return new CryptoCardModel
             {
                 Id = dto.Id,
@@ -62,10 +74,13 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
             };
         }
 
+        /// <summary>
+        /// Конвертирует DTO создаваемой карточки криптовалюты в модель.
+        /// </summary>
+        /// <param name="dto">Исходный DTO создаваемой карточки криптовалюты.</param>
+        /// <returns>Модель создаваемой карточки криптовалюты.</returns>
         public static CreatingCryptoCardModel ToModel(CreatingCryptoCardDto dto)
         {
-            if (dto == null) return null;
-
             return new CreatingCryptoCardModel
             {
                 Name = dto.Name,
@@ -74,10 +89,13 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
             };
         }
 
+        /// <summary>
+        /// Конвертирует DTO изменяемой карточки криптовалюты в модель.
+        /// </summary>
+        /// <param name="dto">Исходный DTO изменяемой карточки криптовалюты.</param>
+        /// <returns>Модель изменяемой карточки криптовалюты.</returns>
         public static UpdatingCryptoCardModel ToModel(UpdatingCryptoCardDto dto)
         {
-            if (dto == null) return null;
-
             return new UpdatingCryptoCardModel
             {
                 Id = dto.Id,

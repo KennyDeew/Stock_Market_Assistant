@@ -13,6 +13,10 @@ namespace StockCardService.WebApi.Controllers
     {
         private readonly IDividendService _dividendService;
 
+        /// <summary>
+        /// Конструктор контроллера дивиденда акции
+        /// </summary>
+        /// <param name="dividendService"></param>
         public DividendController(IDividendService dividendService)
         {
             _dividendService = dividendService;

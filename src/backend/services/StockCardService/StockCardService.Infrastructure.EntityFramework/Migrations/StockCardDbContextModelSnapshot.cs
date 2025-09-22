@@ -36,7 +36,6 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                         .HasColumnType("numeric");
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<decimal>("FaceValue")
@@ -99,7 +98,6 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                         .HasColumnType("numeric");
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Name")
@@ -184,7 +182,6 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                         .HasColumnType("numeric");
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Name")

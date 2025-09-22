@@ -13,17 +13,17 @@ namespace StockMarketAssistant.StockCardService.Domain.Entities
         /// <summary>
         /// Тикер облигации
         /// </summary>
-        public string Ticker { get; set; }
+        public required string Ticker { get; set; }
 
         /// <summary>
         /// Наименование облигации
         /// </summary>
-        public string Name { get; set; }
+        public required string Name { get; set; }
 
         /// <summary>
         /// Описание облигации
         /// </summary>
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         /// <summary>
         /// дата погашения облигации
@@ -33,12 +33,12 @@ namespace StockMarketAssistant.StockCardService.Domain.Entities
         /// <summary>
         /// Валюта
         /// </summary>
-        public string Currency { get; set; }
+        public required string Currency { get; set; }
 
         /// <summary>
         /// Рейтинг
         /// </summary>
-        public string Rating { get; set; }
+        public required string Rating { get; set; }
 
         /// <summary>
         /// Номинальная стоимость
@@ -53,7 +53,7 @@ namespace StockMarketAssistant.StockCardService.Domain.Entities
         /// <summary>
         /// Массив купонов
         /// </summary>
-        public ICollection<Coupon> Coupons { get; set; }
+        public ICollection<Coupon> Coupons { get; set; } = new List<Coupon>();
     }
 }
 

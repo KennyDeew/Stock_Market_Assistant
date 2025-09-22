@@ -13,10 +13,8 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
         /// </summary>
         /// <param name="model">Исходная модель отчета.</param>
         /// <returns>Объект DTO с данными из модели.</returns>
-        public static FinancialReportDto? ToDto(FinancialReportModel model)
+        public static FinancialReportDto ToDto(FinancialReportModel model)
         {
-            if (model == null) return null;
-
             return new FinancialReportDto
             {
                 Id = model.Id,
@@ -46,10 +44,8 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
         /// </summary>
         /// <param name="model">Исходная модель создаваемого отчета.</param>
         /// <returns>Объект DTO с данными из модели.</returns>
-        public static CreatingFinancialReportDto? ToDto(CreatingFinancialReportModel model)
+        public static CreatingFinancialReportDto ToDto(CreatingFinancialReportModel model)
         {
-            if (model == null) return null;
-
             return new CreatingFinancialReportDto
             {
                 ParentId = model.ParentId,
@@ -78,10 +74,8 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
         /// </summary>
         /// <param name="model">Исходная модель изменяемого отчета.</param>
         /// <returns>Объект DTO с данными из модели.</returns>
-        public static UpdatingFinancialReportDto? ToDto(UpdatingFinancialReportModel model)
+        public static UpdatingFinancialReportDto ToDto(UpdatingFinancialReportModel model)
         {
-            if (model == null) return null;
-
             return new UpdatingFinancialReportDto
             {
                 Id = model.Id,
@@ -111,10 +105,8 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
         /// </summary>
         /// <param name="dto">Исходный dto отчета.</param>
         /// <returns>Модель отчета с данными из Dto.</returns>
-        public static FinancialReportModel? ToModel(FinancialReportDto dto)
+        public static FinancialReportModel ToModel(FinancialReportDto dto)
         {
-            if (dto == null) return null;
-
             return new FinancialReportModel
             {
                 Id = dto.Id,
@@ -144,10 +136,8 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
         /// </summary>
         /// <param name="dto">Исходный dto отчета.</param>
         /// <returns>Модель создаваемого отчета с данными из Dto.</returns>
-        public static CreatingFinancialReportModel? ToModel(CreatingFinancialReportDto dto)
+        public static CreatingFinancialReportModel ToModel(CreatingFinancialReportDto dto)
         {
-            if (dto == null) return null;
-
             return new CreatingFinancialReportModel
             {
                 ParentId = dto.ParentId,
@@ -176,10 +166,8 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
         /// </summary>
         /// <param name="dto">Исходный dto отчета.</param>
         /// <returns>Модель изменяемого отчета с данными из Dto.</returns>
-        public static UpdatingFinancialReportModel? ToModel(UpdatingFinancialReportDto dto)
+        public static UpdatingFinancialReportModel ToModel(UpdatingFinancialReportDto dto)
         {
-            if (dto == null) return null;
-
             return new UpdatingFinancialReportModel
             {
                 Id = dto.Id,

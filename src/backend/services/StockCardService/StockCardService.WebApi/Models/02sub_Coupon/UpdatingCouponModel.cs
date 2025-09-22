@@ -16,11 +16,6 @@
         public DateTime CutOffDate { get; set; }
 
         /// <summary>
-        /// Валюта
-        /// </summary>
-        public string Currency { get; set; }
-
-        /// <summary>
         /// Размер купона
         /// </summary>
         public decimal Value { get; set; }

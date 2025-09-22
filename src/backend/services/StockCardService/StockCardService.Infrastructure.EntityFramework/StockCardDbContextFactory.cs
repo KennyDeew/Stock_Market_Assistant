@@ -2,7 +2,6 @@
 using Microsoft.EntityFrameworkCore.Design;
 using StockMarketAssistant.StockCardService.Infrastructure.EntityFramework;
 
-using Microsoft.EntityFrameworkCore.Design;
 namespace StockMarketAssistant.StockCardService;
 
 

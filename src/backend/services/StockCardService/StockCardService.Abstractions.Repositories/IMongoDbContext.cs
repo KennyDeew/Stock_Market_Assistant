@@ -5,6 +5,6 @@ namespace StockCardService.Abstractions.Repositories
     public interface IMongoDBContext
     {
         IMongoDatabase Database { get; }
-        IMongoCollection<T> GetCollection<T>(string name = null);
+        IMongoCollection<T> GetCollection<T>(string? name = null);
     }
 }

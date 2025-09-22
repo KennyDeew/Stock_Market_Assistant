@@ -12,7 +12,7 @@ using StockMarketAssistant.StockCardService.Infrastructure.EntityFramework;
 namespace StockCardService.Infrastructure.EntityFramework.Migrations
 {
     [DbContext(typeof(StockCardDbContext))]
-    [Migration("20250901165531_InitialCreate")]
+    [Migration("20250919210008_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -39,7 +39,6 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                         .HasColumnType("numeric");
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<decimal>("FaceValue")
@@ -102,7 +101,6 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                         .HasColumnType("numeric");
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Name")
@@ -187,7 +185,6 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                         .HasColumnType("numeric");
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Name")

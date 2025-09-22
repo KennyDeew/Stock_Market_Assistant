@@ -29,7 +29,7 @@ namespace StockCardService.WebApi.Controllers
         [HttpGet]
         public async Task<ActionResult<List<ShareCardModel>>> GetShareCardsAsync()
         {
-            var shareCards = (await _shareCardService.GetAllAsync()).Select(ShareCardMapper.ToModel).ToList();
+            var shareCards = (await _shareCardService.GetAllAsync()).Select(ShareCardMapper.ToModel).Where(shcm => shcm != null).Select(shcm => shcm!).ToList();
             return shareCards;
         }
 

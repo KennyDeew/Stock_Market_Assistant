@@ -12,17 +12,17 @@ namespace StockMarketAssistant.StockCardService.Domain.Entities
         /// <summary>
         /// Тикер криптовалюты
         /// </summary>
-        public string Ticker { get; set; }
+        public required string Ticker { get; set; }
 
         /// <summary>
         /// Наименование криптовалюты
         /// </summary>
-        public string Name { get; set; }
+        public required string Name { get; set; }
 
         /// <summary>
         /// Описание криптовалюты
         /// </summary>
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         /// <summary>
         /// Текущая цена
