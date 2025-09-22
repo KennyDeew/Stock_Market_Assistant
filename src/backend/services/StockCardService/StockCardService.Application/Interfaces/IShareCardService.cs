@@ -47,6 +47,11 @@ namespace StockMarketAssistant.StockCardService.Application.Interfaces
         Task UpdateAsync(UpdatingShareCardDto updatingShareCardDto);
 
         /// <summary>
+        /// Обновить цену всех акций
+        /// </summary>
+        Task UpdateShareCardPricesAsync();
+
+        /// <summary>
         /// Удалить карточку акции
         /// </summary>
         /// <param name="id">Идентификатор карточки акции</param>

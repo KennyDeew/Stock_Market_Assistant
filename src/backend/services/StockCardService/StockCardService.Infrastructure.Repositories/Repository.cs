@@ -44,7 +44,7 @@ namespace StockCardService.Infrastructure.Repositories
         /// </summary>
         /// <param name="id"> Id сущности. </param>
         /// <returns> Cущность. </returns>
-        public virtual T GetById(TPrimaryKey id)
+        public virtual T? GetById(TPrimaryKey id)
         {
             return _entitySet.Find(id);
         }
@@ -55,9 +55,9 @@ namespace StockCardService.Infrastructure.Repositories
         /// <param name="id"> Id сущности. </param>
         /// <param name="cancellationToken"></param>
         /// <returns> Cущность. </returns>
-        public virtual async Task<T> GetByIdAsync(TPrimaryKey id, CancellationToken cancellationToken)
+        public virtual async Task<T?> GetByIdAsync(TPrimaryKey id, CancellationToken cancellationToken)
         {
-            return await _entitySet.FindAsync((object)id);
+            return await _entitySet.FindAsync(id);
         }
 
         /// <summary>
@@ -67,7 +67,7 @@ namespace StockCardService.Infrastructure.Repositories
         /// <param name="cancellationToken"></param>
         /// <param name="includeProperties">массив делегатов для связанных объектов</param>
         /// <returns></returns>
-        public virtual async Task<T> GetByIdWithLinkedItemsAsync(TPrimaryKey id, CancellationToken cancellationToken, params Expression<Func<T, object>>[] includeProperties)
+        public virtual async Task<T?> GetByIdWithLinkedItemsAsync(TPrimaryKey id, CancellationToken cancellationToken, params Expression<Func<T, object>>[] includeProperties)
         {
             IQueryable<T> query = _entitySet;
             foreach (var includeProperty in includeProperties)

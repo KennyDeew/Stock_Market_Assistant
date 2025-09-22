@@ -4,6 +4,7 @@ using StockMarketAssistant.StockCardService.Application.DTOs._01sub_Dividend;
 using StockMarketAssistant.StockCardService.Application.DTOs._01sub_Multiplier;
 using StockMarketAssistant.StockCardService.Application.Interfaces;
 using StockMarketAssistant.StockCardService.Domain.Entities;
+using System.Collections.Concurrent;
 
 namespace StockMarketAssistant.StockCardService.Application.Services
 {
@@ -210,6 +211,48 @@ namespace StockMarketAssistant.StockCardService.Application.Services
             shareCard.Description = updatingShareCardDto.Description;
             shareCard.CurrentPrice = updatingShareCardDto.CurrentPrice;
             await _shareCardRepository.UpdateAsync(shareCard);
+        }
+
+        /// <summary>
+        /// Обновить все цены акций
+        /// </summary>
+        /// <returns></returns>
+        public async Task UpdateShareCardPricesAsync()
+        {
+            var shareCards = await _shareCardRepository.GetAllAsync(CancellationToken.None);
+            var CardsAndPrices = new ConcurrentDictionary<string, decimal>();
+            //параллелим определение цены актива с помощью МосБиржи. Число параллельных потоков - 5
+            using var semaphore = new SemaphoreSlim(5);
+            var tasks = shareCards.Select(async card =>
+            {
+                await semaphore.WaitAsync();
+                try
+                {
+                    var priceRequest = await MoexIssClient.GetCurrentPriceWithoutAuthAsync(card.Ticker);
+                    if (priceRequest != null)
+                    {
+                        CardsAndPrices[card.Ticker] = (decimal)priceRequest;
+                    }
+                }
+                catch
+                {
+                    // todo Обработка ошибок (логирование или сохранение исключения)
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
+            });
+            await Task.WhenAll(tasks);
+            //Обновляем БД последовательно (т.к. работаем с одним DbContext)
+            foreach (var card in shareCards)
+            {
+                if (CardsAndPrices.TryGetValue(card.Ticker, out var price))
+                {
+                    card.CurrentPrice = price;
+                    await _shareCardRepository.UpdateAsync(card);
+                }
+            }
         }
     }
 }

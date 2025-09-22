@@ -13,6 +13,10 @@ namespace StockCardService.WebApi.Controllers
     {
         private readonly ICryptoCardService _cryptoCardService;
 
+        /// <summary>
+        /// Конструктор контроллера карточки криптовалюты
+        /// </summary>
+        /// <param name="cryptoCardService"></param>
         public CryptoCardController(ICryptoCardService cryptoCardService)
         {
             _cryptoCardService = cryptoCardService;

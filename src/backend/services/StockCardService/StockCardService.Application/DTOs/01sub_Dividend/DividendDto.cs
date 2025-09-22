@@ -23,12 +23,12 @@
         /// <summary>
         /// период выплаты
         /// </summary>
-        public string Period { get; set; }
+        public required string Period { get; set; }
 
         /// <summary>
         /// Валюта
         /// </summary>
-        public string Currency { get; set; }
+        public required string Currency { get; set; }
 
         /// <summary>
         /// Размер дивидендов

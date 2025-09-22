@@ -13,7 +13,7 @@
         /// <summary>
         /// Наименование мультипликатора
         /// </summary>
-        public string Name { get; set; }
+        public required string Name { get; set; }
 
         /// <summary>
         /// Значение мультипликатора

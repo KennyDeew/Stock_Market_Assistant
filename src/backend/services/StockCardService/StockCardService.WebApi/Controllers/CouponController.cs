@@ -13,6 +13,10 @@ namespace StockCardService.WebApi.Controllers
     {
         private readonly ICouponService _couponService;
 
+        /// <summary>
+        /// Конструктор контроллера купона облигации
+        /// </summary>
+        /// <param name="couponService"></param>
         public CouponController(ICouponService couponService)
         {
             _couponService = couponService;

@@ -18,22 +18,22 @@ namespace StockCardService.WebApi.Models.ShareCard
         /// <summary>
         /// Тикер акции
         /// </summary>
-        public string Ticker { get; set; }
+        public required string Ticker { get; set; }
 
         /// <summary>
         /// Наименование акции
         /// </summary>
-        public string Name { get; set; }
+        public required string Name { get; set; }
 
         /// <summary>
         /// Описание акции
         /// </summary>
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         /// <summary>
         /// Валюта
         /// </summary>
-        public string Currency { get; set; }
+        public required string Currency { get; set; }
 
         /// <summary>
         /// Текущая цена
@@ -43,16 +43,16 @@ namespace StockCardService.WebApi.Models.ShareCard
         /// <summary>
         /// Финансовые отчеты по акции
         /// </summary>
-        public List<FinancialReportModel>? FinancialReports { get; set; }
+        public List<FinancialReportModel> FinancialReports { get; set; } = new List<FinancialReportModel>();
 
         /// <summary>
         /// Мультипликаторы акции
         /// </summary>
-        public List<MultiplierModel>? Multipliers { get; set; }
+        public List<MultiplierModel> Multipliers { get; set; } = new List<MultiplierModel>();
 
         /// <summary>
         /// Дивиденды акции
         /// </summary>
-        public List<DividendModel>? Dividends { get; set; }
+        public List<DividendModel> Dividends { get; set; } = new List<DividendModel>();
     }
 }
