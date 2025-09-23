@@ -44,7 +44,7 @@ namespace StockMarketAssistant.PortfolioService.Application.Interfaces
         /// Удалить портфель
         /// </summary>
         /// <param name="id">Идентификатор портфеля</param>
-        Task DeleteAsync(Guid id);
+        Task<bool> DeleteAsync(Guid id);
 
     }
 }
