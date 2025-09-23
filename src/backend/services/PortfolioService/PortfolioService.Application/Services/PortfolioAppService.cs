@@ -1,4 +1,5 @@
-﻿using StockMarketAssistant.PortfolioService.Application.DTOs;
+﻿using Microsoft.Extensions.Logging;
+using StockMarketAssistant.PortfolioService.Application.DTOs;
 using StockMarketAssistant.PortfolioService.Application.Interfaces;
 using StockMarketAssistant.PortfolioService.Application.Interfaces.Repositories;
 using StockMarketAssistant.PortfolioService.Domain.Entities;
@@ -8,10 +9,11 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
     /// <summary>
     /// Сервис работы с портфелями ценных бумаг
     /// </summary>
-    public class PortfolioAppService(IPortfolioRepository portfolioRepository, IPortfolioAssetAppService portfolioAssetAppService) : IPortfolioAppService
+    public class PortfolioAppService(IPortfolioRepository portfolioRepository, IPortfolioAssetAppService portfolioAssetAppService, ILogger<PortfolioAppService> logger) : IPortfolioAppService
     {
         private readonly IPortfolioRepository _portfolioRepository = portfolioRepository;
         private readonly IPortfolioAssetAppService _portfolioAssetAppService = portfolioAssetAppService;
+        private readonly ILogger<PortfolioAppService> _logger = logger;
 
         /// <summary>
         /// Создать портфель ценных бумаг
@@ -25,21 +27,41 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                 Name = creatingPortfolioDto.Name,
                 Currency = creatingPortfolioDto.Currency
             };
-            Portfolio createdPortfolio = await _portfolioRepository.AddAsync(portfolio);
-            return createdPortfolio.Id;
+            try
+            {
+                Portfolio createdPortfolio = await _portfolioRepository.AddAsync(portfolio);
+                return createdPortfolio.Id;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка при создании портфеля для пользователя {UserId} с именем {PortfolioName}",
+                               creatingPortfolioDto.UserId, creatingPortfolioDto.Name);
+                throw;
+            }
         }
 
         /// <summary>
         /// Удалить портфель ценных бумаг
         /// </summary>
         /// <param name="id">Идентификатор портфеля</param>
-        /// <returns></returns>
-        public async Task DeleteAsync(Guid id)
+        /// <returns>Успешность операции</returns>
+        public async Task<bool> DeleteAsync(Guid id)
         {
-            Portfolio? portfolio = await _portfolioRepository.GetByIdAsync(id);
-            if (portfolio is not null)
+            try
             {
+                Portfolio? portfolio = await _portfolioRepository.GetByIdAsync(id);
+                if (portfolio is null)
+                {
+                    _logger.LogWarning("Портфель с ID {PortfolioId} не найден для удаления", id);
+                    return false;
+                }
                 await _portfolioRepository.DeleteAsync(portfolio);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка при удалении портфеля с ID {PortfolioId}", id);
+                throw;
             }
         }
 
@@ -78,7 +100,7 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                 UserId = portfolio.UserId,
                 Name = portfolio.Name,
                 Currency = portfolio.Currency,
-                Assets = [.. assets.Where(a => a is not null).Cast<PortfolioAssetDto>()]
+                Assets = [.. assets.Where(a => a is not null).Cast<PortfolioAssetDto>().OrderBy(a => a.AssetType).ThenBy(a => a.Ticker)]
             };
         }
 

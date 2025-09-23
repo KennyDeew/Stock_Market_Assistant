@@ -22,23 +22,50 @@ namespace StockMarketAssistant.PortfolioService.Application.Interfaces
         Task<bool> ExistsAsync(Guid id);
 
         /// <summary>
-        /// Создать актив
+        /// Создать актив с начальной транзакцией
         /// </summary>
         /// <param name="creatingCourseDto">DTO создаваемого актива в портфеле</param>
-        Task<Guid> CreateAsync(CreatingPortfolioAssetDto creatingPortfolioAssetDto);
-
-        /// <summary>
-        /// Обновить актив
-        /// </summary>
-        /// <param name="id">Идентификатор актива</param>
-        /// <param name="updatingPortfolioDto">DTO редактируемого актива в портфеле</param>
-        Task UpdateAsync(Guid id, UpdatingPortfolioAssetDto updatingPortfolioAssetDto);
+        Task<PortfolioAssetDto> CreateAsync(CreatingPortfolioAssetDto dto);
 
         /// <summary>
         /// Удалить актив
         /// </summary>
         /// <param name="id">Идентификатор актива</param>
-        Task DeleteAsync(Guid id);
+        Task<bool> DeleteAsync(Guid id);
 
+        /// <summary>
+        /// Получить транзакцию по идентификатору
+        /// </summary>
+        Task<PortfolioAssetTransactionDto?> GetAssetTransactionByIdAsync(Guid transactionId);
+
+        /// <summary>
+        /// Получить все транзакции актива
+        /// </summary>
+        Task<IEnumerable<PortfolioAssetTransactionDto>> GetAssetTransactionsByAssetIdAsync(Guid assetId);
+
+        /// <summary>
+        /// Получить транзакции актива за период
+        /// </summary>
+        Task<IEnumerable<PortfolioAssetTransactionDto>> GetAssetTransactionsByAssetIdAndPeriodAsync(
+            Guid assetId, DateTime startDate, DateTime endDate);
+
+        /// <summary>
+        /// Добавить транзакцию покупки/продажи к активу
+        /// </summary>
+        /// <param name="assetId">Идентификатор актива</param>
+        /// <param name="dto">DTO добавляемой транзакции</param>
+        Task<PortfolioAssetTransactionDto> AddAssetTransactionAsync(Guid assetId, CreatingPortfolioAssetTransactionDto dto);
+
+        /// <summary>
+        /// Обновить транзакцию актива
+        /// </summary>
+        /// <param name="id">Идентификатор транзакции</param>
+        /// <param name="dto">DTO редактируемой транзакции</param>
+        Task UpdateAssetTransactionAsync(Guid id, UpdatingPortfolioAssetTransactionDto dto);
+
+        /// <summary>
+        /// Удалить транзакцию актива
+        /// </summary>
+        Task<bool> DeleteAssetTransactionAsync(Guid transactionId);
     }
 }
