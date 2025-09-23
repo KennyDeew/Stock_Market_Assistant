@@ -19,10 +19,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\Project\NotificationService\Notification\NotificationService.csproj" />
     <ProjectReference Include="..\backend\gateway\Gateway.WebApi\Gateway.WebApi.csproj" />
     <ProjectReference Include="..\backend\services\AnalyticsService\AnalyticsService.WebApi\AnalyticsService.WebApi.csproj" />
     <ProjectReference Include="..\backend\services\AuthService\AuthService.WebApi\AuthService.WebApi.csproj" />
+    <ProjectReference Include="..\backend\services\NotificationService\Notification\NotificationService.csproj" />
     <ProjectReference Include="..\backend\services\PortfolioService\PortfolioService.WebApi\PortfolioService.WebApi.csproj" />
     <ProjectReference Include="..\backend\services\StockCardService\StockCardService.WebApi\StockCardService.WebApi.csproj" />
   </ItemGroup>

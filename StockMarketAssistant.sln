@@ -37,7 +37,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StockMarketAssistant.AppHos
 	ProjectSection(ProjectDependencies) = postProject
 		{1100EA22-3454-E34D-EDF1-CA20C78FB093} = {1100EA22-3454-E34D-EDF1-CA20C78FB093}
 		{6CEC36BA-6B65-47C5-BF16-B713163A25CC} = {6CEC36BA-6B65-47C5-BF16-B713163A25CC}
-		{B3540D91-A9B7-A55B-1B0C-049C410A560A} = {B3540D91-A9B7-A55B-1B0C-049C410A560A}
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core", "Core", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
@@ -108,13 +107,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AnalyticsService.Infrastruc
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AnalyticsService.WebApi", "src\backend\services\AnalyticsService\AnalyticsService.WebApi\AnalyticsService.WebApi.csproj", "{E2784DD7-59E8-449A-B54B-33A28188A04F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NotificationService", "..\..\Project\NotificationService\Notification\NotificationService.csproj", "{B3540D91-A9B7-A55B-1B0C-049C410A560A}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NotificationService.Domain", "..\..\Project\NotificationService\Notification.Domain\NotificationService.Domain.csproj", "{B043E76D-32D3-88A4-58CD-06D8D78825D3}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NotificationService.Application", "..\..\Project\NotificationService\Notification.Application\NotificationService.Application.csproj", "{0CB02807-B614-1FBF-2990-ACA4B34C702F}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NotificationService.Infrastructure", "..\..\Project\NotificationService\Notification.Infrastructure\NotificationService.Infrastructure.csproj", "{D9637E88-4F65-9DC4-9A9E-E6654506C5E4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NotificationService", "src\backend\services\NotificationService\Notification\NotificationService.csproj", "{52486EF6-1A62-0517-ECA5-75C6ACB191AE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -218,22 +211,10 @@ Global
 		{E2784DD7-59E8-449A-B54B-33A28188A04F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E2784DD7-59E8-449A-B54B-33A28188A04F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E2784DD7-59E8-449A-B54B-33A28188A04F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B3540D91-A9B7-A55B-1B0C-049C410A560A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B3540D91-A9B7-A55B-1B0C-049C410A560A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B3540D91-A9B7-A55B-1B0C-049C410A560A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B3540D91-A9B7-A55B-1B0C-049C410A560A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B043E76D-32D3-88A4-58CD-06D8D78825D3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B043E76D-32D3-88A4-58CD-06D8D78825D3}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B043E76D-32D3-88A4-58CD-06D8D78825D3}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B043E76D-32D3-88A4-58CD-06D8D78825D3}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0CB02807-B614-1FBF-2990-ACA4B34C702F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0CB02807-B614-1FBF-2990-ACA4B34C702F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0CB02807-B614-1FBF-2990-ACA4B34C702F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0CB02807-B614-1FBF-2990-ACA4B34C702F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D9637E88-4F65-9DC4-9A9E-E6654506C5E4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D9637E88-4F65-9DC4-9A9E-E6654506C5E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D9637E88-4F65-9DC4-9A9E-E6654506C5E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D9637E88-4F65-9DC4-9A9E-E6654506C5E4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{52486EF6-1A62-0517-ECA5-75C6ACB191AE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{52486EF6-1A62-0517-ECA5-75C6ACB191AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{52486EF6-1A62-0517-ECA5-75C6ACB191AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{52486EF6-1A62-0517-ECA5-75C6ACB191AE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -285,10 +266,7 @@ Global
 		{2850E90D-E920-4C0C-B3B5-C6D31C488FD2} = {9B6D6EF2-E538-40EC-96D2-B81BBEF741DA}
 		{8147C948-3B45-4360-90D7-2B622C5C98D1} = {9B6D6EF2-E538-40EC-96D2-B81BBEF741DA}
 		{E2784DD7-59E8-449A-B54B-33A28188A04F} = {76FAE845-4F9E-4076-9C6F-3EB9485CC772}
-		{B3540D91-A9B7-A55B-1B0C-049C410A560A} = {8F871752-F3D5-48FC-9DFA-1CBFA827DB18}
-		{B043E76D-32D3-88A4-58CD-06D8D78825D3} = {8F871752-F3D5-48FC-9DFA-1CBFA827DB18}
-		{0CB02807-B614-1FBF-2990-ACA4B34C702F} = {8F871752-F3D5-48FC-9DFA-1CBFA827DB18}
-		{D9637E88-4F65-9DC4-9A9E-E6654506C5E4} = {8F871752-F3D5-48FC-9DFA-1CBFA827DB18}
+		{52486EF6-1A62-0517-ECA5-75C6ACB191AE} = {8F871752-F3D5-48FC-9DFA-1CBFA827DB18}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {C7DE2C96-9A08-45EC-9A91-EF711525ABF1}
