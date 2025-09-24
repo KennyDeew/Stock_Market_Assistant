@@ -36,10 +36,10 @@ public abstract class Program
         app.UseExceptionMiddleware();
 
         // Порядок: миграции -> сиды
-        await app.MigrateDatabaseAsync<AccountsWriteDbContext>();
+        await app.MigrateDatabaseAsync<AccountsWriteDbContext>(CancellationToken.None);
 
-        var accountsSeeder = app.Services.GetRequiredService<AccountsSeeder>();
-        await accountsSeeder.SeedAsync();
+        //var accountsSeeder = app.Services.GetRequiredService<AccountsSeeder>();
+        //await accountsSeeder.SeedAsync();
 
         if (app.Environment.IsDevelopment())
         {

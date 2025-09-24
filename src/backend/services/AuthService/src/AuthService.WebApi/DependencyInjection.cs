@@ -1,10 +1,9 @@
 ﻿using AuthService.Infrastructure.Postgres;
 using AuthService.Infrastructure.Postgres.Options;
 using AuthService.Presentation;
-using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace AuthService.WebApi;
 
@@ -21,7 +20,7 @@ public static class DependencyInjection
     public static IServiceCollection AddAuthServices(
         this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddSingleton<IAuthorizationHandler, PermissionRequirementHandler>();
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IAuthorizationHandler, PermissionRequirementHandler>());
         services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
 
         services
@@ -29,13 +28,14 @@ public static class DependencyInjection
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultSignInScheme = JwtBearerDefaults.AuthenticationScheme;
             })
             .AddJwtBearer(options =>
             {
+                options.SaveToken = true;
                 var jwtOptions = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
                                  ?? throw new ApplicationException("Missing Jwt configuration");
 
+                options.MapInboundClaims = false; // <-- важно для "Permission"
                 options.TokenValidationParameters = TokenValidationParametersFactory.CreateWithLifeTime(jwtOptions);
             });
 
