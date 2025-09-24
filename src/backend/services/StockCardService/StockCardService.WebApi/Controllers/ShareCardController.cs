@@ -13,6 +13,10 @@ namespace StockCardService.WebApi.Controllers
     {
         private readonly IShareCardService _shareCardService;
 
+        /// <summary>
+        /// Конструктор контроллера карточки акции
+        /// </summary>
+        /// <param name="shareCardService"></param>
         public ShareCardController(IShareCardService shareCardService)
         {
             _shareCardService = shareCardService;
@@ -25,7 +29,7 @@ namespace StockCardService.WebApi.Controllers
         [HttpGet]
         public async Task<ActionResult<List<ShareCardModel>>> GetShareCardsAsync()
         {
-            var shareCards = (await _shareCardService.GetAllAsync()).Select(ShareCardMapper.ToModel).ToList();
+            var shareCards = (await _shareCardService.GetAllAsync()).Select(ShareCardMapper.ToModel).Where(shcm => shcm != null).Select(shcm => shcm!).ToList();
             return shareCards;
         }
 
@@ -105,6 +109,19 @@ namespace StockCardService.WebApi.Controllers
         public async Task<IActionResult> EditShareCardAsync(UpdatingShareCardModel request)
         {
             await _shareCardService.UpdateAsync(ShareCardMapper.ToDto(request));
+            return Ok();
+        }
+
+        /// <summary>
+        /// Обновить все цены акций
+        /// </summary>
+        /// <returns></returns>
+        [HttpPut("UpdateAllPrices", Name = "UpdateShareCardPrices")]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> UpdateAllShareCardPriceAsync()
+        {
+            await _shareCardService.UpdateShareCardPricesAsync();
             return Ok();
         }
 

@@ -27,6 +27,14 @@ internal class Program
             .WithImage("postgres:17.5")
             .WithHostPort(14051)
             .AddDatabase("stock-card-db");
+        var mongo = builder.AddMongoDB("mongo")
+            .WithImage("mongo:7.0")
+            .WithDataVolume("stock-mongo-data").WithEndpoint("mongodb", endpoint =>
+            {
+                endpoint.Port = 14052;       // внешний порт на хосте
+                endpoint.TargetPort = 27017; // внутренний порт контейнера MongoDB
+            });
+        var mongoStockCardDb = mongo.AddDatabase("finantial-report-db");
 
         var notificationPostgres = builder.AddPostgres("notification-db")
             .WithImage("postgres:17.5")
@@ -47,6 +55,7 @@ internal class Program
 
         apiStockCardService.WithReference(redis)
                            .WithReference(pgStockCardDb)
+                           .WithReference(mongoStockCardDb)
                            .WaitFor(pgStockCardDb);
 
         apiNotificationService
