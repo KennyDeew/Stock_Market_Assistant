@@ -14,23 +14,23 @@ public class ErrorList : IEnumerable<Error>
         _errors = new List<Error>(errors);
     }
 
-    public IEnumerator<Error> GetEnumerator()
-    {
-        return _errors.GetEnumerator();
-    }
+    public static ErrorList From(Error error) =>
+        new ErrorList(new[] { error });
 
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        return GetEnumerator();
-    }
+    public static ErrorList From(IEnumerable<Error> errors) =>
+        new ErrorList(errors);
 
-    public static implicit operator ErrorList(List<Error> errors)
-    {
-        return new ErrorList(errors);
-    }
+    public static readonly ErrorList Empty = new(Array.Empty<Error>());
 
-    public static implicit operator ErrorList(Error error)
-    {
-        return new ErrorList(new Error[] { error });
-    }
+    public int Count => _errors.Count;
+
+    public bool IsEmpty => _errors.Count == 0;
+
+    public IEnumerator<Error> GetEnumerator() => _errors.GetEnumerator();
+
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    public static implicit operator ErrorList(List<Error> errors) => new(errors);
+
+    public static implicit operator ErrorList(Error error) => new(new[] { error });
 }
