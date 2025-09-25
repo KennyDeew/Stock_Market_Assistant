@@ -10,27 +10,75 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
     /// Портфели
     /// </summary>
     [ApiController]
-    [Route("api/v1/[controller]")]
+    //[Route("api/v1/[controller]")]
+    [Route("api/v1/portfolios")]
+    [Produces("application/json")]
     [OpenApiTag("Portfolios")]
-    public class PortfoliosController(IPortfolioAppService service, ILogger<PortfoliosController> logger) : ControllerBase
+    public class PortfoliosController(IPortfolioAppService portfolioAppService, ILogger<PortfoliosController> logger) : ControllerBase
     {
-        private readonly IPortfolioAppService _service = service;
+        private readonly IPortfolioAppService _portfolioAppService = portfolioAppService;
         private readonly ILogger<PortfoliosController> _logger = logger;
 
         /// <summary>
         /// Получить список всех портфелей от всех пользователей
         /// </summary>
-        /// <returns></returns>
+        /// <param name="page">Номер страницы (по умолчанию 1)</param>
+        /// <param name="pageSize">Размер страницы (по умолчанию 10, максимум 100)</param>
+        /// <returns>Пагинированный список портфелей</returns>
         [HttpGet]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<PortfolioShortResponse>))]
-        public async Task<ActionResult<IEnumerable<PortfolioShortResponse>>> GetPortfoliosAsync()
+        [ProducesResponseType(typeof(PaginatedResponse<PortfolioShortResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<PaginatedResponse<PortfolioShortResponse>>> GetPortfoliosAsync(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10)
         {
-            var portfoliosDtos = await _service.GetAllAsync();
+            _logger.LogDebug("Получение списка портфелей. Страница: {Page}, Размер: {PageSize}", page, pageSize);
 
-            var portfoliosModels = portfoliosDtos.Select(p =>
-                new PortfolioShortResponse(p.Id, p.UserId, p.Name, p.Currency));
+            try
+            {
+                // Валидация параметров
+                if (page < 1)
+                {
+                    return BadRequest("Номер страницы должен быть больше 0");
+                }
 
-            return Ok(portfoliosModels);
+                if (pageSize < 1 || pageSize > 100)
+                {
+                    return BadRequest("Размер страницы должен быть от 1 до 100");
+                }
+
+                var portfoliosDtos = await _portfolioAppService.GetAllAsync();
+
+                // Применяем пагинацию
+                var totalItems = portfoliosDtos.Count();
+                var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+
+                var pagedPortfolios = portfoliosDtos
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+
+                var portfolioResponses = pagedPortfolios.Select(p =>
+                    new PortfolioShortResponse(p.Id, p.UserId, p.Name, p.Currency));
+
+                var paginatedResponse = new PaginatedResponse<PortfolioShortResponse>(
+                    portfolioResponses,
+                    totalItems,
+                    page,
+                    pageSize,
+                    totalPages);
+
+                _logger.LogDebug("Получено {Count} портфелей из {Total} на странице {Page}",
+                                pagedPortfolios.Count, totalItems, page);
+
+                return Ok(paginatedResponse);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка при получении списка портфелей");
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                                 new { error = "InternalError", message = "Внутренняя ошибка сервера" });
+            }
         }
 
         /// <summary>
@@ -41,15 +89,49 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(PortfolioShortResponse))]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
-        public async Task<ActionResult<PortfolioShortResponse>> CreatePortfolioAsync(CreatePortfolioRequest request)
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<PortfolioShortResponse>> CreatePortfolio(CreatePortfolioRequest request)
         {
-            CreatingPortfolioDto creatingPortfolioDto = new(request.UserId, request.Name, request.Currency);
-            var createdPortfolioId = await _service.CreateAsync(creatingPortfolioDto);
-            if (createdPortfolioId == Guid.Empty)
-                return BadRequest("Произошла ошибка при создании портфеля");
+            try
+            {
+                // Проверяем валидность модели
+                if (!ModelState.IsValid)
+                {
+                    _logger.LogWarning("Некорректные данные при создании портфеля для пользователя {UserId}", request.UserId);
+                    return BadRequest(ModelState);
+                }
 
-            var createdPortfolioShortResponse = new PortfolioShortResponse(createdPortfolioId, creatingPortfolioDto.UserId, creatingPortfolioDto.Name, creatingPortfolioDto.Currency);
-            return Created(string.Empty, createdPortfolioShortResponse);
+                CreatingPortfolioDto createDto = new(request.UserId, request.Name, request.Currency);
+                var createdPortfolioId = await _portfolioAppService.CreateAsync(createDto);
+
+                if (createdPortfolioId == Guid.Empty)
+                {
+                    _logger.LogWarning("Портфель для пользователя {UserId} с именем {PortfolioName} не был создан",
+                                     request.UserId, request.Name);
+                    return BadRequest("Произошла ошибка при создании портфеля");
+                }
+
+                var response = new PortfolioShortResponse(
+                    createdPortfolioId,
+                    createDto.UserId,
+                    createDto.Name,
+                    createDto.Currency);
+
+                _logger.LogInformation("Портфель {PortfolioId} успешно создан для пользователя {UserId}",
+                                     createdPortfolioId, request.UserId);
+
+                return CreatedAtAction(
+                    nameof(GetPortfolioById),  // Имя метода для получения созданного ресурса
+                    new { id = createdPortfolioId },  // Параметры для метода
+                    response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Критическая ошибка при создании портфеля для пользователя {UserId} с именем {PortfolioName}",
+                                request.UserId, request.Name);
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                                 new { error = "InternalError", message = "Внутренняя ошибка сервера" });
+            }
         }
 
         /// <summary>
@@ -60,21 +142,40 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
         [HttpGet("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(PortfolioResponse))]
         [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(string))]
-        public async Task<ActionResult<PortfolioResponse>> GetPortfolioAsync(Guid id)
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<PortfolioResponse>> GetPortfolioById(Guid id)
         {
-            PortfolioDto? portfolioDto = await _service.GetByIdAsync(id);
-            if (portfolioDto is null)
-                return NotFound($"Портфель с id {id} не найден");
-
-            var portfolioModel = new PortfolioResponse()
+            try
             {
-                Id = portfolioDto.Id,
-                UserId = portfolioDto.UserId,
-                Name = portfolioDto.Name,
-                Currency = portfolioDto.Currency,
-                Assets = portfolioDto.Assets.Select(sa => new PortfolioAssetShortResponse(sa.Id, sa.Ticker, sa.Quantity, sa.AveragePurchasePrice))
-            };
-            return Ok(portfolioModel);
+                var portfolioDto = await _portfolioAppService.GetByIdAsync(id);
+                if (portfolioDto is null)
+                {
+                    _logger.LogWarning("Портфель с ID {PortfolioId} не найден", id);
+                    return NotFound();
+                }
+
+                var portfolioModel = new PortfolioResponse
+                {
+                    Id = portfolioDto.Id,
+                    UserId = portfolioDto.UserId,
+                    Name = portfolioDto.Name,
+                    Currency = portfolioDto.Currency,
+                    Assets = [.. portfolioDto.Assets.Select(a => new PortfolioAssetShortResponse(
+                a.Id,
+                a.PortfolioId,
+                a.Ticker,
+                a.TotalQuantity,
+                a.AveragePurchasePrice))]
+                };
+
+                return Ok(portfolioModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Критическая ошибка при получении портфеля с ID {PortfolioId}", id);
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                                 new { error = "InternalError", message = "Внутренняя ошибка сервера" });
+            }
         }
 
         /// <summary>
@@ -86,17 +187,38 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
         [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(string))]
-        public async Task<IActionResult> UpdatePortfolioAsync(Guid id, [FromBody] UpdatePortfolioRequest request)
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> UpdatePortfolio(Guid id, [FromBody] UpdatePortfolioRequest request)
         {
-            if (request is null)
-                return BadRequest("Некорректные данные для обновления характеристик портфеля");
+            try
+            {
+                // Проверяем валидность модели
+                if (!ModelState.IsValid)
+                {
+                    _logger.LogWarning("Некорректные данные при обновлении портфеля {PortfolioId}", id);
+                    return BadRequest(ModelState);
+                }
 
-            if (!await _service.ExistsAsync(id))
-                return NotFound($"Портфель с id {id} не найден");
+                // Проверяем существование портфеля
+                var exists = await _portfolioAppService.ExistsAsync(id);
+                if (!exists)
+                {
+                    _logger.LogWarning("Попытка обновления несуществующего портфеля {PortfolioId}", id);
+                    return NotFound();
+                }
 
-            var updatingPortfolioDto = new UpdatingPortfolioDto(request.Name, request.Currency);
-            await _service.UpdateAsync(id, updatingPortfolioDto);
-            return NoContent();
+                var updatingPortfolioDto = new UpdatingPortfolioDto(request.Name, request.Currency);
+                await _portfolioAppService.UpdateAsync(id, updatingPortfolioDto);
+
+                _logger.LogInformation("Портфель {PortfolioId} успешно обновлен", id);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Критическая ошибка при обновлении портфеля {PortfolioId}", id);
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                                 new { error = "InternalError", message = "Внутренняя ошибка сервера" });
+            }
         }
 
         /// <summary>
@@ -107,13 +229,25 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(string))]
         [HttpDelete("{id:guid}")]
-        public async Task<IActionResult> DeletePortfolioAsync(Guid id)
+        public async Task<ActionResult> DeletePortfolio(Guid id)
         {
-            if (!await _service.ExistsAsync(id))
-                return NotFound($"Портфель с id {id} не найден");
+            try
+            {
+                var result = await _portfolioAppService.DeleteAsync(id);
 
-            await _service.DeleteAsync(id);
-            return NoContent();
+                if (!result)
+                {
+                    _logger.LogWarning("Портфель с ID {PortfolioId} не найден при попытке удаления", id);
+                    return NotFound();
+                }
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Критическая ошибка при удалении портфеля с ID {PortfolioId}", id);
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                                 new { error = "InternalError", message = "Внутренняя ошибка сервера" });
+            }
         }
     }
 }
