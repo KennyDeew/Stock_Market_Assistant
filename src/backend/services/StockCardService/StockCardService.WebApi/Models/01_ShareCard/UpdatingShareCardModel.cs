@@ -13,17 +13,17 @@
         /// <summary>
         /// Тикер акции
         /// </summary>
-        public string Ticker { get; set; }
+        public required string Ticker { get; set; }
 
         /// <summary>
         /// Наименование акции
         /// </summary>
-        public string Name { get; set; }
+        public required string Name { get; set; }
 
         /// <summary>
         /// Описание акции
         /// </summary>
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         /// <summary>
         /// Текущая цена

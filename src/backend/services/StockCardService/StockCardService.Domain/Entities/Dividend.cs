@@ -25,12 +25,12 @@ namespace StockMarketAssistant.StockCardService.Domain.Entities
         /// <summary>
         /// период выплаты
         /// </summary>
-        public string Period { get; set; }
+        public required string Period { get; set; }
 
         /// <summary>
         /// Валюта
         /// </summary>
-        public string Currency { get; set; }
+        public required string Currency { get; set; }
 
         /// <summary>
         /// Размер дивидендов
@@ -40,7 +40,7 @@ namespace StockMarketAssistant.StockCardService.Domain.Entities
         /// <summary>
         /// Акция
         /// </summary>
-        public ShareCard ShareCard { get; set; }
+        public ShareCard? ShareCard { get; set; }
     }
 }
 

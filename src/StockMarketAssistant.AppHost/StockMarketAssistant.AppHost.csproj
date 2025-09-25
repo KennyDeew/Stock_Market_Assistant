@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <PackageReference Include="Aspire.Hosting.AppHost" Version="9.3.1" />
+    <PackageReference Include="Aspire.Hosting.MongoDB" Version="9.3.1" />
     <PackageReference Include="Aspire.Hosting.PostgreSQL" Version="9.3.1" />
     <PackageReference Include="Aspire.Hosting.Redis" Version="9.3.1" />
   </ItemGroup>
@@ -20,10 +21,10 @@
   <ItemGroup>
     <ProjectReference Include="..\backend\gateway\Gateway.WebApi\Gateway.WebApi.csproj" />
     <ProjectReference Include="..\backend\services\AnalyticsService\AnalyticsService.WebApi\AnalyticsService.WebApi.csproj" />
-    <ProjectReference Include="..\backend\services\AuthService\AuthService.WebApi\AuthService.WebApi.csproj" />
     <ProjectReference Include="..\backend\services\NotificationService\NotificationService.WebApi\NotificationService.WebApi.csproj" />
     <ProjectReference Include="..\backend\services\PortfolioService\PortfolioService.WebApi\PortfolioService.WebApi.csproj" />
     <ProjectReference Include="..\backend\services\StockCardService\StockCardService.WebApi\StockCardService.WebApi.csproj" />
+      <ProjectReference Include="..\backend\services\AuthService\src\AuthService.WebApi\AuthService.WebApi.csproj" />
   </ItemGroup>
 
 </Project>

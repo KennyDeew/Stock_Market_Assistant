@@ -18,14 +18,14 @@ namespace StockMarketAssistant.StockCardService.Domain.Entities
         /// <summary>
         /// Наименование мультипликатора
         /// </summary>
-        public string Name { get; set; }
+        public required string Name { get; set; }
 
         /// <summary>
         /// Значение мультипликатора
         /// </summary>
         public decimal Value { get; set; }
         
-        public ShareCard ShareCard { get; set; }
+        public ShareCard? ShareCard { get; set; }
     }
 }
 

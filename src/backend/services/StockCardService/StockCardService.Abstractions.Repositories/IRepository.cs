@@ -32,7 +32,7 @@ namespace StockCardService.Abstractions.Repositories
         /// </summary>
         /// <param name="id"> Id сущности. </param>
         /// <returns> Cущность. </returns>
-        T GetById(TPrimaryKey id);
+        T? GetById(TPrimaryKey id);
 
         /// <summary>
         /// Получить сущность по Id.
@@ -40,7 +40,7 @@ namespace StockCardService.Abstractions.Repositories
         /// <param name="id"> Id сущности. </param>
         /// <param name="cancellationToken"></param>
         /// <returns> Cущность. </returns>
-        Task<T> GetByIdAsync(TPrimaryKey id, CancellationToken cancellationToken);
+        Task<T?> GetByIdAsync(TPrimaryKey id, CancellationToken cancellationToken);
 
         /// <summary>
         /// Получить сущность по Id со связанными объектами.
@@ -48,7 +48,7 @@ namespace StockCardService.Abstractions.Repositories
         /// <param name="id">Id сущности.</param>
         /// <param name="includeProperties">массив делегатов</param>
         /// <returns></returns>
-        Task<T> GetByIdWithLinkedItemsAsync(TPrimaryKey id, CancellationToken cancellationToken, params Expression<Func<T, object>>[] includeProperties);
+        Task<T?> GetByIdWithLinkedItemsAsync(TPrimaryKey id, CancellationToken cancellationToken, params Expression<Func<T, object>>[] includeProperties);
 
         /// <summary>
         /// Добавить в базу одну сущность.

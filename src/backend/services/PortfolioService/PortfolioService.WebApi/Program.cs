@@ -5,21 +5,25 @@ using StockMarketAssistant.PortfolioService.Application.Services;
 using StockMarketAssistant.PortfolioService.Infrastructure.EntityFramework;
 using StockMarketAssistant.PortfolioService.Infrastructure.EntityFramework.Context;
 using StockMarketAssistant.PortfolioService.Infrastructure.Repositories;
+using StockMarketAssistant.PortfolioService.WebApi.Infrastructure.Swagger;
 
 namespace StockMarketAssistant.PortfolioService.WebApi
 {
+#pragma warning disable CS1591
     public class Program
+#pragma warning restore CS1591
     {
         private static readonly string[] customControllersOrder = ["Portfolios", "PortfolioAssets"];
 
+#pragma warning disable CS1591
         public static void Main(string[] args)
+#pragma warning restore CS1591
         {
 
             var builder = WebApplication.CreateBuilder(args);
 
             // Добавляем сервисы Aspire
             builder.AddServiceDefaults();
-
             // Add services to the container.
 
             //if (builder.Environment.IsDevelopment())
@@ -48,12 +52,14 @@ namespace StockMarketAssistant.PortfolioService.WebApi
 
             builder.Services.AddControllers();
 
-            builder.Services.AddOpenApiDocument(options =>
+            builder.Services.AddOpenApiDocument(config =>
             {
-                options.Title = "Portfolio Service API Doc";
-                options.Version = "1.0";
-                options.PostProcess = (document) =>
+                config.SchemaSettings.SchemaProcessors.Add(new EnumDescriptionSchemaProcessor());
+                config.SchemaSettings.SchemaProcessors.Add(new DefaultValueSchemaProcessor());
+                config.PostProcess = (document) =>
                 {
+                    document.Info.Title = "Portfolio Service API";
+                    document.Info.Version = "v1";
                     document.Tags = document.Tags?
                         .OrderBy(t =>
                         {

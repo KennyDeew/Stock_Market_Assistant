@@ -17,22 +17,22 @@ namespace StockMarketAssistant.StockCardService.Application.DTOs._01_ShareCard
         /// <summary>
         /// Тикер акции
         /// </summary>
-        public string Ticker { get; set; }
+        public required string Ticker { get; set; }
 
         /// <summary>
         /// Наименование акции
         /// </summary>
-        public string Name { get; set; }
+        public required string Name { get; set; }
 
         /// <summary>
         /// Описание акции
         /// </summary>
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         /// <summary>
         /// Валюта
         /// </summary>
-        public string Currency { get; set; }
+        public required string Currency { get; set; }
 
         /// <summary>
         /// Текущая цена
@@ -42,16 +42,16 @@ namespace StockMarketAssistant.StockCardService.Application.DTOs._01_ShareCard
         /// <summary>
         /// Финансовые отчеты по акции
         /// </summary>
-        public List<FinancialReportDto>? FinancialReports { get; set; }
+        public List<FinancialReportDto> FinancialReports { get; set; } = new List<FinancialReportDto>();
 
         /// <summary>
         /// Мультипликаторы акции
         /// </summary>
-        public List<MultiplierDto>? Multipliers { get; set; }
+        public List<MultiplierDto> Multipliers { get; set; } = new List<MultiplierDto>();
 
         /// <summary>
         /// Дивиденды акции
         /// </summary>
-        public List<DividendDto>? Dividends { get; set; }
+        public List<DividendDto> Dividends { get; set; } = new List<DividendDto>();
     }
 }

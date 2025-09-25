@@ -11,7 +11,6 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
             : base(options) { }
 
         public DbSet<ShareCard> ShareCards { get; set; }
-        public DbSet<FinancialReport> FinancialReports { get; set; }
         public DbSet<Multiplier> Multipliers { get; set; }
         public DbSet<Dividend> Dividends { get; set; }
         public DbSet<BondCard> BondCards { get; set; }
@@ -39,7 +38,6 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
 
             // Установка первичных ключей
             modelBuilder.Entity<ShareCard>().HasKey(s => s.Id);
-            modelBuilder.Entity<FinancialReport>().HasKey(f => f.Id);
             modelBuilder.Entity<Multiplier>().HasKey(m => m.Id);
             modelBuilder.Entity<Dividend>().HasKey(d => d.Id);
             modelBuilder.Entity<BondCard>().HasKey(b => b.Id);
@@ -61,11 +59,6 @@ namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
                 .Property(c => c.Ticker)
                 .IsRequired()
                 .HasMaxLength(20);
-
-            modelBuilder.Entity<FinancialReport>()
-                .Property(f => f.Period)
-                .IsRequired()
-                .HasMaxLength(50);
 
             modelBuilder.Entity<Dividend>()
                 .Property(d => d.Period)

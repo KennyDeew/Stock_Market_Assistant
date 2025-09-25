@@ -21,7 +21,7 @@
         public required string Name { get; init; }
 
         /// <summary>
-        /// Валюта портфеля (USD, RUB и т.д.)
+        /// Валюта портфеля (RUB, USD и т.д.)
         /// </summary>
         public required string Currency { get; init; }
 

@@ -8,23 +8,46 @@ using StockMarketAssistant.StockCardService.Application.Interfaces;
 using StockMarketAssistant.StockCardService.Application.Services;
 using StockMarketAssistant.StockCardService.Domain.Entities;
 using StockMarketAssistant.StockCardService.Infrastructure.EntityFramework;
+using StockMarketAssistant.StockCardService.Infrastructure.EntityFramework.Settings;
+using StockMarketAssistant.StockCardService.Infrastructure.Repositories;
 using StockMarketAssistant.StockCardService.WebApi.Helper;
 
 namespace StockMarketAssistant.StockCardService.WebApi
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public class Program
     {
+        /// <summary>
+        /// Точка входа в приложение. Настройка сервисов, middleware. Запуск веб-приложения.
+        /// </summary>
+        /// <param name="args"></param>
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
             builder.AddServiceDefaults();
 
-            //EntityFramework
+            //EntityFramework. Настройки подключения пробрасываем из Aspire. Aspire пробрасывает connection string (по имени базы).
             builder.Services.AddDbContext<StockCardDbContext>(options =>
             {
-                options.UseNpgsql(builder.Configuration.GetConnectionString("pg-stock-card-db"),
+                options.UseNpgsql(builder.Configuration.GetConnectionString("stock-card-db"),
                     optionsBuilder => optionsBuilder.MigrationsAssembly("StockCardService.Infrastructure.EntityFramework"));
                 options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+            });
+
+            //MongoDb. Настройки подключения пробрасываем из Aspire. Aspire пробрасывает connection string (по имени базы).
+            builder.Services.Configure<MongoSettings>(options =>
+            {
+                var connStr = builder.Configuration.GetConnectionString("finantial-report-db");
+
+                if (string.IsNullOrEmpty(connStr))
+                {
+                    throw new InvalidOperationException("Mongo connection string not provided by Aspire");
+                }
+
+                options.ConnectionString = connStr;
+                options.DatabaseName = "finantial-report-db";
             });
 
             //IOC
@@ -34,11 +57,14 @@ namespace StockMarketAssistant.StockCardService.WebApi
             builder.Services.AddScoped(typeof(IRepository<CryptoCard, Guid>), typeof(CryptoCardRepository));
             builder.Services.AddScoped(typeof(ISubRepository<Dividend, Guid>), typeof(DividendRepository));
             builder.Services.AddScoped(typeof(ISubRepository<Coupon, Guid>), typeof(CouponRepository));
+            builder.Services.AddScoped(typeof(IMongoRepository<FinancialReport, Guid>), typeof(FinancialReportRepository));
+            builder.Services.AddSingleton<IMongoDBContext, MongoDBContext>();
             builder.Services.AddScoped<IShareCardService, ShareCardService>();
             builder.Services.AddScoped<IBondCardService, BondCardservice>();
             builder.Services.AddScoped<ICryptoCardService, CryptoCardService>();
             builder.Services.AddScoped<IDividendService, DividendService>();
             builder.Services.AddScoped<ICouponService, CouponService>();
+            builder.Services.AddScoped<IFinancialReportService, FinancialReportService>();
 
             builder.Services.AddEndpointsApiExplorer(); // Для генерации OpenAPI spec
             // Добавляет Swagger-сервисы. Настраиваем xml разметку

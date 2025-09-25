@@ -8,17 +8,17 @@
         /// <summary>
         /// Тикер облигации
         /// </summary>
-        public string Ticker { get; set; }
+        public required string Ticker { get; set; }
 
         /// <summary>
         /// Наименование облигации
         /// </summary>
-        public string Name { get; set; }
+        public required string Name { get; set; }
 
         /// <summary>
         /// Описание облигации
         /// </summary>
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         /// <summary>
         /// дата погашения облигации
@@ -28,12 +28,12 @@
         /// <summary>
         /// Валюта
         /// </summary>
-        public string Currency { get; set; }
+        public required string Currency { get; set; }
 
         /// <summary>
         /// Рейтинг
         /// </summary>
-        public string Rating { get; set; }
+        public required string Rating { get; set; }
 
         /// <summary>
         /// Номинальная стоимость

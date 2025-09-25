@@ -4,14 +4,17 @@ using StockMarketAssistant.StockCardService.WebApi.Models._02sub_Coupon;
 namespace StockMarketAssistant.StockCardService.WebApi.Mappers
 {
     /// <summary>
-    /// маппер для купонов облигаций Dto/Model
+    /// Маппер для купонов облигаций model/dto.
     /// </summary>
     public class CouponMapper
     {
+        /// <summary>
+        /// Конвертирует модель купона облигации в DTO.
+        /// </summary>
+        /// <param name="model">Исходная модель купона облигации.</param>
+        /// <returns>DTO купона облигации.</returns>
         public static CouponDto ToDto(CouponModel model)
         {
-            if (model == null) return null;
-
             return new CouponDto
             {
                 Id = model.Id,
@@ -22,10 +25,13 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
             };
         }
 
+        /// <summary>
+        /// Конвертирует модель создаваемого купона облигации в DTO.
+        /// </summary>
+        /// <param name="model">Исходная модель создаваемого купона облигации.</param>
+        /// <returns>DTO создаваемого купона облигации.</returns>
         public static CreatingCouponDto ToDto(CreatingCouponModel model)
         {
-            if (model == null) return null;
-
             return new CreatingCouponDto
             {
                 BondId = model.BondId,
@@ -35,20 +41,27 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
             };
         }
 
+        /// <summary>
+        /// Конвертирует модель изменяемого купона облигации в DTO.
+        /// </summary>
+        /// <param name="model">Исходная модель изменяемого купона облигации.</param>
+        /// <returns>DTO изменяемого купона облигации.</returns>
         public static UpdatingCouponDto ToDto(UpdatingCouponModel model)
         {
-            if (model == null) return null;
-
             return new UpdatingCouponDto
             {
                 CutOffDate = DateTime.SpecifyKind(model.CutOffDate, DateTimeKind.Utc),
                 Value = model.Value
             };
         }
+
+        /// <summary>
+        /// Конвертирует DTO купона облигации в модель.
+        /// </summary>
+        /// <param name="dto">Исходный DTO купона облигации.</param>
+        /// <returns>Модель купона облигации.</returns>
         public static CouponModel ToModel(CouponDto dto)
         {
-            if (dto == null) return null;
-
             return new CouponModel
             {
                 Id = dto.Id,
@@ -59,10 +72,13 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
             };
         }
 
+        /// <summary>
+        /// Конвертирует DTO создаваемого купона облигации в модель.
+        /// </summary>
+        /// <param name="dto">Исходный DTO создаваемого купона облигации.</param>
+        /// <returns>Модель создаваемого купона облигации.</returns>
         public static CreatingCouponModel ToDto(CreatingCouponDto dto)
         {
-            if (dto == null) return null;
-
             return new CreatingCouponModel
             {
                 BondId = dto.BondId,
@@ -72,10 +88,13 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
             };
         }
 
+        /// <summary>
+        /// Конвертирует DTO изменяемого купона облигации в модель.
+        /// </summary>
+        /// <param name="dto">Исходный DTO изменяемого купона облигации.</param>
+        /// <returns>Модель изменяемого купона облигации.</returns>
         public static UpdatingCouponModel ToDto(UpdatingCouponDto dto)
         {
-            if (dto == null) return null;
-
             return new UpdatingCouponModel
             {
                 CutOffDate = dto.CutOffDate,

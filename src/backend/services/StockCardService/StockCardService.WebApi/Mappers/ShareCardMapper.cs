@@ -1,16 +1,20 @@
-﻿using StockCardService.WebApi.Models._01sub_Dividend;
-using StockCardService.WebApi.Models.ShareCard;
+﻿using StockCardService.WebApi.Models.ShareCard;
 using StockMarketAssistant.StockCardService.Application.DTOs._01_ShareCard;
-using StockMarketAssistant.StockCardService.Application.DTOs._01sub_Dividend;
 
 namespace StockMarketAssistant.StockCardService.WebApi.Mappers
 {
+    /// <summary>
+    /// Маппер для карточки акции model/dto.
+    /// </summary>
     public static class ShareCardMapper
     {
+        /// <summary>
+        /// Конвертирует модель карточки акции в DTO.
+        /// </summary>
+        /// <param name="model">Исходная модель карточки акции.</param>
+        /// <returns>DTO карточки акции.</returns>
         public static ShareCardDto ToDto(ShareCardModel model)
         {
-            if (model == null) return null;
-
             return new ShareCardDto
             {
                 Id = model.Id,
@@ -19,16 +23,19 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
                 Description = model.Description,
                 Currency = model.Currency,
                 CurrentPrice = model.CurrentPrice,
-                Dividends = model.Dividends?.Select(DividendMapper.ToDto).ToList() ?? new List<DividendDto>(),
-                Multipliers = model.Multipliers?.Select(MultiplierMapper.ToDto).ToList(),
-                FinancialReports = model.FinancialReports?.Select(FinancialReportMapper.ToDto).ToList()
+                Dividends = model.Dividends.Select(DividendMapper.ToDto).ToList(),
+                Multipliers = model.Multipliers.Select(MultiplierMapper.ToDto).ToList(),
+                FinancialReports = model.FinancialReports.Select(FinancialReportMapper.ToDto).ToList()
             };
         }
 
+        /// <summary>
+        /// Конвертирует модель создаваемой карточки акции в DTO.
+        /// </summary>
+        /// <param name="model">Исходная модель создаваемой карточки акции.</param>
+        /// <returns>DTO создаваемой карточки акции.</returns>
         public static CreatingShareCardDto ToDto(CreatingShareCardModel model)
         {
-            if (model == null) return null;
-
             return new CreatingShareCardDto
             {
                 Name = model.Name,
@@ -38,10 +45,13 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
             };
         }
 
+        /// <summary>
+        /// Конвертирует модель изменяемой карточки акции в DTO.
+        /// </summary>
+        /// <param name="model">Исходная модель изменяемой карточки акции.</param>
+        /// <returns>DTO изменяемой карточки акции.</returns>
         public static UpdatingShareCardDto ToDto(UpdatingShareCardModel model)
         {
-            if (model == null) return null;
-
             return new UpdatingShareCardDto
             {
                 Id = model.Id,
@@ -52,10 +62,13 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
             };
         }
 
+        /// <summary>
+        /// Конвертирует модель краткой карточки акции в DTO.
+        /// </summary>
+        /// <param name="model">Исходная модель краткой карточки акции.</param>
+        /// <returns>DTO краткой карточки акции.</returns>
         public static ShareCardShortDto ToDto(ShareCardShortModel model)
         {
-            if (model == null) return null;
-
             return new ShareCardShortDto
             {
                 Id = model.Id,
@@ -67,10 +80,13 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
             };
         }
 
+        /// <summary>
+        /// Конвертирует DTO карточки акции в модель.
+        /// </summary>
+        /// <param name="dto">Исходный DTO карточки акции.</param>
+        /// <returns>Модель карточки акции.</returns>
         public static ShareCardModel ToModel(ShareCardDto dto)
         {
-            if (dto == null) return null;
-
             return new ShareCardModel
             {
                 Id = dto.Id,
@@ -79,16 +95,19 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
                 Description = dto.Description,
                 Currency = dto.Currency,
                 CurrentPrice = dto.CurrentPrice,
-                Dividends = dto.Dividends?.Select(DividendMapper.ToModel).ToList() ?? new List<DividendModel>(),
-                Multipliers = dto.Multipliers?.Select(MultiplierMapper.ToModel).ToList(),
-                FinancialReports = dto.FinancialReports?.Select(FinancialReportMapper.ToModel).ToList()
+                Dividends = dto.Dividends.Select(DividendMapper.ToModel).ToList(),
+                Multipliers = dto.Multipliers.Select(MultiplierMapper.ToModel).ToList(),
+                FinancialReports = dto.FinancialReports.Select(FinancialReportMapper.ToModel).ToList()
             };
         }
 
+        /// <summary>
+        /// Конвертирует DTO создаваемой карточки акции в модель.
+        /// </summary>
+        /// <param name="dto">Исходный DTO создаваемой карточки акции.</param>
+        /// <returns>Модель создаваемой карточки акции.</returns>
         public static CreatingShareCardModel ToModel(CreatingShareCardDto dto)
         {
-            if (dto == null) return null;
-
             return new CreatingShareCardModel
             {
                 Name = dto.Name,
@@ -98,10 +117,13 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
             };
         }
 
+        /// <summary>
+        /// Конвертирует DTO изменяемой карточки акции в модель.
+        /// </summary>
+        /// <param name="dto">Исходный DTO изменяемой карточки акции.</param>
+        /// <returns>Модель изменяемой карточки акции.</returns>
         public static UpdatingShareCardModel ToModel(UpdatingShareCardDto dto)
         {
-            if (dto == null) return null;
-
             return new UpdatingShareCardModel
             {
                 Id = dto.Id,
@@ -112,10 +134,13 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
             };
         }
 
+        /// <summary>
+        /// Конвертирует DTO краткой карточки акции в модель.
+        /// </summary>
+        /// <param name="dto">Исходный DTO краткой карточки акции.</param>
+        /// <returns>Модель краткой карточки акции.</returns>
         public static ShareCardShortModel ToModel(ShareCardShortDto dto)
         {
-            if (dto == null) return null;
-
             return new ShareCardShortModel
             {
                 Id = dto.Id,
