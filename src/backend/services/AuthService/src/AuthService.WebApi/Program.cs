@@ -12,39 +12,47 @@ public abstract class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        // Отключена автоматическая проверка ModelState для ручной обработки ошибок
+        // Отключаем авто-валидацию ModelState (будем формировать ошибку сами)
         builder.Services.Configure<ApiBehaviorOptions>(options =>
         {
             options.SuppressModelStateInvalidFilter = true;
         });
 
-        builder.Services.AddProgramDependencies();
-
+        // Инфраструктура БД + политика ретраев миграций (всё через Options)
         builder.Services
-            .AddPostgresInfrastructure(builder.Configuration)
+            .AddPostgresInfrastructure()
             .AddMigrationResilience();
 
-        builder.Services.AddAccountsModule(builder.Configuration);
+        // Модуль аккаунтов (Infrastructure + Presentation)
+        builder.Services.AddAccountsModule();
 
-        builder.Services.AddAuthServices(builder.Configuration);
+        // Аутентификация/авторизация (JwtBearer на Options, hot-reload)
+        builder.Services.AddAuthServices();
 
+        // Приложение (Use-cases, валидация и т.д.)
         builder.Services.AddApplication();
+
+        // Базовые веб-зависимости (Controllers, OpenAPI)
+        builder.Services.AddProgramDependencies();
 
         var app = builder.Build();
 
-        // Глобальный обработчик ошибок
+        // Глобальный обработчик исключений
         app.UseExceptionMiddleware();
 
-        // Порядок: миграции -> сиды
+        // Миграции -> сидинг
         await app.MigrateDatabaseAsync<AccountsWriteDbContext>(CancellationToken.None);
 
-        //var accountsSeeder = app.Services.GetRequiredService<AccountsSeeder>();
-        //await accountsSeeder.SeedAsync();
+        var accountsSeeder = app.Services.GetRequiredService<AccountsSeeder>();
+        await accountsSeeder.SeedAsync();
 
         if (app.Environment.IsDevelopment())
         {
             app.MapOpenApi();
-            app.UseSwaggerUI(options => options.SwaggerEndpoint("/openapi/v1.json", "AuthService API"));
+            app.UseSwaggerUI(options =>
+            {
+                options.SwaggerEndpoint("/openapi/v1.json", "AuthService API");
+            });
         }
 
         app.UseAuthentication();

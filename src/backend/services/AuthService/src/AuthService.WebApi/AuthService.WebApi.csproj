@@ -33,14 +33,4 @@
       <ProjectReference Include="..\SharedKernel\SharedKernel.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Auth\" />
-    </ItemGroup>
-
-  <ItemGroup>
-    <Content Update="etc\accounts.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-
 </Project>

@@ -1,9 +1,0 @@
-{
-  "Permissions": {
-    "Service": [ "auth.service"  ]
-  },
-  "Roles": {
-    "ADMIN": [ "auth.service"  ],
-    "USER":  [ "auth.service" ]
-  }
-}
