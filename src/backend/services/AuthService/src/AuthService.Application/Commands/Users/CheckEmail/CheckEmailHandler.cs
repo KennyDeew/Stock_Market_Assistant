@@ -17,7 +17,7 @@ public sealed class CheckEmailHandler : ICommandHandler<CheckEmailResponse, Chec
 
     public async Task<Result<CheckEmailResponse, ErrorList>> Handle(
         CheckEmailCommand command,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(command.Email))
         {

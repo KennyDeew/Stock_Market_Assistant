@@ -29,7 +29,6 @@ public class LoginHandler : ICommandHandler<LoginResponse, LoginCommand>
     {
         Error invalid = Errors.User.InvalidCredentials();
 
-        // ищем пользователя
         var user = await _userManager.FindByEmailAsync(command.Email);
         if (user is null)
         {
@@ -37,7 +36,6 @@ public class LoginHandler : ICommandHandler<LoginResponse, LoginCommand>
             return Result.Failure<LoginResponse, ErrorList>(invalid.ToErrorList());
         }
 
-        // проверяем пароль
         var passwordOk = await _userManager.CheckPasswordAsync(user, command.Password);
         if (!passwordOk)
         {
@@ -45,7 +43,6 @@ public class LoginHandler : ICommandHandler<LoginResponse, LoginCommand>
             return Result.Failure<LoginResponse, ErrorList>(invalid.ToErrorList());
         }
 
-        // генерим пару токенов
         var accessToken = await _tokenProvider.GenerateAccessToken(user, cancellationToken);
         var refreshToken = await _tokenProvider.GenerateRefreshToken(user, accessToken.Jti, cancellationToken);
 

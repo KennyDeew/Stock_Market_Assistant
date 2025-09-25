@@ -26,7 +26,7 @@ public class RegisterHandler : ICommandHandler<RegisterResponse, RegisterCommand
 
     public async Task<Result<RegisterResponse, ErrorList>> Handle(
         RegisterCommand command,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(command.Email))
             return Result.Failure<RegisterResponse, ErrorList>(Errors.General.ValueIsRequired("Email").ToErrorList());
@@ -40,7 +40,7 @@ public class RegisterHandler : ICommandHandler<RegisterResponse, RegisterCommand
             return Result.Failure<RegisterResponse, ErrorList>(Errors.General.AlreadyExist("Пользователь").ToErrorList());
 
         // ✅ создаём через фабрику
-        var user = User.Create(command.Email, command.Email);
+        var user = User.CreateUser(command.FullName, command.Email);
 
         var create = await _userManager.CreateAsync(user, command.Password);
         if (!create.Succeeded)

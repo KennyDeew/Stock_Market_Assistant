@@ -7,6 +7,4 @@ public interface IPermissionReader
     Task<Permission?> FindByCode(string code, CancellationToken cancellationToken);
 
     Task<HashSet<string>> GetUserPermissionCodes(Guid userId, CancellationToken cancellationToken);
-
-    //Task AddRangeIfNotExists(IEnumerable<string> permissionCodes, CancellationToken cancellationToken);
 }

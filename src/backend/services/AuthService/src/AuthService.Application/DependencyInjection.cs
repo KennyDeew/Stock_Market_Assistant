@@ -1,4 +1,5 @@
 ﻿using AuthService.Application.Commands.Users.CheckEmail;
+using AuthService.Application.Commands.Users.DeleteAccount;
 using AuthService.Application.Commands.Users.Login;
 using AuthService.Application.Commands.Users.Logout;
 using AuthService.Application.Commands.Users.RefreshTokens;
@@ -13,10 +14,11 @@ public static class DependencyInjection
     {
         // Командные хэндлеры
         services.AddScoped<LoginHandler>();
-        services.AddScoped<RefreshTokensHandler>();
         services.AddScoped<LogoutHandler>();
+        services.AddScoped<RefreshTokensHandler>();
         services.AddScoped<RegisterHandler>();
         services.AddScoped<CheckEmailHandler>();
+        services.AddScoped<DeleteAccountHandler>();
         return services;
     }
 }
