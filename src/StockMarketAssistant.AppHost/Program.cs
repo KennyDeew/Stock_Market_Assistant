@@ -27,6 +27,11 @@ internal class Program
             .WithImage("postgres:17.5")
             .WithHostPort(14051)
             .AddDatabase("stock-card-db");
+        var pgAuthDb = builder.AddPostgres("pg-auth-db")
+            .WithImage("postgres:17.5")
+            .WithDataVolume("auth-pg-data")
+            .WithHostPort(14052)
+            .AddDatabase("Database");
         var mongo = builder.AddMongoDB("mongo")
             .WithImage("mongo:7.0")
             .WithDataVolume("stock-mongo-data").WithEndpoint("mongodb", endpoint =>
@@ -57,6 +62,8 @@ internal class Program
                            .WithReference(pgStockCardDb)
                            .WithReference(mongoStockCardDb)
                            .WaitFor(pgStockCardDb);
+        apiAuthService.WithReference(pgAuthDb)
+                      .WaitFor(pgAuthDb);
 
         apiNotificationService
             .WithReference(notificationPostgres)
