@@ -2,13 +2,15 @@
 
 namespace AuthService.Presentation;
 
-public class PermissionAttribute : AuthorizeAttribute, IAuthorizationRequirement
+public sealed class PermissionAttribute : AuthorizeAttribute
 {
+    public const string PREFIX = "permission:";
+
     public string Code { get; }
 
     public PermissionAttribute(string code)
-        : base(policy: PermissionPolicyProvider.PolicyPrefix + code)
     {
         Code = code;
+        Policy = PREFIX + code;
     }
 }

@@ -1,25 +1,22 @@
-﻿using System.Security.Claims;
-using AuthService.Contracts.Models;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 
-namespace AuthService.Presentation;
-
-public sealed class PermissionRequirementHandler : AuthorizationHandler<PermissionAttribute>
+namespace AuthService.Presentation
 {
-    protected override Task HandleRequirementAsync(
-        AuthorizationHandlerContext context,
-        PermissionAttribute requirement)
+    public sealed class PermissionRequirementHandler
+        : AuthorizationHandler<PermissionRequirement>
     {
-        var hasPermission = context.User.Claims
-            .Where(c => c.Type == CustomClaims.Permission)
-            .Select(c => c.Value)
-            .Any(code => string.Equals(code, requirement.Code, StringComparison.Ordinal));
-
-        if (hasPermission)
+        protected override Task HandleRequirementAsync(
+            AuthorizationHandlerContext context,
+            PermissionRequirement requirement)
         {
-            context.Succeed(requirement);
-        }
+            var has = context.User
+                .FindAll("Permission")
+                .Any(c => string.Equals(c.Value, requirement.Code, StringComparison.OrdinalIgnoreCase));
 
-        return Task.CompletedTask;
+            if (has)
+                context.Succeed(requirement);
+
+            return Task.CompletedTask;
+        }
     }
 }

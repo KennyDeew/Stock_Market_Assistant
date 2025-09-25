@@ -12,8 +12,8 @@ public class AccountsContract : IAccountsContract
         _permissionManager = permissionManager;
     }
 
-    public async Task<HashSet<string>> GetUserPermissionCodes(Guid userId)
+    public async Task<HashSet<string>> GetUserPermissionCodes(Guid userId, CancellationToken ct)
     {
-        return await _permissionManager.GetUserPermissionCodes(userId, default);
+        return await _permissionManager.GetUserPermissionCodes(userId, ct);
     }
 }
