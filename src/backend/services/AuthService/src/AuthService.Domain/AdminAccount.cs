@@ -6,7 +6,6 @@ public class AdminAccount
 {
     public const string ADMIN = nameof(ADMIN);
 
-    //ef core
     private AdminAccount()
     {
     }

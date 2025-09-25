@@ -12,22 +12,23 @@ public class User : IdentityUser<Guid>
 
     public IReadOnlyList<Role> Roles => _roles;
 
-    public static User CreateAdmin(string userName, string email, Role role)
+    public static User CreateAdmin(string userName, string email)
     {
         return new User
         {
             UserName = userName,
             Email = email,
-            _roles = [role],
+            EmailConfirmed = true,
         };
     }
 
-    public static User Create(string userName, string email)
+    public static User CreateUser(string userName, string email)
     {
         return new User
         {
             UserName = userName,
             Email = email,
+            EmailConfirmed = false,
         };
     }
 }
