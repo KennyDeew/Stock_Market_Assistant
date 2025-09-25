@@ -22,17 +22,9 @@ public sealed class AccountsWriteDbContext : IdentityDbContext<User, Role, Guid>
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // 1) схема по умолчанию
         modelBuilder.HasDefaultSchema("accounts");
-
-        // 2) базовая конфигурация Identity
         base.OnModelCreating(modelBuilder);
-
-        // 3) расширение PostgreSQL
         modelBuilder.HasPostgresExtension("citext");
-
-        // 4) применяем все IEntityTypeConfiguration<> из этой сборки
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AccountsWriteDbContext).Assembly);
     }
 }
-

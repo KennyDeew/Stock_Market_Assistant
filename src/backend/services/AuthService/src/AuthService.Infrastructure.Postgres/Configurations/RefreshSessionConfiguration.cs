@@ -28,7 +28,6 @@ public sealed class RefreshSessionConfiguration : IEntityTypeConfiguration<Refre
             "ck_refresh_sessions_expires_after_created",
             "\"expires_in\" > \"created_at\""));
 
-        // ✅ простой композитный индекс (без фильтра с now())
         b.HasIndex(x => new { x.UserId, x.ExpiresIn })
             .HasDatabaseName("ix_refresh_sessions_active");
     }

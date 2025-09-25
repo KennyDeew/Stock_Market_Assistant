@@ -11,10 +11,8 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
     {
         b.ToTable("users");
 
-        // Email как citext для case-insensitive поиска
         b.Property(u => u.Email).HasColumnType("citext");
 
-        // Навигация на приватный бэкинг-филд _roles
         b.Metadata.FindNavigation(nameof(User.Roles))!
             .SetPropertyAccessMode(PropertyAccessMode.Field);
 

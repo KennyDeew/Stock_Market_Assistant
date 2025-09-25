@@ -2,7 +2,9 @@
 
 public sealed class RolePermissionOptions
 {
-    public Dictionary<string, string[]> Permissions { get; set; } = new Dictionary<string, string[]>();
+    public const string SECTION_NAME = "RolePermission";
 
-    public Dictionary<string, string[]> Roles { get; set; } = new Dictionary<string, string[]>();
+    public Dictionary<string, string[]?>? Permissions { get; init; }
+
+    public Dictionary<string, string[]?>? Roles { get; init; }
 }

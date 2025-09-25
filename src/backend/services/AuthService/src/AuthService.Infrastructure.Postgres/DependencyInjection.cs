@@ -1,4 +1,5 @@
-﻿using AuthService.Application.Abstractions;
+﻿using System.Data.Common;
+using AuthService.Application.Abstractions;
 using AuthService.Application.Database;
 using AuthService.Application.JWT;
 using AuthService.Domain;
@@ -6,10 +7,9 @@ using AuthService.Infrastructure.Postgres.IdentityManagers;
 using AuthService.Infrastructure.Postgres.Options;
 using AuthService.Infrastructure.Postgres.Seeding;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using System.Data.Common;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Npgsql;
 using Polly;
 using Polly.Retry;
@@ -18,12 +18,18 @@ namespace AuthService.Infrastructure.Postgres;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddAccountsInfrastructure(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddAccountsInfrastructure(this IServiceCollection services)
     {
-        services.AddTransient<ITokenProvider, JwtTokenProvider>();
+        services.AddOptions<JwtOptions>()
+                .BindConfiguration(JwtOptions.SECTION_NAME);
 
-        services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
-        services.Configure<AdminOptions>(configuration.GetSection(AdminOptions.SectionName));
+        services.AddOptions<AdminOptions>()
+                .BindConfiguration(AdminOptions.SECTION_NAME);
+
+        services.AddOptions<RolePermissionOptions>()
+                .BindConfiguration(RolePermissionOptions.SECTION_NAME);
+
+        services.AddTransient<ITokenProvider, JwtTokenProvider>();
 
         services.RegisterIdentity();
 
@@ -47,11 +53,17 @@ public static class DependencyInjection
         services.AddScoped<IRefreshSessionManager, RefreshSessionManager>();
     }
 
-    public static IServiceCollection AddPostgresInfrastructure(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddPostgresInfrastructure(this IServiceCollection services)
     {
-        services.AddDbContextPool<AccountsWriteDbContext>(opt =>
+        services.AddOptions<ConnectionStringsOptions>()
+                .BindConfiguration(ConnectionStringsOptions.SECTION_NAME);
+
+        services.AddDbContextPool<AccountsWriteDbContext>((sp, opt) =>
         {
-            opt.UseNpgsql(configuration.GetConnectionString("Database"), npg =>
+            var cs = sp.GetRequiredService<IOptionsMonitor<ConnectionStringsOptions>>()
+                       .CurrentValue.Database;
+
+            opt.UseNpgsql(cs, npg =>
             {
                 npg.EnableRetryOnFailure();
                 npg.MigrationsHistoryTable("__EFMigrationsHistory", "accounts");

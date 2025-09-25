@@ -6,48 +6,45 @@ using SharedKernel;
 
 namespace AuthService.Infrastructure.Postgres.IdentityManagers
 {
-    public class RefreshSessionManager : IRefreshSessionManager
+    public class RefreshSessionManager(AccountsWriteDbContext db) : IRefreshSessionManager
     {
-        private readonly AccountsWriteDbContext _ctx;
-
-        public RefreshSessionManager(AccountsWriteDbContext accountsWriteContext)
-        {
-            ArgumentNullException.ThrowIfNull(accountsWriteContext);
-            _ctx = accountsWriteContext;
-        }
-
         public async Task<Result<RefreshSession, Error>> GetByRefreshToken(
-            Guid refreshToken,
-            CancellationToken cancellationToken)
+            Guid refreshToken, CancellationToken ct)
         {
             if (refreshToken == Guid.Empty)
-            {
-                return Errors.General.ValueIsInvalid("RefreshToken");
-            }
+                return Errors.General.ValueIsInvalid(nameof(refreshToken));
 
-            RefreshSession? session = await _ctx.RefreshSessions
-                .AsNoTracking()
+            var session = await db.RefreshSessions
                 .Include(r => r.User)
-                .FirstOrDefaultAsync(r => r.RefreshToken == refreshToken, cancellationToken)
-                .ConfigureAwait(false);
+                .FirstOrDefaultAsync(r => r.RefreshToken == refreshToken, ct);
 
             if (session is null)
-            {
                 return Errors.General.NotFound(name: "Сессия обновления");
-            }
 
             if (session.ExpiresIn <= DateTime.UtcNow)
-            {
                 return Errors.Tokens.ExpiredToken();
-            }
 
             return session;
         }
 
-        public void Delete(RefreshSession refreshSession)
+        public async Task<Result<bool, Error>> DeleteAllByUserId(Guid userId, CancellationToken ct)
+        {
+            if (userId == Guid.Empty)
+                return Errors.General.ValueIsInvalid(nameof(userId));
+
+            var rows = await db.RefreshSessions
+                .Where(r => r.UserId == userId)
+                .ExecuteDeleteAsync(ct);
+
+            return rows > 0;
+        }
+
+        public void Delete(RefreshSession refreshSession, CancellationToken ct)
         {
             ArgumentNullException.ThrowIfNull(refreshSession);
-            _ctx.RefreshSessions.Remove(refreshSession);
+
+            // db.Attach(refreshSession);
+            db.RefreshSessions.Remove(refreshSession);
         }
     }
 }

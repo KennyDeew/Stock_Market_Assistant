@@ -5,14 +5,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Npgsql;
-using Polly;
 using Polly.Retry;
 
 namespace AuthService.Infrastructure.Postgres;
 
 public static class MigrationManager
 {
-    public static async Task MigrateDatabaseAsync<TDbContext>(this IHost host, CancellationToken ct = default)
+    public static async Task MigrateDatabaseAsync<TDbContext>(this IHost host, CancellationToken ct)
         where TDbContext : DbContext
     {
         await using var scope = host.Services.CreateAsyncScope();
@@ -50,8 +49,6 @@ public static class MigrationManager
             logger.LogInformation("✅ Миграции применены для {DbContext}.", typeof(TDbContext).Name);
         }, ct);
     }
-
-    // --------- pg_advisory_lock с авто-unlock и закрытием соединения ---------
 
     private static async Task<IAsyncDisposable> AcquireAdvisoryLockAsync(
         DbConnection connection, ILogger logger, CancellationToken ct)
@@ -109,7 +106,9 @@ public static class MigrationManager
             finally
             {
                 if (_shouldClose && _conn.State == System.Data.ConnectionState.Open)
+                {
                     await _conn.CloseAsync();
+                }
             }
         }
     }

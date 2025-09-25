@@ -1,5 +1,4 @@
-﻿using System.Text.Json;
-using AuthService.Domain;
+﻿using AuthService.Domain;
 using AuthService.Domain.ValueObjects;
 using AuthService.Infrastructure.Postgres.IdentityManagers;
 using AuthService.Infrastructure.Postgres.Options;
@@ -16,7 +15,9 @@ public sealed class AccountsSeederService
     private readonly AccountsManager _accountsManager;
     private readonly PermissionManager _permissionManager;
     private readonly RolePermissionManager _rolePermissionManager;
-    private readonly AdminOptions _adminOptions;
+    private readonly IOptionsMonitor<AdminOptions> _adminOptions;
+    private readonly IOptions<RolePermissionOptions> _seedOptions;
+    private readonly IOptions<IdentityOptions> _identityOptions;
     private readonly ILogger<AccountsSeederService> _logger;
 
     public AccountsSeederService(
@@ -25,7 +26,9 @@ public sealed class AccountsSeederService
         AccountsManager accountsManager,
         PermissionManager permissionManager,
         RolePermissionManager rolePermissionManager,
-        IOptions<AdminOptions> adminOptions,
+        IOptionsMonitor<AdminOptions> adminOptions,
+        IOptions<RolePermissionOptions> seedOptions,
+        IOptions<IdentityOptions> identityOptions,
         ILogger<AccountsSeederService> logger)
     {
         _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
@@ -33,177 +36,201 @@ public sealed class AccountsSeederService
         _accountsManager = accountsManager ?? throw new ArgumentNullException(nameof(accountsManager));
         _permissionManager = permissionManager ?? throw new ArgumentNullException(nameof(permissionManager));
         _rolePermissionManager = rolePermissionManager ?? throw new ArgumentNullException(nameof(rolePermissionManager));
-        ArgumentNullException.ThrowIfNull(adminOptions);
-        _adminOptions = adminOptions.Value ?? throw new ArgumentNullException(nameof(adminOptions.Value));
+        _adminOptions = adminOptions ?? throw new ArgumentNullException(nameof(adminOptions));
+        _seedOptions = seedOptions ?? throw new ArgumentNullException(nameof(seedOptions));
+        _identityOptions = identityOptions ?? throw new ArgumentNullException(nameof(identityOptions));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task SeedAsync(CancellationToken cancellationToken = default)
+    public async Task SeedAsync(CancellationToken ct = default)
     {
         _logger.LogInformation("Инициализация учётных записей...");
 
-        // Используем etc/accounts.json
-        RolePermissionOptions seedData = await LoadSeedDataAsync("etc/accounts.json", cancellationToken);
+        var addedPerms = await SeedPermissions(_seedOptions.Value, ct);
+        var (createdRoles, totalRoles) = await SeedRoles(_seedOptions.Value, ct);
+        var addedLinks = await SeedRolePermissions(_seedOptions.Value, ct);
+        await EnsureAdminAsync(ct);
 
-        await SeedPermissions(seedData, cancellationToken);
-        await SeedRoles(seedData, cancellationToken);
-        await SeedRolePermissions(seedData, cancellationToken);
-        await EnsureAdminAsync(cancellationToken);
-
-        _logger.LogInformation("Инициализация учётных записей завершена.");
+        _logger.LogInformation(
+            "Инициализация завершена: +{Perms} прав, ролей {Created}/{Total}, связок роль-право +{Links}.",
+            addedPerms, createdRoles, totalRoles, addedLinks);
     }
 
-    private static readonly JsonSerializerOptions s_jsonOptions = new()
+    private async Task<int> SeedPermissions(RolePermissionOptions cfg, CancellationToken ct)
     {
-        PropertyNameCaseInsensitive = true
-    };
-
-    private static async Task<RolePermissionOptions> LoadSeedDataAsync(string relativePath, CancellationToken ct)
-    {
-        var candidatePaths = new[]
-        {
-            Path.Combine(AppContext.BaseDirectory, relativePath.Replace('/', Path.DirectorySeparatorChar)),
-            Path.Combine(Directory.GetCurrentDirectory(), relativePath.Replace('/', Path.DirectorySeparatorChar))
-        };
-
-        var path = candidatePaths.FirstOrDefault(File.Exists);
-        if (path is null)
-            throw new ApplicationException($"Файл сидов не найден: {relativePath} (пробовали: {string.Join(" | ", candidatePaths)})");
-
-        string json = await File.ReadAllTextAsync(path, ct);
-        RolePermissionOptions? seed =
-            JsonSerializer.Deserialize<RolePermissionOptions>(json, s_jsonOptions);
-
-        if (seed is null)
-            throw new ApplicationException("Не удалось десериализовать конфигурацию ролей и прав.");
-
-        return seed;
-    }
-
-    private async Task SeedPermissions(RolePermissionOptions seedData, CancellationToken ct)
-    {
-        IEnumerable<string> permissionsToAdd = seedData.Permissions
-            .SelectMany(kv => kv.Value)
+        var permissionsToAdd = (cfg.Permissions ?? [])
+            .SelectMany(kv => kv.Value ?? Array.Empty<string>())
             .Where(p => !string.IsNullOrWhiteSpace(p))
             .Select(p => p.Trim())
-            .Distinct(StringComparer.OrdinalIgnoreCase);
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        if (permissionsToAdd.Length == 0)
+        {
+            _logger.LogInformation("В конфиге сидов нет прав для добавления.");
+            return 0;
+        }
 
         await _permissionManager.AddRangeIfNotExists(permissionsToAdd, ct);
-        _logger.LogInformation("Права добавлены в базу данных.");
+        _logger.LogInformation("Права добавлены в БД (уникальных в конфиге: {Count}).", permissionsToAdd.Length);
+        return permissionsToAdd.Length;
     }
 
-    private async Task SeedRoles(RolePermissionOptions seedData, CancellationToken ct)
+    private async Task<(int created, int total)> SeedRoles(RolePermissionOptions cfg, CancellationToken ct)
     {
-        IEnumerable<string> roleNames = seedData.Roles.Keys
+        var roleNames = (cfg.Roles ?? [])
+            .Keys
             .Where(r => !string.IsNullOrWhiteSpace(r))
             .Select(r => r.Trim())
-            .Distinct(StringComparer.OrdinalIgnoreCase);
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
 
-        foreach (string roleName in roleNames)
+        if (roleNames.Length == 0)
         {
-            Role? role = await _roleManager.FindByNameAsync(roleName);
-            if (role is null)
+            _logger.LogInformation("В конфиге сидов нет ролей для добавления.");
+            return (0, 0);
+        }
+
+        var existing = _roleManager.Roles.Select(r => r.Name!).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var missing = roleNames.Where(r => !existing.Contains(r)).ToArray();
+
+        foreach (var roleName in missing)
+        {
+            var res = await _roleManager.CreateAsync(new Role { Name = roleName });
+            if (!res.Succeeded)
             {
-                IdentityResult created = await _roleManager.CreateAsync(new Role { Name = roleName });
-                if (!created.Succeeded)
-                {
-                    string errors = string.Join("; ", created.Errors.Select(e => $"{e.Code}: {e.Description}"));
-                    throw new ApplicationException($"Не удалось создать роль '{roleName}': {errors}");
-                }
+                var errors = string.Join("; ", res.Errors.Select(e => $"{e.Code}: {e.Description}"));
+                throw new ApplicationException($"Не удалось создать роль '{roleName}': {errors}");
             }
         }
 
-        _logger.LogInformation("Роли добавлены в базу данных.");
+        _logger.LogInformation("Роли добавлены в БД: создано {Created} из {Total}.", missing.Length, roleNames.Length);
+        return (missing.Length, roleNames.Length);
     }
 
-    private async Task SeedRolePermissions(RolePermissionOptions seedData, CancellationToken ct)
+    private async Task<int> SeedRolePermissions(RolePermissionOptions cfg, CancellationToken ct)
     {
-        foreach (string roleName in seedData.Roles.Keys)
+        if (cfg.Roles is null || cfg.Roles.Count == 0)
         {
-            Role? role = await _roleManager.FindByNameAsync(roleName)
-                         ?? throw new ApplicationException($"Роль '{roleName}' не найдена при назначении прав.");
-
-            IEnumerable<string> rolePermissions = seedData.Roles[roleName]
-                .Where(p => !string.IsNullOrWhiteSpace(p))
-                .Select(p => p.Trim())
-                .Distinct(StringComparer.OrdinalIgnoreCase);
-
-            await _rolePermissionManager.AddRangeIfExist(role.Id, rolePermissions, ct);
+            _logger.LogInformation("В конфиге сидов нет связок ролей и прав.");
+            return 0;
         }
 
-        _logger.LogInformation("Права для ролей добавлены в базу данных.");
+        var count = 0;
+        foreach (var (roleName, permsRaw) in cfg.Roles)
+        {
+            var role = await _roleManager.FindByNameAsync(roleName)
+                       ?? throw new ApplicationException($"Роль '{roleName}' не найдена при назначении прав.");
+
+            var rolePermissions = (permsRaw ?? Array.Empty<string>())
+                .Where(p => !string.IsNullOrWhiteSpace(p))
+                .Select(p => p.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+
+            if (rolePermissions.Length == 0)
+                continue;
+
+            await _rolePermissionManager.AddRangeIfExist(role.Id, rolePermissions, ct);
+            count += rolePermissions.Length;
+        }
+
+        _logger.LogInformation("Права для ролей добавлены в БД (суммарно связок в конфиге: {Count}).", count);
+        return count;
     }
 
+    /// <summary>
+    /// Обеспечивает наличие администратора.
+    /// Проверяем строго по Email. Если пользователь с таким Email уже есть — пропускаем создание и просто логируем.
+    /// </summary>
     private async Task EnsureAdminAsync(CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(_adminOptions.UserName) ||
-            string.IsNullOrWhiteSpace(_adminOptions.Email) ||
-            string.IsNullOrWhiteSpace(_adminOptions.Password))
+        var cfg = _adminOptions.CurrentValue;
+        var policy = _identityOptions.Value.Password;
+
+        if (string.IsNullOrWhiteSpace(cfg.UserName) ||
+            string.IsNullOrWhiteSpace(cfg.Email) ||
+            string.IsNullOrWhiteSpace(cfg.Password))
         {
             throw new ApplicationException("Параметры администратора не настроены (UserName/Email/Password).");
         }
 
-        Role? adminRole = await _roleManager.FindByNameAsync(AdminAccount.ADMIN);
-        if (adminRole is null)
+        if (await _roleManager.FindByNameAsync(AdminAccount.ADMIN) is null)
         {
-            IdentityResult createRole = await _roleManager.CreateAsync(new Role { Name = AdminAccount.ADMIN });
+            var createRole = await _roleManager.CreateAsync(new Role { Name = AdminAccount.ADMIN });
             if (!createRole.Succeeded)
             {
-                string errors = string.Join("; ", createRole.Errors.Select(e => $"{e.Code}: {e.Description}"));
-                throw new ApplicationException($"Не удалось создать роль администратора: {errors}");
+                var roleErrors = string.Join("; ", createRole.Errors.Select(e => $"{e.Code}: {e.Description}"));
+                throw new ApplicationException($"Не удалось создать роль администратора: {roleErrors}");
             }
-            adminRole = await _roleManager.FindByNameAsync(AdminAccount.ADMIN)
-                        ?? throw new ApplicationException("Не удалось найти роль администратора после создания.");
         }
 
-        User? existingByEmail = await _userManager.FindByEmailAsync(_adminOptions.Email);
-        if (existingByEmail is not null)
+        var user = await _userManager.FindByEmailAsync(cfg.Email);
+
+        var createdNew = false;
+        var roleAdded = false;
+        var profileCreated = false;
+
+        if (user is null)
         {
-            bool inRole = await _userManager.IsInRoleAsync(existingByEmail, AdminAccount.ADMIN);
-            if (!inRole)
+            var probeUser = User.CreateAdmin(cfg.UserName, cfg.Email);
+            var errors = new List<string>();
+            foreach (var validator in _userManager.PasswordValidators)
             {
-                IdentityResult addToRoleExisting = await _userManager.AddToRoleAsync(existingByEmail, AdminAccount.ADMIN);
-                if (!addToRoleExisting.Succeeded)
-                {
-                    string errors = string.Join("; ", addToRoleExisting.Errors.Select(e => $"{e.Code}: {e.Description}"));
-                    throw new ApplicationException($"Не удалось добавить существующего администратора в роль: {errors}");
-                }
+                var result = await validator.ValidateAsync(_userManager, probeUser, cfg.Password);
+                if (!result.Succeeded)
+                    errors.AddRange(result.Errors.Select(e => $"{e.Code}: {e.Description}"));
             }
-            _logger.LogInformation("Администратор уже существует. Создание пропущено.");
-            return;
+
+            if (errors.Count > 0)
+                throw new ApplicationException("Пароль администратора из конфига не соответствует политике Identity: " + string.Join("; ", errors));
+
+            user = probeUser;
+            user.EmailConfirmed = true;
+            var create = await _userManager.CreateAsync(user, cfg.Password);
+            if (!create.Succeeded)
+            {
+                var createErrors = string.Join("; ", create.Errors.Select(e => $"{e.Code}: {e.Description}"));
+                throw new ApplicationException($"Не удалось создать пользователя-администратора: {createErrors}");
+            }
+
+            createdNew = true;
+            _logger.LogInformation("Создан пользователь-администратор: user='{UserName}', email='{Email}'.", user.UserName, user.Email);
+        }
+        else
+        {
+            _logger.LogInformation("Пользователь с email '{Email}' уже существует. Пропускаю создание.", cfg.Email);
         }
 
-        User adminUser = User.CreateAdmin(_adminOptions.UserName, _adminOptions.Email, adminRole);
-        IdentityResult createUser = await _userManager.CreateAsync(adminUser, _adminOptions.Password);
-        if (!createUser.Succeeded)
+        if (!await _userManager.IsInRoleAsync(user, AdminAccount.ADMIN))
         {
-            string errors = string.Join("; ", createUser.Errors.Select(e => $"{e.Code}: {e.Description}"));
-            throw new ApplicationException($"Не удалось создать пользователя-администратора: {errors}");
-        }
-
-        if (!await _userManager.IsInRoleAsync(adminUser, AdminAccount.ADMIN))
-        {
-            IdentityResult addRole = await _userManager.AddToRoleAsync(adminUser, AdminAccount.ADMIN);
+            var addRole = await _userManager.AddToRoleAsync(user, AdminAccount.ADMIN);
             if (!addRole.Succeeded)
             {
-                string errors = string.Join("; ", addRole.Errors.Select(e => $"{e.Code}: {e.Description}"));
-                throw new ApplicationException($"Не удалось назначить роль администратора: {errors}");
+                var roleErrors = string.Join("; ", addRole.Errors.Select(e => $"{e.Code}: {e.Description}"));
+                throw new ApplicationException($"Не удалось назначить роль администратора: {roleErrors}");
             }
+
+            roleAdded = true;
         }
 
-        var fullNameResult = FullName.Create(_adminOptions.UserName, _adminOptions.UserName);
+        var fullNameResult = FullName.Create(cfg.UserName, cfg.UserName);
         if (fullNameResult.IsFailure)
+            throw new ApplicationException($"Некорректное ФИО администратора: {fullNameResult.Error}");
+
+        var adminAccount = new AdminAccount(fullNameResult.Value, user);
+        var profileResult = await _accountsManager.CreateAdminAccount(adminAccount, ct);
+        if (profileResult.IsFailure)
         {
-            throw new ApplicationException($"Некорректное ФИО администратора: {fullNameResult.Error.Message}");
+            _logger.LogInformation("Профиль администратора уже существует или не создан: {Error}", profileResult.Error);
+        }
+        else
+        {
+            profileCreated = true;
         }
 
-        AdminAccount adminAccount = new(fullNameResult.Value, adminUser);
-        var adminAccountCreated = await _accountsManager.CreateAdminAccount(adminAccount, ct);
-        if (adminAccountCreated.IsFailure)
-        {
-            throw new ApplicationException($"Не удалось создать профиль администратора: {adminAccountCreated.Error.Message}");
-        }
-
-        _logger.LogInformation("Администратор создан и привязан к профилю AdminAccount.");
+        _logger.LogInformation(
+            "Администратор: созданНовым={CreatedNew}, рольНазначенаСейчас={RoleAdded}, профильСозданСейчас={ProfileCreated}.",
+            createdNew, roleAdded, profileCreated);
     }
 }

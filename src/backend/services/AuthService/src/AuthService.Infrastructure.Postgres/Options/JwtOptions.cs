@@ -2,7 +2,7 @@
 
 public class JwtOptions
 {
-    public const string SectionName = "Jwt";
+    public const string SECTION_NAME = "Jwt";
 
     public string Issuer { get; init; } = string.Empty;
 
@@ -10,5 +10,7 @@ public class JwtOptions
 
     public string Key { get; init; } = string.Empty;
 
-    public int ExpiredMinutes { get; init; } = 15;
+    public int AccessTokenLifetimeMinutes { get; init; } = 10;
+
+    public int RefreshTokenLifetimeDays { get; init; } = 1;
 }
