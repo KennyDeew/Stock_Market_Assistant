@@ -1,3 +1,3 @@
 ﻿namespace AuthService.Contracts.Requests;
 
-public record CheckEmailRequest(string Email);
+public sealed record CheckEmailRequest(string Email);

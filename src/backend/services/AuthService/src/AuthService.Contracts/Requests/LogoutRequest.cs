@@ -1,3 +1,3 @@
 ﻿namespace AuthService.Contracts.Requests;
 
-public record LogoutRequest(string AccessToken, Guid RefreshToken, bool AllDevices);
+public sealed record LogoutRequest(Guid RefreshToken, bool AllDevices);

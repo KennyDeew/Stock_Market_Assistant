@@ -1,3 +1,3 @@
 ﻿namespace AuthService.Contracts.Requests;
 
-public record RefreshTokensRequest(string AccessToken, Guid RefreshToken);
+public sealed record RefreshTokensRequest(Guid RefreshToken);
