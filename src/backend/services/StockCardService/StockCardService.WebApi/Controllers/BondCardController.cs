@@ -13,6 +13,10 @@ namespace StockCardService.WebApi.Controllers
     {
         private readonly IBondCardService _bondCardService;
 
+        /// <summary>
+        /// Конструктор контроллера карточки облигации
+        /// </summary>
+        /// <param name="bondCardService"></param>
         public BondCardController(IBondCardService bondCardService)
         {
             _bondCardService = bondCardService;

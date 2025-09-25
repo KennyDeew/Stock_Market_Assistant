@@ -23,14 +23,14 @@ namespace StockMarketAssistant.StockCardService.Domain.Entities
         /// <summary>
         /// Валюта
         /// </summary>
-        public string Currency { get; set; }
+        public required string Currency { get; set; }
 
         /// <summary>
         /// Размер купона
         /// </summary>
         public decimal Value { get; set; }
 
-        public BondCard Bond { get; set; }
+        public BondCard? Bond { get; set; }
     }
 }
 

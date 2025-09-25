@@ -13,22 +13,22 @@ namespace StockMarketAssistant.StockCardService.Domain.Entities
         /// <summary>
         /// Тикер акции
         /// </summary>
-        public string Ticker { get; set; }
+        public required string Ticker { get; set; }
 
         /// <summary>
         /// Наименование акции
         /// </summary>
-        public string Name { get; set; }
+        public required string Name { get; set; }
 
         /// <summary>
         /// Описание акции
         /// </summary>
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         /// <summary>
         /// Валюта акции
         /// </summary>
-        public string Currency { get; set; }
+        public required string Currency { get; set; }
 
         /// <summary>
         /// Текущая цена
@@ -38,12 +38,12 @@ namespace StockMarketAssistant.StockCardService.Domain.Entities
         /// <summary>
         /// Массив мультипликаторов
         /// </summary>
-        public ICollection<Multiplier> Multipliers { get; set; }
+        public ICollection<Multiplier> Multipliers { get; set; } = new List<Multiplier>();
 
         /// <summary>
         /// Массив дивидендов
         /// </summary>
-        public ICollection<Dividend> Dividends { get; set; }
+        public ICollection<Dividend> Dividends { get; set; } = new List<Dividend>();
     }
 }
 

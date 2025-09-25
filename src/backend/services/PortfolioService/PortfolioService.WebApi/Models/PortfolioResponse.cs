@@ -1,7 +1,7 @@
 ﻿namespace StockMarketAssistant.PortfolioService.WebApi.Models
 {
     /// <summary>
-    /// Модель контроллера для портфеля ценных бумаг
+    /// Модель контроллера для возвращаемого значения по портфелю ценных бумаг
     /// </summary>
     public record PortfolioResponse
     {
@@ -21,13 +21,13 @@
         public required string Name { get; init; }
 
         /// <summary>
-        /// Валюта портфеля (USD, RUB и т.д.)
+        /// Валюта портфеля (RUB, USD и т.д.)
         /// </summary>
         public required string Currency { get; init; }
 
         /// <summary>
         /// Перечень активов ценных бумаг в портфеле
         /// </summary>
-        public IEnumerable<PortfolioAssetShortResponse> Assets { get; init; } = [];
+        public IReadOnlyCollection<PortfolioAssetShortResponse> Assets { get; init; } = [];
     }
 }

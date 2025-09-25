@@ -18,7 +18,7 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Ticker = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
                     Name = table.Column<string>(type: "text", nullable: false),
-                    Description = table.Column<string>(type: "text", nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: true),
                     MaturityPeriod = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Currency = table.Column<string>(type: "text", nullable: false),
                     Rating = table.Column<string>(type: "text", nullable: false),
@@ -37,33 +37,12 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Ticker = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
                     Name = table.Column<string>(type: "text", nullable: false),
-                    Description = table.Column<string>(type: "text", nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: true),
                     CurrentPrice = table.Column<decimal>(type: "numeric", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_CryptoCards", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "FinancialReports",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    ParentId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Name = table.Column<string>(type: "text", nullable: false),
-                    Description = table.Column<string>(type: "text", nullable: false),
-                    Period = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    Revenue = table.Column<decimal>(type: "numeric", nullable: false),
-                    EBITDA = table.Column<decimal>(type: "numeric", nullable: false),
-                    NetProfit = table.Column<decimal>(type: "numeric", nullable: false),
-                    CAPEX = table.Column<decimal>(type: "numeric", nullable: false),
-                    FCF = table.Column<decimal>(type: "numeric", nullable: false),
-                    Debt = table.Column<decimal>(type: "numeric", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_FinancialReports", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -73,7 +52,7 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Ticker = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
                     Name = table.Column<string>(type: "text", nullable: false),
-                    Description = table.Column<string>(type: "text", nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: true),
                     Currency = table.Column<string>(type: "text", nullable: false),
                     CurrentPrice = table.Column<decimal>(type: "numeric", nullable: false)
                 },
@@ -172,9 +151,6 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
 
             migrationBuilder.DropTable(
                 name: "Dividends");
-
-            migrationBuilder.DropTable(
-                name: "FinancialReports");
 
             migrationBuilder.DropTable(
                 name: "Multipliers");

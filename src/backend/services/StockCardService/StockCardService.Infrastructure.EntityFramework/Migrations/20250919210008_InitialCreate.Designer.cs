@@ -12,7 +12,7 @@ using StockMarketAssistant.StockCardService.Infrastructure.EntityFramework;
 namespace StockCardService.Infrastructure.EntityFramework.Migrations
 {
     [DbContext(typeof(StockCardDbContext))]
-    [Migration("20250820133210_InitialCreate")]
+    [Migration("20250919210008_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -39,7 +39,6 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                         .HasColumnType("numeric");
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<decimal>("FaceValue")
@@ -102,7 +101,6 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                         .HasColumnType("numeric");
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Name")
@@ -150,51 +148,6 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                     b.ToTable("Dividends");
                 });
 
-            modelBuilder.Entity("StockMarketAssistant.StockCardService.Domain.Entities.FinancialReport", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal>("CAPEX")
-                        .HasColumnType("numeric");
-
-                    b.Property<decimal>("Debt")
-                        .HasColumnType("numeric");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<decimal>("EBITDA")
-                        .HasColumnType("numeric");
-
-                    b.Property<decimal>("FCF")
-                        .HasColumnType("numeric");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<decimal>("NetProfit")
-                        .HasColumnType("numeric");
-
-                    b.Property<Guid>("ParentId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Period")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<decimal>("Revenue")
-                        .HasColumnType("numeric");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("FinancialReports");
-                });
-
             modelBuilder.Entity("StockMarketAssistant.StockCardService.Domain.Entities.Multiplier", b =>
                 {
                     b.Property<Guid>("Id")
@@ -232,7 +185,6 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                         .HasColumnType("numeric");
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Name")

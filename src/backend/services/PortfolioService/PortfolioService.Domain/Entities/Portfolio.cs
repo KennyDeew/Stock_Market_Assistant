@@ -1,4 +1,8 @@
-﻿namespace StockMarketAssistant.PortfolioService.Domain.Entities
+﻿using StockMarketAssistant.PortfolioService.Domain.Enums;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Transactions;
+
+namespace StockMarketAssistant.PortfolioService.Domain.Entities
 {
     /// <summary>
     /// Доменная сущность портфеля ценных бумаг
@@ -23,27 +27,42 @@
         public required string Name { get; set; }
 
         /// <summary>
-        /// Валюта портфеля (USD, RUB и т.д.)
+        /// Валюта портфеля (RUB, USD и т.д.)
         /// </summary>
-        public required string Currency{ get; set; }
+        public required string Currency { get; set; }
 
         /// <summary>
         /// Набор активов в портфеле
         /// </summary>
         public virtual ICollection<PortfolioAsset> Assets { get; set; } = [];
 
+        /// <summary>
+        /// Итоговая цена портфеля
+        /// </summary>
+        [NotMapped]
+        public decimal TotalPrice
+        {
+            get
+            {
+                if (Assets == null || Assets.Count == 0)
+                    return 0;
+                return Assets.Sum(a => a.TotalQuantity * a.AveragePurchasePrice);
+            }
+        }
 
         /// <summary>
-        /// Не предполагается хранить в БД, а только кэшировать в Redis
+        /// Дата последнего обновления портфеля (вычисляемое свойство)
         /// </summary>
+        [NotMapped]
+        public DateTime LastUpdated
+        {
+            get
+            {
+                if (Assets == null || Assets.Count == 0)
+                    return DateTime.MinValue;
 
-        //public decimal TotalPrice { get; private set; }
-
-        /// <summary>
-        /// Не предполагается хранить в БД, а только кэшировать в Redis
-        /// </summary>
-
-        //public DateTime LastUpdated { get; private set; }
-
+                return Assets.Max(a => a.LastUpdated);
+            }
+        }
     }
 }

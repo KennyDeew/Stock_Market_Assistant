@@ -23,18 +23,19 @@ internal class Program
             .WithDataVolume("portfolio-pg-data")
             .WithHostPort(14050)
             .AddDatabase("portfolio-db");
-        
         var pgStockCardDb = builder.AddPostgres("pg-stock-card-db")
             .WithImage("postgres:17.5")
             .WithHostPort(14051)
             .AddDatabase("stock-card-db");
-        
-        var pgAuthDb = builder.AddPostgres("pg-auth-db")
-            .WithImage("postgres:17.5")
-            .WithHostPort(14052)
-            .AddDatabase("auth-db");
+        var mongo = builder.AddMongoDB("mongo")
+            .WithImage("mongo:7.0")
+            .WithDataVolume("stock-mongo-data").WithEndpoint("mongodb", endpoint =>
+            {
+                endpoint.Port = 14052;       // внешний порт на хосте
+                endpoint.TargetPort = 27017; // внутренний порт контейнера MongoDB
+            });
+        var mongoStockCardDb = mongo.AddDatabase("finantial-report-db");
 
-        //var postgres = builder.AddPostgres("postgres").AddDatabase("stockcarddb");
         //var container = builder.AddDockerfile("gateway", "../backend/gateway/");
 
         // Связывание ресурсов с проектами
@@ -44,10 +45,8 @@ internal class Program
 
         apiStockCardService.WithReference(redis)
                            .WithReference(pgStockCardDb)
+                           .WithReference(mongoStockCardDb)
                            .WaitFor(pgStockCardDb);
-        
-        apiAuthService.WithReference(pgAuthDb)
-            .WaitFor(pgAuthDb);
 
 
         builder.Build().Run();

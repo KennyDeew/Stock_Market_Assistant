@@ -15,22 +15,22 @@ namespace StockMarketAssistant.StockCardService.Application.DTOs._02_BondCard
         /// <summary>
         /// Тикер облигации
         /// </summary>
-        public string Ticker { get; set; }
+        public required string Ticker { get; set; }
 
         /// <summary>
         /// Наименование облигации
         /// </summary>
-        public string Name { get; set; }
+        public required string Name { get; set; }
 
         /// <summary>
         /// Описание облигации
         /// </summary>
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         /// <summary>
         /// Валюта
         /// </summary>
-        public string Currency { get; set; }
+        public required string Currency { get; set; }
 
         /// <summary>
         /// дата погашения облигации
@@ -40,7 +40,7 @@ namespace StockMarketAssistant.StockCardService.Application.DTOs._02_BondCard
         /// <summary>
         /// Рейтинг
         /// </summary>
-        public string Rating { get; set; }
+        public required string Rating { get; set; }
 
         /// <summary>
         /// Номинальная стоимость
@@ -55,6 +55,6 @@ namespace StockMarketAssistant.StockCardService.Application.DTOs._02_BondCard
         /// <summary>
         /// Купоны облигации
         /// </summary>
-        public List<CouponDto>? Coupons { get; set; }
+        public List<CouponDto> Coupons { get; set; } = new List<CouponDto>();
     }
 }
