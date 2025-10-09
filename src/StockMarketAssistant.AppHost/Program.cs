@@ -36,7 +36,7 @@ internal class Program
             .WithImage("mongo:7.0")
             .WithDataVolume("stock-mongo-data").WithEndpoint("mongodb", endpoint =>
             {
-                endpoint.Port = 14052;       // внешний порт на хосте
+                endpoint.Port = 14053;       // внешний порт на хосте
                 endpoint.TargetPort = 27017; // внутренний порт контейнера MongoDB
             });
         var mongoStockCardDb = mongo.AddDatabase("finantial-report-db");

@@ -5,9 +5,9 @@ namespace AuthService.Infrastructure.Postgres.IdentityManagers;
 
 public class RolePermissionManager
 {
-    private readonly AccountsWriteDbContext _db;
+    private readonly PostgresDbContext _db;
 
-    public RolePermissionManager(AccountsWriteDbContext accountsWriteContext)
+    public RolePermissionManager(PostgresDbContext accountsWriteContext)
     {
         ArgumentNullException.ThrowIfNull(accountsWriteContext);
         _db = accountsWriteContext;

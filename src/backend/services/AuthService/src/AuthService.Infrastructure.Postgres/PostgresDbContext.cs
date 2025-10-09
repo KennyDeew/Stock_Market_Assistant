@@ -5,9 +5,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AuthService.Infrastructure.Postgres;
 
-public sealed class AccountsWriteDbContext : IdentityDbContext<User, Role, Guid>
+public sealed class PostgresDbContext : IdentityDbContext<User, Role, Guid>
 {
-    public AccountsWriteDbContext(DbContextOptions<AccountsWriteDbContext> options)
+    public PostgresDbContext(DbContextOptions<PostgresDbContext> options)
         : base(options)
     {
     }
@@ -25,6 +25,6 @@ public sealed class AccountsWriteDbContext : IdentityDbContext<User, Role, Guid>
         modelBuilder.HasDefaultSchema("accounts");
         base.OnModelCreating(modelBuilder);
         modelBuilder.HasPostgresExtension("citext");
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(AccountsWriteDbContext).Assembly);
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(PostgresDbContext).Assembly);
     }
 }

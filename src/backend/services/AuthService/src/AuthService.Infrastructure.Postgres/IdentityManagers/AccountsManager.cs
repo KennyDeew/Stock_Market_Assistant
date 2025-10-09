@@ -8,10 +8,10 @@ namespace AuthService.Infrastructure.Postgres.IdentityManagers;
 
 public sealed class AccountsManager
 {
-    private readonly AccountsWriteDbContext _db;
+    private readonly PostgresDbContext _db;
     private readonly ILogger<AccountsManager> _logger;
 
-    public AccountsManager(AccountsWriteDbContext db, ILogger<AccountsManager> logger)
+    public AccountsManager(PostgresDbContext db, ILogger<AccountsManager> logger)
     {
         _db = db ?? throw new ArgumentNullException(nameof(db));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));

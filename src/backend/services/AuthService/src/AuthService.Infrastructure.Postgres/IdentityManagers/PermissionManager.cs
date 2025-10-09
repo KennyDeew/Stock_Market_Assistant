@@ -6,9 +6,9 @@ namespace AuthService.Infrastructure.Postgres.IdentityManagers;
 
 public class PermissionManager : IPermissionReader, IPermissionWriter
 {
-    private readonly AccountsWriteDbContext _dbContext;
+    private readonly PostgresDbContext _dbContext;
 
-    public PermissionManager(AccountsWriteDbContext dbContext)
+    public PermissionManager(PostgresDbContext dbContext)
     {
         _dbContext = dbContext;
     }

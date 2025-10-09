@@ -122,6 +122,9 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AnalyticsService.WebApi", "src\backend\services\AnalyticsService\AnalyticsService.WebApi\AnalyticsService.WebApi.csproj", "{E2784DD7-59E8-449A-B54B-33A28188A04F}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AuthService", "AuthService", "{DA2D70AC-8089-4A9C-AF68-0A30C8E27663}"
+	ProjectSection(SolutionItems) = preProject
+		src\backend\services\AuthService\AuthService.Infrastructure.Repositories\obj\rider.project.restore.info = src\backend\services\AuthService\AuthService.Infrastructure.Repositories\obj\rider.project.restore.info
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{D0006E97-13CA-47C6-B86A-359852CFEE51}"
 EndProject

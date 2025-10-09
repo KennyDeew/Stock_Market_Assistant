@@ -6,7 +6,7 @@ using SharedKernel;
 
 namespace AuthService.Infrastructure.Postgres.IdentityManagers
 {
-    public class RefreshSessionManager(AccountsWriteDbContext db) : IRefreshSessionManager
+    public class RefreshSessionManager(PostgresDbContext db) : IRefreshSessionManager
     {
         public async Task<Result<RefreshSession, Error>> GetByRefreshToken(
             Guid refreshToken, CancellationToken ct)
