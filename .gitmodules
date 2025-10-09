@@ -1,3 +1,0 @@
-[submodule "src/backend/services/NotificationService"]
-	path = src/backend/services/NotificationService
-	url = https://github.com/drogremtal/NotificationService

@@ -7,4 +7,10 @@
     <RootNamespace>$(SolutionName).$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Folder Include="Interfaces\Repositories\" />
+    <Folder Include="Services\" />
+    <Folder Include="DTOs\" />
+  </ItemGroup>
+
 </Project>
