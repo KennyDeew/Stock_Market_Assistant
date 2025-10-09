@@ -16,14 +16,14 @@ namespace StockMarketAssistant.PortfolioService.Infrastructure.Repositories
         where TEntity : BaseEntity<TPrimaryKey>
         where TPrimaryKey : notnull
     {
-        protected readonly DatabaseContext DataContext;
+        private readonly DatabaseContext _dataContext;
 
         protected DbSet<TEntity> Data { get; set; }
 
         public EfRepository(DatabaseContext dataContext)
         {
-            DataContext = dataContext;
-            Data = DataContext.Set<TEntity>();
+            _dataContext = dataContext;
+            Data = _dataContext.Set<TEntity>();
         }
 
         public async Task<TEntity?> GetByIdAsync(TPrimaryKey id, params Expression<Func<TEntity, object>>[] includeProperties)
@@ -58,20 +58,20 @@ namespace StockMarketAssistant.PortfolioService.Infrastructure.Repositories
         public async Task<TEntity> AddAsync(TEntity entity)
         {
             var entityEntryAdded = await Data.AddAsync(entity);
-            await DataContext.SaveChangesAsync();
+            await _dataContext.SaveChangesAsync();
             return entityEntryAdded.Entity;
         }
 
         public async Task UpdateAsync(TEntity entity)
         {
             Data.Update(entity);
-            await DataContext.SaveChangesAsync();
+            await _dataContext.SaveChangesAsync();
         }
 
         public async Task DeleteAsync(TEntity entity)
         {
             Data.Remove(entity);
-            await DataContext.SaveChangesAsync();
+            await _dataContext.SaveChangesAsync();
         }
 
         public async Task<TEntity?> FirstOrDefaultAsync(Expression<Func<TEntity, bool>> predicate)
