@@ -62,26 +62,9 @@ namespace StockMarketAssistant.PortfolioService.Infrastructure.EntityFramework.M
                         .HasColumnType("smallint")
                         .HasColumnName("asset_type");
 
-                    b.Property<decimal?>("AveragePurchasePrice")
-                        .HasColumnType("numeric")
-                        .HasColumnName("average_purchase_price");
-
-                    b.Property<string>("Currency")
-                        .HasMaxLength(10)
-                        .HasColumnType("character varying(10)")
-                        .HasColumnName("currency");
-
-                    b.Property<DateTime?>("LastUpdated")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("last_updated");
-
                     b.Property<Guid>("PortfolioId")
                         .HasColumnType("uuid")
                         .HasColumnName("portfolio_id");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("integer")
-                        .HasColumnName("quantity");
 
                     b.Property<Guid>("StockCardId")
                         .HasColumnType("uuid")
@@ -96,6 +79,48 @@ namespace StockMarketAssistant.PortfolioService.Infrastructure.EntityFramework.M
                     b.ToTable("portfolio_asset", (string)null);
                 });
 
+            modelBuilder.Entity("StockMarketAssistant.PortfolioService.Domain.Entities.PortfolioAssetTransaction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("currency");
+
+                    b.Property<Guid>("PortfolioAssetId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("portfolio_asset_id");
+
+                    b.Property<decimal>("PricePerUnit")
+                        .HasColumnType("numeric")
+                        .HasColumnName("price_per_unit");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer")
+                        .HasColumnName("quantity");
+
+                    b.Property<DateTime>("TransactionDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("transaction_date");
+
+                    b.Property<short>("TransactionType")
+                        .HasColumnType("smallint")
+                        .HasColumnName("transaction_type");
+
+                    b.HasKey("Id")
+                        .HasName("pk_portfolio_asset_transaction");
+
+                    b.HasIndex("PortfolioAssetId")
+                        .HasDatabaseName("ix_portfolio_asset_transaction_portfolio_asset_id");
+
+                    b.ToTable("portfolio_asset_transaction", (string)null);
+                });
+
             modelBuilder.Entity("StockMarketAssistant.PortfolioService.Domain.Entities.PortfolioAsset", b =>
                 {
                     b.HasOne("StockMarketAssistant.PortfolioService.Domain.Entities.Portfolio", "Portfolio")
@@ -108,9 +133,26 @@ namespace StockMarketAssistant.PortfolioService.Infrastructure.EntityFramework.M
                     b.Navigation("Portfolio");
                 });
 
+            modelBuilder.Entity("StockMarketAssistant.PortfolioService.Domain.Entities.PortfolioAssetTransaction", b =>
+                {
+                    b.HasOne("StockMarketAssistant.PortfolioService.Domain.Entities.PortfolioAsset", "PortfolioAsset")
+                        .WithMany("Transactions")
+                        .HasForeignKey("PortfolioAssetId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_portfolio_asset_transaction_portfolio_asset_portfolio_asset");
+
+                    b.Navigation("PortfolioAsset");
+                });
+
             modelBuilder.Entity("StockMarketAssistant.PortfolioService.Domain.Entities.Portfolio", b =>
                 {
                     b.Navigation("Assets");
+                });
+
+            modelBuilder.Entity("StockMarketAssistant.PortfolioService.Domain.Entities.PortfolioAsset", b =>
+                {
+                    b.Navigation("Transactions");
                 });
 #pragma warning restore 612, 618
         }
