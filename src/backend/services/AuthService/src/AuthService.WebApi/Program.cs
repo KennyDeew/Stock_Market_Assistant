@@ -41,7 +41,7 @@ public abstract class Program
         app.UseExceptionMiddleware();
 
         // Миграции -> сидинг
-        await app.MigrateDatabaseAsync<AccountsWriteDbContext>(CancellationToken.None);
+        await app.MigrateDatabaseAsync<PostgresDbContext>(CancellationToken.None);
 
         var accountsSeeder = app.Services.GetRequiredService<AccountsSeeder>();
         await accountsSeeder.SeedAsync();

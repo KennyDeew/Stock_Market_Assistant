@@ -16,7 +16,7 @@ public class AccountsSeeder
         using var scope = _scopeFactory.CreateScope();
 
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<AccountsSeeder>>();
-        var db = scope.ServiceProvider.GetRequiredService<AccountsWriteDbContext>();
+        var db = scope.ServiceProvider.GetRequiredService<PostgresDbContext>();
         var svc = scope.ServiceProvider.GetRequiredService<AccountsSeederService>();
 
         const long LockKey = 0x0ACC_0000_0000_0001L;
