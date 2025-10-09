@@ -47,7 +47,7 @@ public static class DependencyInjection
                 options.User.RequireUniqueEmail = true;
             })
             .AddRoles<Role>()
-            .AddEntityFrameworkStores<AccountsWriteDbContext>();
+            .AddEntityFrameworkStores<PostgresDbContext>();
 
         services.AddScoped<RolePermissionManager>();
         services.AddScoped<IRefreshSessionManager, RefreshSessionManager>();
@@ -58,7 +58,7 @@ public static class DependencyInjection
         services.AddOptions<ConnectionStringsOptions>()
                 .BindConfiguration(ConnectionStringsOptions.SECTION_NAME);
 
-        services.AddDbContextPool<AccountsWriteDbContext>((sp, opt) =>
+        services.AddDbContextPool<PostgresDbContext>((sp, opt) =>
         {
             var cs = sp.GetRequiredService<IOptionsMonitor<ConnectionStringsOptions>>()
                        .CurrentValue.Database;

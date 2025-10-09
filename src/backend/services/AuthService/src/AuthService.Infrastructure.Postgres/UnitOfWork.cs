@@ -5,9 +5,9 @@ namespace AuthService.Infrastructure.Postgres;
 
 internal class UnitOfWork : IUnitOfWork
 {
-    private readonly AccountsWriteDbContext _db;
+    private readonly PostgresDbContext _db;
 
-    public UnitOfWork(AccountsWriteDbContext db) => _db = db;
+    public UnitOfWork(PostgresDbContext db) => _db = db;
 
     public Task<IDbContextTransaction> BeginTransaction(CancellationToken cancellationToken) =>
         _db.Database.BeginTransactionAsync(cancellationToken);

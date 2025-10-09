@@ -17,14 +17,14 @@ namespace AuthService.Infrastructure.Postgres;
 public class JwtTokenProvider : ITokenProvider
 {
     private readonly PermissionManager _permissionManager;
-    private readonly AccountsWriteDbContext _accountWriteContext;
+    private readonly PostgresDbContext _accountWriteContext;
     private readonly UserManager<User> _userManager;
     private readonly JwtOptions _jwtOptions;
 
     public JwtTokenProvider(
         IOptions<JwtOptions> options,
         PermissionManager permissionManager,
-        AccountsWriteDbContext accountWriteContext,
+        PostgresDbContext accountWriteContext,
         UserManager<User> userManager)
     {
         _permissionManager = permissionManager ?? throw new ArgumentNullException(nameof(permissionManager));
