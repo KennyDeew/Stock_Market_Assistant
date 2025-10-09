@@ -43,7 +43,7 @@ internal class Program
 
         var notificationPostgres = builder.AddPostgres("notification-db")
             .WithImage("postgres:17.5")
-            .WithHostPort(14053).WithPgWeb(n => n.WithHostPort(5000))
+            .WithHostPort(14054).WithPgWeb(n => n.WithHostPort(5000))
             .AddDatabase("notificationDb");
 
         var kafka = builder.AddKafka("kafka")
