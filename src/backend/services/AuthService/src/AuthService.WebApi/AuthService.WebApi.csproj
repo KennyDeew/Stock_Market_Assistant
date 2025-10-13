@@ -25,6 +25,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\..\..\..\StockMarketAssistant.ServiceDefaults\StockMarketAssistant.ServiceDefaults.csproj" />
       <ProjectReference Include="..\AuthService.Domain\AuthService.Domain.csproj" />
       <ProjectReference Include="..\AuthService.Infrastructure.Postgres\AuthService.Infrastructure.Postgres.csproj" />
       <ProjectReference Include="..\AuthService.Presentation\AuthService.Presentation.csproj" />

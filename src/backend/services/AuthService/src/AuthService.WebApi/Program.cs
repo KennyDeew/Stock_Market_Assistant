@@ -36,7 +36,9 @@ public abstract class Program
         builder.Services.AddProgramDependencies();
 
         var app = builder.Build();
-
+        
+        app.MapDefaultEndpoints();
+        
         // Глобальный обработчик исключений
         app.UseExceptionMiddleware();
 
