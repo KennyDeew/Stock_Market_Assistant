@@ -71,6 +71,8 @@ namespace StockMarketAssistant.PortfolioService.WebApi
 
             var app = builder.Build();
 
+            app.MapDefaultEndpoints();
+
             // Автоматическое применение миграций
             using (var scope = app.Services.CreateScope())
             {

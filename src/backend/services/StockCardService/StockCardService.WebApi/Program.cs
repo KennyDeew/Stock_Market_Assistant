@@ -77,6 +77,8 @@ namespace StockMarketAssistant.StockCardService.WebApi
 
             var app = builder.Build();
 
+            app.MapDefaultEndpoints();
+
             app.MapGet("/", () => Results.Redirect("/swagger"));
 
             //var StockCardServisConnectionString = builder.Configuration.GetConnectionString("pg-stock-card-db");
