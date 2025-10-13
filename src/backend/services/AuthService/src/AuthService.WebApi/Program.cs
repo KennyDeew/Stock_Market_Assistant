@@ -12,6 +12,8 @@ public abstract class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
+        builder.Services.AddHealthChecks();
+        
         // Отключаем авто-валидацию ModelState (будем формировать ошибку сами)
         builder.Services.Configure<ApiBehaviorOptions>(options =>
         {
