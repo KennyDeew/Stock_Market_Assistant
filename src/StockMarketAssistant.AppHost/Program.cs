@@ -13,7 +13,7 @@ internal class Program
         var apiStockCardService = builder.AddProject<Projects.StockCardService_WebApi>("stockcardservice-api");
         var apiPortfolioService = builder.AddProject<Projects.PortfolioService_WebApi>("portfolioservice-api");
         //var apiAnalyticsService = builder.AddProject<Projects.AnalyticsService_WebApi>("analyticsservice-api");
-        var apiNotificationService = builder.AddProject<Projects.NotificationService>("notificationservice-api");
+        //var apiNotificationService = builder.AddProject<Projects.NotificationService>("notificationservice-api");
 
         // Добавление ресурсов
         var redis = builder.AddRedis("cache");
@@ -66,11 +66,11 @@ internal class Program
         apiAuthService.WithReference(pgAuthDb)
             .WithEnvironment("ConnectionStrings__Database" , pgAuthDb.Resource.ConnectionStringExpression);
 
-        apiNotificationService
+        /*apiNotificationService
             .WithReference(notificationPostgres)
             .WithReference(kafka)
             .WaitFor(notificationPostgres)
-            .WaitFor(kafka);
+            .WaitFor(kafka);*/
 
 
         builder.Build().Run();

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <Sdk Name="Aspire.AppHost.Sdk" Version="9.0.0" />
 
@@ -23,7 +23,6 @@
     <ProjectReference Include="..\backend\gateway\Gateway.WebApi\Gateway.WebApi.csproj" />
     <ProjectReference Include="..\backend\services\AnalyticsService\AnalyticsService.WebApi\AnalyticsService.WebApi.csproj" />
 
-    <ProjectReference Include="..\backend\services\NotificationService\Notification\NotificationService.csproj" />
     <ProjectReference Include="..\backend\services\PortfolioService\PortfolioService.WebApi\PortfolioService.WebApi.csproj" />
     <ProjectReference Include="..\backend\services\StockCardService\StockCardService.WebApi\StockCardService.WebApi.csproj" />
       <ProjectReference Include="..\backend\services\AuthService\src\AuthService.WebApi\AuthService.WebApi.csproj" />
