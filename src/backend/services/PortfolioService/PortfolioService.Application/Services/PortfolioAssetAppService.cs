@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
 using StockMarketAssistant.PortfolioService.Application.DTOs;
 using StockMarketAssistant.PortfolioService.Application.Interfaces;
+using StockMarketAssistant.PortfolioService.Application.Interfaces.Caching;
+using StockMarketAssistant.PortfolioService.Application.Interfaces.Gateways;
 using StockMarketAssistant.PortfolioService.Application.Interfaces.Repositories;
 using StockMarketAssistant.PortfolioService.Domain.Entities;
 using StockMarketAssistant.PortfolioService.Domain.Enums;
@@ -10,12 +12,56 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
     /// <summary>
     /// Сервис работы с финансовыми активами в портфеле
     /// </summary>
-    public class PortfolioAssetAppService(IPortfolioAssetRepository portfolioAssetRepository, IPortfolioRepository portfolioRepository, IStockCardServiceClient stockCardServiceClient, ILogger<PortfolioAssetAppService> logger) : IPortfolioAssetAppService
+    public class PortfolioAssetAppService(IPortfolioAssetRepository portfolioAssetRepository, IPortfolioRepository portfolioRepository, IStockCardServiceGateway stockCardServiceGateway, ICacheService cache, ILogger<PortfolioAssetAppService> logger) : IPortfolioAssetAppService
     {
         private readonly IPortfolioAssetRepository _portfolioAssetRepository = portfolioAssetRepository;
         private readonly IPortfolioRepository _portfolioRepository = portfolioRepository;
-        private readonly IStockCardServiceClient _stockCardServiceClient = stockCardServiceClient;
+        private readonly IStockCardServiceGateway _stockCardServiceGateway = stockCardServiceGateway;
+        private readonly ICacheService _cache = cache;
         private readonly ILogger<PortfolioAssetAppService> _logger = logger;
+        private readonly TimeSpan _cacheExpiration = TimeSpan.FromMinutes(30);
+
+        /// <summary>
+        /// Инвалидация записи кэша для финансового актива
+        /// </summary>
+        /// <param name="assetId">Id актива</param>
+        /// <returns></returns>
+        private async Task InvalidateAssetCacheAsync(Guid assetId)
+        {
+            await _cache.RemoveAsync($"asset_{assetId}");
+        }
+
+        private async Task<StockCardInfoDto> GetStockCardInfoAsync(PortfolioAssetType assetType, Guid stockCardId)
+        {
+            return assetType switch
+            {
+                PortfolioAssetType.Share => await GetShareCardInfoAsync(stockCardId),
+                PortfolioAssetType.Bond => await GetBondCardInfoAsync(stockCardId),
+                _ => new StockCardInfoDto(string.Empty, string.Empty, string.Empty)
+            };
+        }
+
+        private async Task<StockCardInfoDto> GetShareCardInfoAsync(Guid stockCardId)
+        {
+            var shareCard = await _stockCardServiceGateway.GetShortShareCardModelByIdAsync(stockCardId);
+            if (shareCard is null)
+            {
+                _logger.LogWarning("Акция с ID {StockCardId} не найдена в сервисе карточек активов", stockCardId);
+                return new StockCardInfoDto(string.Empty, string.Empty, string.Empty);
+            }
+            return new StockCardInfoDto(shareCard.Ticker, shareCard.Name, shareCard.Description ?? string.Empty, shareCard.Currency);
+        }
+
+        private async Task<StockCardInfoDto> GetBondCardInfoAsync(Guid stockCardId)
+        {
+            var bondCard = await _stockCardServiceGateway.GetShortBondCardModelByIdAsync(stockCardId);
+            if (bondCard is null)
+            {
+                _logger.LogWarning("Облигация с ID {StockCardId} не найдена в сервисе карточек активов", stockCardId);
+                return new StockCardInfoDto(string.Empty, string.Empty, string.Empty);
+            }
+            return new StockCardInfoDto(bondCard.Ticker, bondCard.Name, bondCard.Description ?? string.Empty, bondCard.Currency);
+        }
 
         /// <summary>
         /// Создать актив ценной бумаги в портфеле
@@ -36,12 +82,13 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                 }
                 if (dto.Quantity <= 0)
                 {
-                    throw new ArgumentException("Количество должно быть больше нуля", nameof(dto.Quantity));
+                    throw new ArgumentOutOfRangeException(nameof(dto), "Количество должно быть больше нуля");
                 }
 
                 PortfolioAsset asset = new(Guid.NewGuid(), dto.PortfolioId, dto.StockCardId, dto.AssetType);
-                // Вызвать внешний микросервис карточки актива
-                var stockCardInfo = await _stockCardServiceClient.GetStockCardInfoAsync(asset.StockCardId);
+                // Вызов внешнего микросервиса карточки актива
+                var cardInfo = await GetStockCardInfoAsync(asset.AssetType, asset.StockCardId);
+
                 // Создаем начальную транзакцию
                 var initialTransaction = new PortfolioAssetTransaction(
                     Guid.NewGuid(),
@@ -50,10 +97,24 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                     dto.Quantity,
                     dto.PurchasePricePerUnit,
                     DateTime.UtcNow,
-                    stockCardInfo.Currency);
+                    cardInfo.Currency);
                 asset.Transactions.Add(initialTransaction);
                 PortfolioAsset createdAsset = await _portfolioAssetRepository.AddAsync(asset);
-                return new PortfolioAssetDto(createdAsset.Id, createdAsset.PortfolioId, createdAsset.StockCardId, createdAsset.AssetType, stockCardInfo.Ticker, stockCardInfo.Name, stockCardInfo.Description, initialTransaction.Quantity, initialTransaction.PricePerUnit, stockCardInfo.Currency, initialTransaction.TransactionDate, []);
+
+                return new PortfolioAssetDto(
+                    createdAsset.Id,
+                    createdAsset.PortfolioId,
+                    createdAsset.StockCardId,
+                    createdAsset.AssetType,
+                    cardInfo.Ticker,
+                    cardInfo.Name,
+                    cardInfo.Description,
+                    initialTransaction.Quantity,
+                    initialTransaction.PricePerUnit,
+                    cardInfo.Currency,
+                    initialTransaction.TransactionDate,
+                    []
+                );
             }
             catch (Exception ex)
             {
@@ -78,6 +139,7 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                     return false;
                 }
                 await _portfolioAssetRepository.DeleteAsync(asset);
+                await InvalidateAssetCacheAsync(id);
                 return true;
             }
             catch (Exception ex)
@@ -120,6 +182,7 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                 {
                     await _portfolioAssetRepository.DeleteAsync(asset);
                 }
+                await InvalidateAssetCacheAsync(asset.Id); // данные изменились — кэш устарел
                 return true;
             }
             catch (Exception ex)
@@ -136,15 +199,40 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
         /// <returns></returns>
         public async Task<PortfolioAssetDto?> GetByIdAsync(Guid id)
         {
+            string cacheKey = $"asset_{id}";
+
             try
             {
+                var cached = await _cache.GetAsync<PortfolioAssetDto>(cacheKey);
+                if (cached != null)
+                    return cached;
+
                 PortfolioAsset? asset = await _portfolioAssetRepository.GetByIdAsync(id, a => a.Transactions);
                 if (asset is null)
                     return null;
-                // Вызвать внешний микросервис карточки актива
-                var stockCardInfo = await _stockCardServiceClient.GetStockCardInfoAsync(asset.StockCardId);
-                return new PortfolioAssetDto(asset.Id, asset.PortfolioId, asset.StockCardId, asset.AssetType, stockCardInfo.Ticker, stockCardInfo.Name, stockCardInfo.Description, asset.TotalQuantity, asset.AveragePurchasePrice, stockCardInfo.Currency, asset.LastUpdated,
-                    [.. asset.Transactions.OrderBy(t => t.TransactionDate).Select(t => new PortfolioAssetTransactionDto(t.Id, t.PortfolioAssetId, t.TransactionDate, t.TransactionType, t.Quantity, t.PricePerUnit, t.Currency))]);
+
+                // Вызов внешнего микросервиса карточки актива
+                var cardInfo = await GetStockCardInfoAsync(asset.AssetType, asset.StockCardId);
+                var assetDto = new PortfolioAssetDto(
+                    asset.Id,
+                    asset.PortfolioId,
+                    asset.StockCardId,
+                    asset.AssetType,
+                    cardInfo.Ticker,
+                    cardInfo.Name,
+                    cardInfo.Description,
+                    asset.TotalQuantity,
+                    asset.AveragePurchasePrice,
+                    cardInfo.Currency,
+                    asset.LastUpdated,
+                    [.. asset.Transactions.OrderBy(t => t.TransactionDate).Select(t =>
+                new PortfolioAssetTransactionDto(
+                    t.Id, t.PortfolioAssetId, t.TransactionDate, t.TransactionType,
+                    t.Quantity, t.PricePerUnit, t.Currency))]
+                );
+                
+                await _cache.SetAsync(cacheKey, assetDto, _cacheExpiration);
+                return assetDto;
             }
             catch (Exception ex)
             {
@@ -248,7 +336,7 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
 
                 if (dto.Quantity <= 0)
                 {
-                    throw new ArgumentException("Количество должно быть больше нуля", nameof(dto.Quantity));
+                    throw new ArgumentOutOfRangeException(nameof(dto), "Количество должно быть больше нуля");
                 }
 
                 // Проверяем возможность продажи
@@ -256,8 +344,8 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                 {
                     throw new InvalidOperationException("Недостаточно активов для продажи");
                 }
-                // Вызвать внешний микросервис карточки актива
-                var stockCardInfo = await _stockCardServiceClient.GetStockCardInfoAsync(asset.StockCardId);
+                // Вызов внешнего микросервиса карточки актива
+                var cardInfo = await GetStockCardInfoAsync(asset.AssetType, asset.StockCardId);
 
                 PortfolioAssetTransaction transaction = new(
                     Guid.NewGuid(),
@@ -266,7 +354,7 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                     dto.Quantity,
                     dto.PricePerUnit,
                     dto.TransactionDate ?? DateTime.UtcNow,
-                    dto.Currency ?? stockCardInfo.Currency);
+                    dto.Currency ?? cardInfo.Currency);
 
                 PortfolioAssetTransaction createdAssetTransaction = await _portfolioAssetRepository.AddAssetTransactionAsync(transaction);
                 asset.Transactions.Add(transaction);
@@ -276,6 +364,7 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                 {
                     await _portfolioAssetRepository.DeleteAsync(asset);
                 }
+                await InvalidateAssetCacheAsync(assetId); // данные изменились — кэш устарел
 
                 return new PortfolioAssetTransactionDto(createdAssetTransaction.Id, createdAssetTransaction.PortfolioAssetId, createdAssetTransaction.TransactionDate, createdAssetTransaction.TransactionType, createdAssetTransaction.Quantity, createdAssetTransaction.PricePerUnit, createdAssetTransaction.Currency);
             }
@@ -332,6 +421,7 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
 
                 // Сохраняем изменения
                 await _portfolioAssetRepository.UpdateAssetTransactionAsync(transaction);
+                await InvalidateAssetCacheAsync(transaction.PortfolioAssetId); // данные изменились — кэш устарел
 
                 _logger.LogInformation("Транзакция {TransactionId} успешно обновлена", transactionId);
             }

@@ -24,7 +24,9 @@
     <ProjectReference Include="..\..\..\..\StockMarketAssistant.ServiceDefaults\StockMarketAssistant.ServiceDefaults.csproj" />
     <ProjectReference Include="..\PortfolioService.Application\PortfolioService.Application.csproj" />
     <ProjectReference Include="..\PortfolioService.Domain\PortfolioService.Domain.csproj" />
+    <ProjectReference Include="..\PortfolioService.Infrastructure.Caching\PortfolioService.Infrastructure.Caching.csproj" />
     <ProjectReference Include="..\PortfolioService.Infrastructure.EntityFramework\PortfolioService.Infrastructure.EntityFramework.csproj" />
+    <ProjectReference Include="..\PortfolioService.Infrastructure.Gateways\PortfolioService.Infrastructure.Gateways.csproj" />
     <ProjectReference Include="..\PortfolioService.Infrastructure.Repositories\PortfolioService.Infrastructure.Repositories.csproj" />
   </ItemGroup>
 

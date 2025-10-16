@@ -1,9 +1,13 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using StockMarketAssistant.PortfolioService.Application.Interfaces;
+using StockMarketAssistant.PortfolioService.Application.Interfaces.Caching;
+using StockMarketAssistant.PortfolioService.Application.Interfaces.Gateways;
 using StockMarketAssistant.PortfolioService.Application.Interfaces.Repositories;
 using StockMarketAssistant.PortfolioService.Application.Services;
+using StockMarketAssistant.PortfolioService.Infrastructure.Caching;
 using StockMarketAssistant.PortfolioService.Infrastructure.EntityFramework;
 using StockMarketAssistant.PortfolioService.Infrastructure.EntityFramework.Context;
+using StockMarketAssistant.PortfolioService.Infrastructure.Gateways;
 using StockMarketAssistant.PortfolioService.Infrastructure.Repositories;
 using StockMarketAssistant.PortfolioService.WebApi.Infrastructure.Swagger;
 
@@ -42,13 +46,25 @@ namespace StockMarketAssistant.PortfolioService.WebApi
             }
 
             // Регистрация сервисов в DI
-            builder.Services.AddSingleton<IStockCardServiceClient, FakeStockCardServiceClient>(); // заглушка для сервиса StockCardService
+            // Регистрация распределённого кэша Redis
+            builder.Services.AddStackExchangeRedisCache(options =>
+            {
+                options.Configuration = builder.Configuration.GetConnectionString("cache");
+            });
+
+            builder.Services.AddScoped<ICacheService, RedisCacheService>();
 
             builder.Services.AddScoped<IPortfolioRepository, PortfolioRepository>();
             builder.Services.AddScoped<IPortfolioAssetRepository, PortfolioAssetRepository>();
 
             builder.Services.AddScoped<IPortfolioAppService, PortfolioAppService>();
             builder.Services.AddScoped<IPortfolioAssetAppService, PortfolioAssetAppService>();
+
+            builder.Services.AddHttpClient<IStockCardServiceGateway, StockCardServiceGateway>(httpClient =>
+            {
+                httpClient.BaseAddress = new Uri("http://stockcardservice-api");
+            })
+            .AddServiceDiscovery();
 
             builder.Services.AddControllers();
 
@@ -70,6 +86,7 @@ namespace StockMarketAssistant.PortfolioService.WebApi
             });
 
             var app = builder.Build();
+            app.MapDefaultEndpoints();
 
             app.MapDefaultEndpoints();
 

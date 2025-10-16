@@ -47,22 +47,24 @@
             .WithPgWeb(n => n.WithHostPort(5000))
             .AddDatabase("notificationDb");
 
-        //var container = builder.AddDockerfile("gateway", "../backend/gateway/");
-
         // Связывание ресурсов с проектами
         apiAuthService.WithReference(pgAuthDb)
                       .WaitFor(pgAuthDb);
 
-        apiStockCardService.WithReference(redis)
-                           .WithReference(pgStockCardDb)
-                           .WithReference(mongoStockCardDb)
-                           .WaitFor(pgStockCardDb);
+        apiStockCardService
+            .WithReference(redis)
+            .WithReference(pgStockCardDb)
+            .WithReference(mongoStockCardDb)
+            .WaitFor(pgStockCardDb);
 
-        apiPortfolioService.WithReference(redis)
+        apiPortfolioService
+            .WithReference(redis)
             .WithReference(pgPortfolioDb)
+            .WithReference(apiStockCardService)
             .WaitFor(pgPortfolioDb);
 
-        apiAuthService.WithReference(pgAuthDb)
+        apiAuthService
+            .WithReference(pgAuthDb)
             .WithEnvironment("ConnectionStrings__Database", pgAuthDb.Resource.ConnectionStringExpression);
 
         apiNotificationService

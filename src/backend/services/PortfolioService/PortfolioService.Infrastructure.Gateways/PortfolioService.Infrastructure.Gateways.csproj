@@ -13,7 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\StockMarketAssistant.SharedLibrary\StockMarketAssistant.SharedLibrary.csproj" />
-    <ProjectReference Include="..\PortfolioService.Domain\PortfolioService.Domain.csproj" />
+    <ProjectReference Include="..\PortfolioService.Application\PortfolioService.Application.csproj" />
   </ItemGroup>
 
 </Project>
