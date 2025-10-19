@@ -67,7 +67,7 @@ jobs:
           export PATH="$PATH:$PWD/.config/dotnet-tools"
           echo "Applying EF Core migrations..."
           dotnet tool run dotnet-ef database update \
-            --project ../StockCardService.Infrastructure \
+            --project ../StockCardService.Infrastructure.EntityFramework \
             --startup-project .
         env:
           ConnectionStrings__stock-card-db: "Host=localhost;Database=stock-card-db;Username=postgres;Password=password;Port=5432"
