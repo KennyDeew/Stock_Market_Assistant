@@ -43,24 +43,36 @@ jobs:
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: '9.0.x'
 
+      # Восстановление зависимостей
       - name: Restore dependencies
         run: dotnet restore src/backend/services/StockCardService/StockCardService.WebApi
 
+      # Сборка решения
       - name: Build solution
         run: dotnet build src/backend/services/StockCardService/StockCardService.WebApi --configuration Release --no-restore
 
+      # Установка локального инструмента dotnet-ef
+      - name: Install dotnet-ef tool
+        run: |
+          cd src/backend/services/StockCardService/StockCardService.WebApi
+          dotnet new tool-manifest || echo "Tool manifest already exists"
+          dotnet tool install dotnet-ef --version 9.0.0 || echo "dotnet-ef already installed"
+
+      # Применение миграций EF Core
       - name: Apply EF Core migrations
         run: |
           cd src/backend/services/StockCardService/StockCardService.WebApi
+          export PATH="$PATH:$PWD/.config/dotnet-tools"
           echo "Applying EF Core migrations..."
-          dotnet ef database update \
+          dotnet tool run dotnet-ef database update \
             --project ../StockCardService.Infrastructure \
             --startup-project .
         env:
           ConnectionStrings__stock-card-db: "Host=localhost;Database=stock-card-db;Username=postgres;Password=password;Port=5432"
 
+      # Прогон тестов
       - name: Run tests
         run: dotnet test src/backend/services/StockCardService/StockCardService.Tests --no-build --verbosity normal
         env:
