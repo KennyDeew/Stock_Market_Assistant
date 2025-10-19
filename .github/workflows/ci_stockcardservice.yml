@@ -68,7 +68,8 @@ jobs:
           echo "Applying EF Core migrations..."
           dotnet tool run dotnet-ef database update \
             --project ../StockCardService.Infrastructure.EntityFramework \
-            --startup-project .
+            --startup-project . \
+            --connection "Host=localhost;Database=stock-card-db;Username=postgres;Password=password;Port=5432"
         env:
           ConnectionStrings__stock-card-db: "Host=localhost;Database=stock-card-db;Username=postgres;Password=password;Port=5432"
 
