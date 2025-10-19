@@ -100,7 +100,7 @@ jobs:
       - name: Build and push image
         uses: docker/build-push-action@v5
         with:
-          context: ./src/backend/services/StockCardService
+          context: .
           file: ./src/backend/services/StockCardService/StockCardService.WebApi/Dockerfile
           push: true
           tags: |
