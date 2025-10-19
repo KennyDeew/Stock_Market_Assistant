@@ -46,10 +46,10 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore dependencies
-        run: dotnet restore src/backend/services/StockCardService
+        run: dotnet restore src/backend/services/StockCardService/StockCardService.WebApi
 
       - name: Build solution
-        run: dotnet build src/backend/services/StockCardService --configuration Release --no-restore
+        run: dotnet build src/backend/services/StockCardService/StockCardService.WebApi --configuration Release --no-restore
 
       - name: Apply EF Core migrations
         run: |
