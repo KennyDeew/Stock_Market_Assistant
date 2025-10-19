@@ -99,7 +99,7 @@ namespace StockMarketAssistant.StockCardService.WebApi
             app.UseAuthorization();
             app.MapControllers();
 
-            app.MigrateDatabase<StockCardDbContext>();
+            //app.MigrateDatabase<StockCardDbContext>();
             //Заполняем БД объектами из FakeDataFactory
             using (var scope = app.Services.CreateScope())
             {

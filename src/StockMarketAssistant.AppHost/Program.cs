@@ -5,9 +5,8 @@ internal class Program
     private static void Main(string[] args)
     {
         var builder = DistributedApplication.CreateBuilder(args);
-        
+
         // Добавление проектов
-        
         var apiGatewayService = builder.AddProject<Projects.Gateway_WebApi>("gateway-api");
         var apiAuthService = builder.AddProject<Projects.AuthService_WebApi>("authservice-api");
         var apiStockCardService = builder.AddProject<Projects.StockCardService_WebApi>("stockcardservice-api");

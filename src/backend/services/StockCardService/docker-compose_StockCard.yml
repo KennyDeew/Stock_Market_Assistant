@@ -1,0 +1,87 @@
+services:
+
+  stockcardservice-api:
+    image: docker.io/kennydew/stockcardservice-api:1.0.3
+    ports:
+      - 8080:8080
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__stock-card-db=Host=postgres-stockcard;Database=stock-card-db;Username=postgres;Password=password;Port=5432
+      - ConnectionStrings__finantial-report-db=mongodb://root:example@mongo-stockcard:27017/finantial-report-db?authSource=admin
+    depends_on:
+      - postgres-stockcard
+      - mongo-stockcard
+    networks:
+      - stock_network
+    command: >
+      sh -c "echo 'Waiting for PostgreSQL...' &&
+             sleep 5 &&
+             echo 'Applying migrations...' &&
+             dotnet ef database update --project /src/StockCardService.Infrastructure --startup-project /src/StockCardService.WebApi &&
+             echo 'Migrations applied. Starting API...' &&
+             dotnet StockCardService.WebApi.dll"
+
+  postgres-stockcard:
+    image: postgres:latest
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=stock-card-db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    networks:
+      - stock_network
+  
+  mongo-stockcard:
+    image: mongo:7
+    restart: always
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=example
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - stock_network
+
+  pgweb:
+    image: sosedoff/pgweb
+    restart: always
+    depends_on:
+      - postgres-stockcard
+    environment:
+      PGWEB_DATABASE_URL: "postgres://postgres:password@postgres-stockcard:5432/stock-card-db?sslmode=disable"
+    ports:
+      - "8081:8081"
+    command: ["--bind=0.0.0.0", "--listen=8081"]
+    networks:
+      - stock_network
+
+  mongo-express:
+    image: mongo-express
+    restart: always
+    depends_on:
+      - mongo-stockcard
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=mongo-stockcard
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=root
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=example
+      - ME_CONFIG_BASICAUTH_USERNAME=admin
+      - ME_CONFIG_BASICAUTH_PASSWORD=admin
+    ports:
+      - "8082:8081"
+    networks:
+      - stock_network
+
+volumes:
+  postgres_data:
+  mongo_data:
+
+networks:
+  stock_network:
+    driver: bridge

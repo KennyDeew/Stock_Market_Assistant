@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <Sdk Name="Aspire.AppHost.Sdk" Version="9.0.0" />
+  <Sdk Name="Aspire.AppHost.Sdk" Version="9.5.1" />
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -12,10 +12,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Aspire.Hosting.AppHost" Version="9.3.1" />
-    <PackageReference Include="Aspire.Hosting.MongoDB" Version="9.3.1" />
-    <PackageReference Include="Aspire.Hosting.PostgreSQL" Version="9.3.1" />
-    <PackageReference Include="Aspire.Hosting.Redis" Version="9.3.1" />
+    <PackageReference Include="Aspire.Hosting.AppHost" Version="9.5.1" />
+    <PackageReference Include="Aspire.Hosting.Kubernetes" Version="9.5.1-preview.1.25502.11" />
+    <PackageReference Include="Aspire.Hosting.MongoDB" Version="9.5.1" />
+    <PackageReference Include="Aspire.Hosting.PostgreSQL" Version="9.5.1" />
+    <PackageReference Include="Aspire.Hosting.Redis" Version="9.5.1" />
   </ItemGroup>
 
   <ItemGroup>
