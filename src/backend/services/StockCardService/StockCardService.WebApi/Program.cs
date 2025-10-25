@@ -6,6 +6,7 @@ using StockCardService.Infrastructure.EntityFramework;
 using StockCardService.Infrastructure.Repositories;
 using StockMarketAssistant.StockCardService.Application.Interfaces;
 using StockMarketAssistant.StockCardService.Application.Services;
+using StockMarketAssistant.StockCardService.Domain.Interfaces;
 using StockMarketAssistant.StockCardService.Domain.Entities;
 using StockMarketAssistant.StockCardService.Infrastructure.EntityFramework;
 using StockMarketAssistant.StockCardService.Infrastructure.EntityFramework.Settings;

@@ -13,8 +13,10 @@ namespace StockMarketAssistant.StockCardService.Tests.Builders
         private string _description = "ПАО «СберБанк России» занимается оказанием банковских и финансовых услуг";
         private string _currency = "RUB";
         private decimal _currentPrice = 0m;
-        private List<MultiplierDto> _multipliers = new();
-        private List<DividendDto> _dividends = new();
+        private List<Multiplier> _multipliers = new();
+        private List<Dividend> _dividends = new();
+        private List<MultiplierDto> _multipliersDto = new();
+        private List<DividendDto> _dividendsDto = new();
 
         public ShareCardBuilder WithId(Guid id)
         {
@@ -52,15 +54,15 @@ namespace StockMarketAssistant.StockCardService.Tests.Builders
             return this;
         }
 
-        public ShareCardBuilder WithMultipliers(List<MultiplierDto> multipliers)
+        public ShareCardBuilder WithMultipliers(List<MultiplierDto> multipliersDto)
         {
-            _multipliers = multipliers;
+            _multipliersDto = multipliersDto;
             return this;
         }
 
-        public ShareCardBuilder WithDividends(List<DividendDto> dividends)
+        public ShareCardBuilder WithDividends(List<DividendDto> dividendsDto)
         {
-            _dividends = dividends;
+            _dividendsDto = dividendsDto;
             return this;
         }
 
@@ -92,8 +94,8 @@ namespace StockMarketAssistant.StockCardService.Tests.Builders
                 Description = _description,
                 Currency = _currency,
                 CurrentPrice = _currentPrice,
-                Multipliers = _multipliers,
-                Dividends = _dividends
+                Multipliers = _multipliersDto,
+                Dividends = _dividendsDto
             };
         }
 

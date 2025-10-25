@@ -1,4 +1,4 @@
-﻿namespace StockCardService.Domain.Entities
+﻿namespace StockMarketAssistant.StockCardService.Domain.Interfaces
 {
     /// <summary>
     /// Интерфейс сущности с идентификатором.

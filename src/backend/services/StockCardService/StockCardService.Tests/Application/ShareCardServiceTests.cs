@@ -6,6 +6,7 @@ using StockMarketAssistant.StockCardService.Application.DTOs._01_ShareCard;
 using StockMarketAssistant.StockCardService.Application.DTOs._01sub_Dividend;
 using StockMarketAssistant.StockCardService.Application.DTOs._01sub_Multiplier;
 using StockMarketAssistant.StockCardService.Application.Services;
+using StockMarketAssistant.StockCardService.Domain.Interfaces;
 using StockMarketAssistant.StockCardService.Domain.Entities;
 using StockMarketAssistant.StockCardService.Tests.Builders;
 

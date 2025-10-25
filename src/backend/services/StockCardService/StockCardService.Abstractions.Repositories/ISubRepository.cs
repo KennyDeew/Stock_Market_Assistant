@@ -1,4 +1,4 @@
-﻿using StockCardService.Domain.Entities;
+﻿using StockMarketAssistant.StockCardService.Domain.Interfaces;
 
 namespace StockCardService.Abstractions.Repositories
 {

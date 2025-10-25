@@ -1,6 +1,6 @@
 ﻿using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
-using StockCardService.Domain.Entities;
+using StockMarketAssistant.StockCardService.Domain.Interfaces;
 
 namespace StockMarketAssistant.StockCardService.Domain.Entities
 {

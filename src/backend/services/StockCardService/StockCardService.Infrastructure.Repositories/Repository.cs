@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using StockCardService.Abstractions.Repositories;
-using StockCardService.Domain.Entities;
+using StockMarketAssistant.StockCardService.Domain.Interfaces;
 using StockMarketAssistant.StockCardService.Infrastructure.EntityFramework;
 using System.Linq.Expressions;
 
