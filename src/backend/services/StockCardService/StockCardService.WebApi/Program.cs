@@ -9,9 +9,10 @@ using StockMarketAssistant.StockCardService.Application.Services;
 using StockMarketAssistant.StockCardService.Domain.Interfaces;
 using StockMarketAssistant.StockCardService.Domain.Entities;
 using StockMarketAssistant.StockCardService.Infrastructure.EntityFramework;
-using StockMarketAssistant.StockCardService.Infrastructure.EntityFramework.Settings;
 using StockMarketAssistant.StockCardService.Infrastructure.Repositories;
 using StockMarketAssistant.StockCardService.WebApi.Helper;
+using StockMarketAssistant.StockCardService.Infrastructure.MongoDb;
+using StockMarketAssistant.StockCardService.Infrastructure.MongoDb.Settings;
 
 namespace StockMarketAssistant.StockCardService.WebApi
 {
