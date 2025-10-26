@@ -1,7 +1,32 @@
 services:
 
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.7.1
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - stock_network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.7.1
+    depends_on:
+      - zookeeper
+    ports:
+      - "29091:29091"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9091,PLAINTEXT_HOST://localhost:29091
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - stock_network
+
   stockcardservice-api:
-    image: docker.io/kennydew/stockcardservice-api:1.0.3
+    image: docker.io/kennydew/stockcardservice-api:1.0.4
     ports:
       - 8080:8080
     environment:
@@ -9,9 +34,12 @@ services:
       - ASPNETCORE_URLS=http://+:8080
       - ConnectionStrings__stock-card-db=Host=postgres-stockcard;Database=stock-card-db;Username=postgres;Password=password;Port=5432
       - ConnectionStrings__finantial-report-db=mongodb://root:example@mongo-stockcard:27017/finantial-report-db?authSource=admin
+      #- ApplicationOptions__KafkaOptions__BootstrapServers=kafka1:9091,kafka2:9092,kafka3:9093
+      - ApplicationOptions__KafkaOptions__BootstrapServers=kafka:9091
     depends_on:
       - postgres-stockcard
       - mongo-stockcard
+      - kafka
     networks:
       - stock_network
     command: >

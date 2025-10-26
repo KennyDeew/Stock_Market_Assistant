@@ -1,4 +1,6 @@
-﻿using StockCardService.Abstractions.Repositories;
+﻿using Microsoft.Extensions.Logging;
+using StockCardService.Abstractions.Repositories;
+using StockCardService.Infrastructure.Messaging.Kafka;
 using StockMarketAssistant.StockCardService.Application.DTOs._01sub_FinancialReport;
 using StockMarketAssistant.StockCardService.Application.Interfaces;
 using StockMarketAssistant.StockCardService.Domain.Entities;
@@ -8,10 +10,15 @@ namespace StockMarketAssistant.StockCardService.Application.Services
     public class FinancialReportService : IFinancialReportService
     {
         private readonly IMongoRepository<FinancialReport, Guid> _financialReportRepository;
+        private readonly ILogger<FinancialReportService> _logger;
+        private readonly FinReportCreatedMessageProducer _producer;
 
-        public FinancialReportService(IMongoRepository<FinancialReport, Guid> financialReportRepository)
+
+        public FinancialReportService(IMongoRepository<FinancialReport, Guid> financialReportRepository, ILogger<FinancialReportService> logger, FinReportCreatedMessageProducer producer)
         {
             _financialReportRepository = financialReportRepository;
+            _logger = logger;
+            _producer = producer;
         }
 
         /// <summary>
@@ -45,6 +52,20 @@ namespace StockMarketAssistant.StockCardService.Application.Services
             };
 
             await _financialReportRepository.AddAsync(financialReport);
+
+            // Формируем Kafka-сообщение
+            var kafkaMessage = new FinancialReportCreatedMessage
+            {
+                ShareCardId = financialReport.ParentId,
+                Name = financialReport.Name,
+                Period = financialReport.Period
+            };
+
+            // 3️⃣ Отправляем в Kafka
+            await _producer.ProduceAsync(kafkaMessage, CancellationToken.None);
+
+            _logger.LogInformation($"Financial report '{financialReport.Name}' for ShareCard {financialReport.ParentId} created and message sent.");
+
             return financialReport.Id;
         }
 
