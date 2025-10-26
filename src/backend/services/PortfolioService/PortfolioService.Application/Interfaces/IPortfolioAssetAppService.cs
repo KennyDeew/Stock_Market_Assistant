@@ -1,4 +1,6 @@
 ﻿using StockMarketAssistant.PortfolioService.Application.DTOs;
+using StockMarketAssistant.PortfolioService.Domain.Enums;
+using StockMarketAssistant.SharedLibrary.Enums;
 
 namespace StockMarketAssistant.PortfolioService.Application.Interfaces
 {
@@ -67,5 +69,23 @@ namespace StockMarketAssistant.PortfolioService.Application.Interfaces
         /// Удалить транзакцию актива
         /// </summary>
         Task<bool> DeleteAssetTransactionAsync(Guid transactionId);
+
+        /// <summary>
+        /// Получить информацию по доходности актива
+        /// </summary>
+        /// <param name="assetId">Идентификатор актива</param>
+        /// <param name="startDate">Начальная дата периода, за который рассчитывается доходность</param>
+        /// <param name="endDate">Конечная дата периода, за который рассчитывается доходность</param>
+        /// <returns></returns>
+        Task<PortfolioAssetProfitLossDto?> GetAssetProfitLossAsync(Guid assetId, CalculationType calculationType);
+
+        /// <summary>
+        /// Получить информацию о ценной бумаге актива из внешнего сервиса StockCardService
+        /// </summary>
+        /// <param name="assetType">Тип финансового актива</param>
+        /// <param name="stockCardId">Идентификатор ценной бумаги</param>
+        /// <param name="toRetrieveCurrentPrice">Требуется ли считывать текущую цену по ценной бумаге</param>
+        /// <returns></returns>
+        Task<StockCardInfoDto> GetStockCardInfoAsync(PortfolioAssetType assetType, Guid stockCardId, bool toRetrieveCurrentPrice);
     }
 }

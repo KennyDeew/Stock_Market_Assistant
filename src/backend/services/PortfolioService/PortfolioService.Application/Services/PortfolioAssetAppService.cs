@@ -6,6 +6,7 @@ using StockMarketAssistant.PortfolioService.Application.Interfaces.Gateways;
 using StockMarketAssistant.PortfolioService.Application.Interfaces.Repositories;
 using StockMarketAssistant.PortfolioService.Domain.Entities;
 using StockMarketAssistant.PortfolioService.Domain.Enums;
+using StockMarketAssistant.SharedLibrary.Enums;
 
 namespace StockMarketAssistant.PortfolioService.Application.Services
 {
@@ -31,25 +32,34 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
             await _cache.RemoveAsync($"asset_{assetId}");
         }
 
-        private async Task<StockCardInfoDto> GetStockCardInfoAsync(PortfolioAssetType assetType, Guid stockCardId)
+        /// <summary>
+        /// Получить информацию о ценной бумаге актива из внешнего сервиса StockCardService
+        /// </summary>
+        /// <param name="assetType">Тип финансового актива</param>
+        /// <param name="stockCardId">Идентификатор ценной бумаги</param>
+        /// <param name="toRetrieveCurrentPrice">Требуется ли считывать текущую цену по ценной бумаге</param>
+        /// <returns></returns>
+        public async Task<StockCardInfoDto> GetStockCardInfoAsync(PortfolioAssetType assetType, Guid stockCardId, bool toRetrieveCurrentPrice)
         {
             return assetType switch
             {
-                PortfolioAssetType.Share => await GetShareCardInfoAsync(stockCardId),
+                PortfolioAssetType.Share => await GetShareCardInfoAsync(stockCardId, toRetrieveCurrentPrice),
                 PortfolioAssetType.Bond => await GetBondCardInfoAsync(stockCardId),
                 _ => new StockCardInfoDto(string.Empty, string.Empty, string.Empty)
             };
         }
 
-        private async Task<StockCardInfoDto> GetShareCardInfoAsync(Guid stockCardId)
+        private async Task<StockCardInfoDto> GetShareCardInfoAsync(Guid stockCardId, bool toRetrieveCurrentPrice)
         {
+            if (toRetrieveCurrentPrice)
+                await _stockCardServiceGateway.UpdateAllPricesForShareCardsAsync();
             var shareCard = await _stockCardServiceGateway.GetShortShareCardModelByIdAsync(stockCardId);
             if (shareCard is null)
             {
                 _logger.LogWarning("Акция с ID {StockCardId} не найдена в сервисе карточек активов", stockCardId);
                 return new StockCardInfoDto(string.Empty, string.Empty, string.Empty);
             }
-            return new StockCardInfoDto(shareCard.Ticker, shareCard.Name, shareCard.Description ?? string.Empty, shareCard.Currency);
+            return new StockCardInfoDto(shareCard.Ticker, shareCard.Name, shareCard.Description ?? string.Empty, toRetrieveCurrentPrice ? shareCard.CurrentPrice : null, shareCard.Currency);
         }
 
         private async Task<StockCardInfoDto> GetBondCardInfoAsync(Guid stockCardId)
@@ -60,7 +70,7 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                 _logger.LogWarning("Облигация с ID {StockCardId} не найдена в сервисе карточек активов", stockCardId);
                 return new StockCardInfoDto(string.Empty, string.Empty, string.Empty);
             }
-            return new StockCardInfoDto(bondCard.Ticker, bondCard.Name, bondCard.Description ?? string.Empty, bondCard.Currency);
+            return new StockCardInfoDto(bondCard.Ticker, bondCard.Name, bondCard.Description ?? string.Empty, null, bondCard.Currency);
         }
 
         /// <summary>
@@ -87,7 +97,7 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
 
                 PortfolioAsset asset = new(Guid.NewGuid(), dto.PortfolioId, dto.StockCardId, dto.AssetType);
                 // Вызов внешнего микросервиса карточки актива
-                var cardInfo = await GetStockCardInfoAsync(asset.AssetType, asset.StockCardId);
+                var cardInfo = await GetStockCardInfoAsync(asset.AssetType, asset.StockCardId, false);
 
                 // Создаем начальную транзакцию
                 var initialTransaction = new PortfolioAssetTransaction(
@@ -209,10 +219,13 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
 
                 PortfolioAsset? asset = await _portfolioAssetRepository.GetByIdAsync(id, a => a.Transactions);
                 if (asset is null)
+                {
+                    _logger.LogWarning("Актив портфеля с ID {AssetId} не найден", id);
                     return null;
+                }
 
                 // Вызов внешнего микросервиса карточки актива
-                var cardInfo = await GetStockCardInfoAsync(asset.AssetType, asset.StockCardId);
+                var cardInfo = await GetStockCardInfoAsync(asset.AssetType, asset.StockCardId, false);
                 var assetDto = new PortfolioAssetDto(
                     asset.Id,
                     asset.PortfolioId,
@@ -345,7 +358,7 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                     throw new InvalidOperationException("Недостаточно активов для продажи");
                 }
                 // Вызов внешнего микросервиса карточки актива
-                var cardInfo = await GetStockCardInfoAsync(asset.AssetType, asset.StockCardId);
+                var cardInfo = await GetStockCardInfoAsync(asset.AssetType, asset.StockCardId, false);
 
                 PortfolioAssetTransaction transaction = new(
                     Guid.NewGuid(),
@@ -375,6 +388,13 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
             }
         }
 
+        /// <summary>
+        /// Обновить транзакцию покупки/продажи актива ценной бумаги в портфеле
+        /// </summary>
+        /// <param name="transactionId"></param>
+        /// <param name="updatingTransactionDto"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
         public async Task UpdateAssetTransactionAsync(
             Guid transactionId,
             UpdatingPortfolioAssetTransactionDto updatingTransactionDto)
@@ -433,6 +453,159 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при обновлении транзакции {TransactionId}", transactionId);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Расчет текущей доходности
+        /// </summary>
+        private PortfolioAssetProfitLossDto CalculateCurrentProfitLoss(PortfolioAsset asset, StockCardInfoDto cardInfo)
+        {
+            var totalQuantity = asset.TotalQuantity;
+            var averagePurchasePrice = asset.AveragePurchasePrice;
+            var investmentAmount = totalQuantity * averagePurchasePrice;
+            decimal? absoluteReturn = null;
+            decimal? percentageReturn = null;
+            decimal? currentValue = null;
+            if (cardInfo.CurrentPrice.HasValue)
+            {
+                _logger.LogDebug("Расчет текущей доходности для актива {Ticker}: количество={Quantity}, средняя цена={AveragePrice}, текущая цена={CurrentPrice}",
+                    cardInfo.Ticker, totalQuantity, averagePurchasePrice, cardInfo.CurrentPrice);
+                currentValue = totalQuantity * cardInfo.CurrentPrice.Value;
+                absoluteReturn = currentValue - investmentAmount;
+                percentageReturn = investmentAmount == 0 ? 0 : decimal.Round((absoluteReturn ?? 0) / investmentAmount * 100);
+            }
+            else
+                _logger.LogWarning("Текущая доходность по активу {Ticker} не расчитана, так как не задана его текущая цена", cardInfo.Ticker);
+
+            return new PortfolioAssetProfitLossDto(
+                    asset.Id,
+                    asset.PortfolioId,
+                    cardInfo.Ticker,
+                    cardInfo.Name,
+                    absoluteReturn,
+                    percentageReturn,
+                    investmentAmount,
+                    currentValue,
+                    cardInfo.Currency,
+                    totalQuantity,
+                    averagePurchasePrice,
+                    cardInfo.CurrentPrice,
+                    CalculationType.Current);
+        }
+
+        /// <summary>
+        /// Расчет реализованной доходности
+        /// </summary>
+        private PortfolioAssetProfitLossDto CalculateRealizedProfitLoss(PortfolioAsset asset, StockCardInfoDto cardInfo)
+        {
+            var realizedProfitLoss = CalculateRealizedProfitLoss(asset.Transactions);
+            var totalInvestment = asset.TotalInvestment;
+
+            var percentageReturn = totalInvestment == 0 ? 0 : decimal.Round(realizedProfitLoss / totalInvestment * 100);
+
+            _logger.LogDebug("Расчет реализованной доходности для актива {Ticker}: реализованная прибыль={RealizedProfit}, общие инвестиции={TotalInvestment}",
+                cardInfo.Ticker, realizedProfitLoss, totalInvestment);
+
+            return new PortfolioAssetProfitLossDto(
+                asset.Id,
+                asset.PortfolioId,
+                cardInfo.Ticker,
+                cardInfo.Name,
+                realizedProfitLoss,
+                percentageReturn,
+                totalInvestment,
+                0,
+                cardInfo.Currency,
+                0,
+                0,
+                0,
+                CalculationType.Realized);
+        }
+
+        /// <summary>
+        /// Расчет реализованной доходности по транзакциям (упрощенный FIFO)
+        /// </summary>
+        private decimal CalculateRealizedProfitLoss(IEnumerable<PortfolioAssetTransaction> transactions)
+        {
+            var sellTransactions = transactions
+                .Where(t => t.TransactionType == PortfolioAssetTransactionType.Sell)
+                .OrderBy(t => t.TransactionDate)
+                .ToList();
+
+            var buyTransactions = transactions
+                .Where(t => t.TransactionType == PortfolioAssetTransactionType.Buy)
+                .OrderBy(t => t.TransactionDate)
+                .ToList();
+
+            _logger.LogDebug("Расчет реализованной доходности: найдено {SellCount} продаж и {BuyCount} покупок",
+                sellTransactions.Count, buyTransactions.Count);
+
+            decimal realizedProfitLoss = 0;
+            var availableBuys = new Queue<(int Quantity, decimal Price)>(buyTransactions.Select(b => (b.Quantity, b.PricePerUnit)));
+
+            foreach (var sell in sellTransactions)
+            {
+                var remainingSellQuantity = sell.Quantity;
+
+                while (remainingSellQuantity > 0 && availableBuys.Count > 0)
+                {
+                    var (Quantity, Price) = availableBuys.Peek();
+                    var quantityToUse = Math.Min(Quantity, remainingSellQuantity);
+
+                    realizedProfitLoss += quantityToUse * (sell.PricePerUnit - Price);
+
+                    if (Quantity == quantityToUse)
+                    {
+                        availableBuys.Dequeue();
+                    }
+                    else
+                    {
+                        availableBuys.Dequeue();
+                        availableBuys.Enqueue((Quantity - quantityToUse, Price));
+                    }
+
+                    remainingSellQuantity -= quantityToUse;
+                }
+            }
+
+            _logger.LogDebug("Реализованная доходность рассчитана: {RealizedProfitLoss}", realizedProfitLoss);
+            return realizedProfitLoss;
+        }
+
+        /// <summary>
+        /// Получить информацию по доходности актива
+        /// </summary>
+        /// <param name="assetId"></param>
+        /// <param name="calculationType"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public async Task<PortfolioAssetProfitLossDto?> GetAssetProfitLossAsync(Guid assetId, CalculationType calculationType = CalculationType.Current)
+        {
+            try
+            {
+                _logger.LogInformation("Расчет доходности типа {CalculationType} для актива ID: {AssetId}", calculationType, assetId);
+                PortfolioAsset ? asset = await _portfolioAssetRepository.GetByIdAsync(assetId, a => a.Transactions);
+                if (asset is null)
+                {
+                    _logger.LogWarning("Актив портфеля с ID {AssetId} не найден", assetId);
+                    return null;
+                }
+
+                // Вызов внешнего микросервиса карточки актива
+                var cardInfo = await GetStockCardInfoAsync(asset.AssetType, asset.StockCardId, true);
+
+                // Рассчитываем доходность в зависимости от метода расчета
+                return calculationType switch
+                {
+                    CalculationType.Realized => CalculateRealizedProfitLoss(asset, cardInfo),
+                    _ => CalculateCurrentProfitLoss(asset, cardInfo)
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка при расчете доходности для актива ID: {AssetId}", assetId);
                 throw;
             }
         }

@@ -3,6 +3,8 @@ using NSwag.Annotations;
 using StockMarketAssistant.PortfolioService.Application.DTOs;
 using StockMarketAssistant.PortfolioService.Application.Interfaces;
 using StockMarketAssistant.PortfolioService.WebApi.Models;
+using StockMarketAssistant.SharedLibrary.Enums;
+using StockMarketAssistant.PortfolioService.WebApi.Mappings;
 
 namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
 {
@@ -59,20 +61,20 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
         /// <summary>
         /// Получить данные актива ценной бумаги из портфеля по Id
         /// </summary>
-        /// <param name="id">Id актива ценной бумаги из портфеля</param>
+        /// <param name="assetId">Id актива ценной бумаги из портфеля</param>
         /// <returns></returns>
-        [HttpGet("{id:guid}")]
+        [HttpGet("{assetId:guid}")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(PortfolioAssetResponse))]
         [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(string))]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<PortfolioAssetResponse>> GetPortfolioAssetById(Guid id)
+        public async Task<ActionResult<PortfolioAssetResponse>> GetPortfolioAssetById(Guid assetId)
         {
             try
             {
-                PortfolioAssetDto? result = await _portfolioAssetAppService.GetByIdAsync(id);
+                PortfolioAssetDto? result = await _portfolioAssetAppService.GetByIdAsync(assetId);
                 if (result is null)
                 {
-                    _logger.LogWarning("Актив портфеля с ID {AssetId} не найден", id);
+                    _logger.LogWarning("Актив портфеля с ID {AssetId} не найден", assetId);
                     return NotFound();
                 }
 
@@ -92,7 +94,7 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Ошибка при получении актива портфеля с ID: {Id}", id);
+                _logger.LogError(ex, "Ошибка при получении актива портфеля с ID: {Id}", assetId);
                 return StatusCode(StatusCodes.Status500InternalServerError, "Внутренняя ошибка сервера");
             }
         }
@@ -100,27 +102,27 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
         /// <summary>
         /// Удалить актив портфеля по Id
         /// </summary>
-        /// <param name="id">Id актива ценной бумаги из портфеля</param>
+        /// <param name="assetId">Id актива ценной бумаги из портфеля</param>
         /// <returns></returns>
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(string))]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        [HttpDelete("{id:guid}")]
-        public async Task<IActionResult> DeletePortfolioAsset(Guid id)
+        [HttpDelete("{assetId:guid}")]
+        public async Task<IActionResult> DeletePortfolioAsset(Guid assetId)
         {
             try
             {
-                if (!await _portfolioAssetAppService.ExistsAsync(id))
+                if (!await _portfolioAssetAppService.ExistsAsync(assetId))
                 {
-                    _logger.LogWarning("Актив портфеля с ID {AssetId} не найден при попытке удаления", id);
+                    _logger.LogWarning("Актив портфеля с ID {AssetId} не найден при попытке удаления", assetId);
                     return NotFound();
                 }
-                await _portfolioAssetAppService.DeleteAsync(id);
+                await _portfolioAssetAppService.DeleteAsync(assetId);
                 return NoContent();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Ошибка при удалении актива портфеля с ID: {Id}", id);
+                _logger.LogError(ex, "Ошибка при удалении актива портфеля с ID: {Id}", assetId);
                 return StatusCode(StatusCodes.Status500InternalServerError, "Внутренняя ошибка сервера");
             }
         }
@@ -360,6 +362,129 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
                                 transactionId, assetId);
                 return StatusCode(StatusCodes.Status500InternalServerError,
                                  new { error = "InternalError", message = "Внутренняя ошибка сервера" });
+            }
+        }
+        /// <summary>
+        /// Получить расчет доходности актива портфеля
+        /// </summary>
+        /// <param name="assetId">Уникальный идентификатор актива портфеля</param>
+        /// <param name="request">Параметры расчета доходности</param>
+        /// <returns>
+        /// 200 - Успешный возврат расчета доходности актива
+        /// 404 - Актив портфеля с указанным идентификатором не найден
+        /// 500 - Внутренняя ошибка сервера при расчете доходности
+        /// </returns>
+        /// <remarks>
+        /// Пример запроса:
+        /// GET /api/v1/portfolio-assets/{id}/profit-loss?calculationType=Current
+        /// </remarks>
+        [HttpGet("{assetId:guid}/profit-loss")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(PortfolioAssetProfitLossResponse))]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<PortfolioAssetProfitLossResponse>> GetAssetProfitLoss(
+            Guid assetId,
+            [FromQuery] CalculateProfitLossRequest request)
+        {
+            _logger.LogInformation("Запрос доходности актива ID: {AssetId}, тип расчета: {CalculationType}",
+                assetId, request.CalculationType);
+
+            try
+            {
+                var result = await _portfolioAssetAppService.GetAssetProfitLossAsync(assetId, request.CalculationType);
+                if (result == null)
+                {
+                    _logger.LogWarning("Актив портфеля с ID {AssetId} не найден при запросе доходности", assetId);
+                    return NotFound($"Актив портфеля с ID {assetId} не найден");
+                }
+
+                _logger.LogInformation("Успешно возвращена доходность актива ID: {AssetId}", assetId);
+                return Ok(result.ToResponse());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка при расчете доходности актива ID: {AssetId}", assetId);
+                return StatusCode(StatusCodes.Status500InternalServerError, "Произошла ошибка при расчете доходности актива");
+            }
+        }
+
+        /// <summary>
+        /// Получить расчет текущей доходности актива портфеля
+        /// </summary>
+        /// <param name="assetId">Уникальный идентификатор актива портфеля</param>
+        /// <returns>
+        /// 200 - Успешный возврат расчета текущей доходности актива
+        /// 404 - Актив портфеля с указанным идентификатором не найден
+        /// 500 - Внутренняя ошибка сервера при расчете доходности
+        /// </returns>
+        /// <remarks>
+        /// Пример запроса:
+        /// GET /api/v1/portfolio-assets/{id}/current-profit-loss
+        /// </remarks>
+        [HttpGet("{assetId:guid}/current-profit-loss")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(PortfolioAssetProfitLossResponse))]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<PortfolioAssetProfitLossResponse>> GetCurrentAssetProfitLoss(Guid assetId)
+        {
+            _logger.LogInformation("Запрос текущей доходности актива ID: {AssetId}", assetId);
+
+            try
+            {
+                var result = await _portfolioAssetAppService.GetAssetProfitLossAsync(assetId, CalculationType.Current);
+                if (result == null)
+                {
+                    _logger.LogWarning("Актив портфеля с ID {AssetId} не найден при запросе текущей доходности", assetId);
+                    return NotFound($"Актив портфеля с ID {assetId} не найден");
+                }
+
+                _logger.LogInformation("Успешно возвращена текущая доходность актива ID: {AssetId}", assetId);
+                return Ok(result.ToResponse());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка при расчете текущей доходности актива ID: {AssetId}", assetId);
+                return StatusCode(StatusCodes.Status500InternalServerError, "Произошла ошибка при расчете текущей доходности актива");
+            }
+        }
+
+        /// <summary>
+        /// Получить расчет реализованной доходности актива портфеля
+        /// </summary>
+        /// <param name="assetId">Уникальный идентификатор актива портфеля</param>
+        /// <returns>
+        /// 200 - Успешный возврат расчета реализованной доходности актива
+        /// 404 - Актив портфеля с указанным идентификатором не найден
+        /// 500 - Внутренняя ошибка сервера при расчете доходности
+        /// </returns>
+        /// <remarks>
+        /// Пример запроса:
+        /// GET /api/v1/portfolio-assets/{id}/realized-profit-loss
+        /// </remarks>
+        [HttpGet("{assetId:guid}/realized-profit-loss")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(PortfolioAssetProfitLossResponse))]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<PortfolioAssetProfitLossResponse>> GetRealizedAssetProfitLoss(Guid assetId)
+        {
+            _logger.LogInformation("Запрос реализованной доходности актива ID: {AssetId}", assetId);
+
+            try
+            {
+                var result = await _portfolioAssetAppService.GetAssetProfitLossAsync(assetId, CalculationType.Realized);
+                if (result == null)
+                {
+                    _logger.LogWarning("Актив портфеля с ID {AssetId} не найден при запросе реализованной доходности", assetId);
+                    return NotFound($"Актив портфеля с ID {assetId} не найден");
+                }
+
+                _logger.LogInformation("Успешно возвращена реализованная доходность актива ID: {AssetId}", assetId);
+                return Ok(result.ToResponse());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка при расчете реализованной доходности актива ID: {AssetId}", assetId);
+                return StatusCode(StatusCodes.Status500InternalServerError, "Произошла ошибка при расчете реализованной доходности актива");
             }
         }
     }

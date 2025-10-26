@@ -47,21 +47,21 @@ namespace StockMarketAssistant.PortfolioService.Infrastructure.Gateways
         }
 
 
-        //public async Task UpdateAllPricesForShareCardsAsync()
-        //{
-        //    try
-        //    {
-        //        var response = await _httpClient.PostAsync($"api/v1/ShareCard/UpdateAllPrices",
-        //        new StringContent(string.Empty));
+        public async Task UpdateAllPricesForShareCardsAsync()
+        {
+            try
+            {
+                var response = await _httpClient.PutAsync($"api/v1/ShareCard/UpdateAllPrices",
+                new StringContent(string.Empty));
 
-        //        response.EnsureSuccessStatusCode();
-        //        _logger.LogInformation("Цены акций успешно актуализированы");
-        //    }
-        //    catch (HttpRequestException ex)
-        //    {
-        //        _logger.LogError(ex, "Ошибка при попытке обновления цен акций");
-        //        throw;
-        //    }
-        //}
+                response.EnsureSuccessStatusCode();
+                _logger.LogInformation("Цены акций успешно актуализированы");
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, "Ошибка при попытке обновления цен акций");
+                throw;
+            }
+        }
     }
 }

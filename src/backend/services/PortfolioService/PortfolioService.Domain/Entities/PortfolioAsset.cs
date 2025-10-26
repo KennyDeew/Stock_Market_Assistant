@@ -85,6 +85,23 @@ namespace StockMarketAssistant.PortfolioService.Domain.Entities
         }
 
         /// <summary>
+        /// Общая сумма инвестиций в актив (вычисляемое свойство)
+        /// </summary>
+        [NotMapped] // Поле не должно сохраняться в БД
+        public decimal TotalInvestment
+        {
+            get
+            {
+                if (Transactions == null || Transactions.Count == 0)
+                    return 0;
+
+                return Transactions
+                    .Where(t => t.TransactionType == PortfolioAssetTransactionType.Buy)
+                    .Sum(t => t.Quantity * t.PricePerUnit);
+            }
+        }
+
+        /// <summary>
         /// Дата последнего обновления актива (вычисляемое свойство)
         /// </summary>
         [NotMapped]

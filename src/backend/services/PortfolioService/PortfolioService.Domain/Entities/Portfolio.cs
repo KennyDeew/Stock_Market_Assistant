@@ -1,6 +1,4 @@
-﻿using StockMarketAssistant.PortfolioService.Domain.Enums;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Transactions;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 
 namespace StockMarketAssistant.PortfolioService.Domain.Entities
 {
