@@ -12,16 +12,36 @@ services:
 
   kafka:
     image: confluentinc/cp-kafka:7.7.1
+    container_name: kafka
     depends_on:
       - zookeeper
     ports:
-      - "29091:29091"
+      - "9091:9091"       # для других контейнеров
+      - "29091:29091"     # для localhost снаружи
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9091,PLAINTEXT_HOST://localhost:29091
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_LISTENERS: INSIDE://0.0.0.0:9091,OUTSIDE://0.0.0.0:29091
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka:9091,OUTSIDE://localhost:29091
+      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+    networks:
+      - stock_network
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    depends_on:
+      - kafka
+      - zookeeper
+    ports:
+      - "8083:8080"
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9091
+      - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
     networks:
       - stock_network
 
@@ -35,7 +55,7 @@ services:
       - ConnectionStrings__stock-card-db=Host=postgres-stockcard;Database=stock-card-db;Username=postgres;Password=password;Port=5432
       - ConnectionStrings__finantial-report-db=mongodb://root:example@mongo-stockcard:27017/finantial-report-db?authSource=admin
       #- ApplicationOptions__KafkaOptions__BootstrapServers=kafka1:9091,kafka2:9092,kafka3:9093
-      - ApplicationOptions__KafkaOptions__BootstrapServers=kafka:9091
+      - KafkaOptions__BootstrapServers=kafka:9091
     depends_on:
       - postgres-stockcard
       - mongo-stockcard
@@ -50,6 +70,19 @@ services:
              echo 'Migrations applied. Starting API...' &&
              dotnet StockCardService.WebApi.dll"
 
+  kafka-consumer:
+    image: kennydew/kafkaconsumer:1.0.0
+    container_name: kafka-consumer
+    depends_on:
+      - kafka
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - KafkaOptions__BootstrapServers=kafka:9091
+      - GroupId=notification_service
+    networks:
+      - stock_network
+    restart: always
+  
   postgres-stockcard:
     image: postgres:latest
     restart: always

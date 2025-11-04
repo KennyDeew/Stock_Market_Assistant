@@ -23,7 +23,7 @@ namespace StockCardService.Infrastructure.Messaging.Kafka
         /// <summary>
         /// Kafka-продюсер из библиотеки Confluent.Kafka.
         /// </summary>
-        public IProducer<TKey, TValue> Producer { get; }
+        protected IProducer<TKey, TValue> Producer { get; }
 
         /// <summary>
         /// Конструктор, создающий Kafka-продюсер с заданной конфигурацией.

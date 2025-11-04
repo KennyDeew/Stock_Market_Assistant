@@ -3,15 +3,15 @@
     /// <summary>
     /// Интерфейс для Kafka-продюсера
     /// </summary>
-    public interface IKafkaProducer
+    /// <typeparam name="TKey">Тип ключа Kafka-сообщения.</typeparam>
+    /// <typeparam name="TValue">Тип значения Kafka-сообщения.</typeparam>
+    public interface IKafkaProducer<TKey, TValue>
     {
         /// <summary>
         /// Публикация сообщения в Kafka
         /// </summary>
-        /// <typeparam name="T">Тип сообщения</typeparam>
-        /// <param name="topic">Имя топика в Kafka</param>
-        /// <param name="message">Экземпляр сообщения</param>
-        /// <returns></returns>
-        Task ProduceAsync<T>(string topic, T message);
+        /// <param name="message">Сообщение, которое нужно опубликовать.</param>
+        /// <param name="cancellationToken">Токен отмены операции.</param>
+        Task ProduceAsync(TValue message, CancellationToken cancellationToken);
     }
 }

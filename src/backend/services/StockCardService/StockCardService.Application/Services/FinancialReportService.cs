@@ -11,10 +11,10 @@ namespace StockMarketAssistant.StockCardService.Application.Services
     {
         private readonly IMongoRepository<FinancialReport, Guid> _financialReportRepository;
         private readonly ILogger<FinancialReportService> _logger;
-        private readonly FinReportCreatedMessageProducer _producer;
+        private readonly IKafkaProducer<string, FinancialReportCreatedMessage> _producer;
 
 
-        public FinancialReportService(IMongoRepository<FinancialReport, Guid> financialReportRepository, ILogger<FinancialReportService> logger, FinReportCreatedMessageProducer producer)
+        public FinancialReportService(IMongoRepository<FinancialReport, Guid> financialReportRepository, ILogger<FinancialReportService> logger, IKafkaProducer<string, FinancialReportCreatedMessage> producer)
         {
             _financialReportRepository = financialReportRepository;
             _logger = logger;
@@ -61,7 +61,7 @@ namespace StockMarketAssistant.StockCardService.Application.Services
                 Period = financialReport.Period
             };
 
-            // 3️⃣ Отправляем в Kafka
+            // Отправляем в Kafka
             await _producer.ProduceAsync(kafkaMessage, CancellationToken.None);
 
             _logger.LogInformation($"Financial report '{financialReport.Name}' for ShareCard {financialReport.ParentId} created and message sent.");

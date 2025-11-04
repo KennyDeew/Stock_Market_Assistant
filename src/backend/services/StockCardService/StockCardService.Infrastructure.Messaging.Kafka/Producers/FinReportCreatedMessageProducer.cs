@@ -1,7 +1,5 @@
 ﻿using Confluent.Kafka;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using StockCardService.Infrastructure.Messaging.Kafka.Options;
 using StockMarketAssistant.StockCardService.Domain.Entities;
 
 namespace StockCardService.Infrastructure.Messaging.Kafka
@@ -10,52 +8,78 @@ namespace StockCardService.Infrastructure.Messaging.Kafka
     ///  Реализация Kafka-продюсера для отправки сообщений о публикации финансового отчета
     /// </summary>
     //public class FinReportCreatedMessageProducer : IKafkaProducer<string, FinancialReportCreatedMessage>
-    public class FinReportCreatedMessageProducer : BaseProducer<string, FinancialReportCreatedMessage>
+    public class FinReportCreatedMessageProducer : IKafkaProducer<string, FinancialReportCreatedMessage>
     {
+        /// <summary>
+        /// Название Kafka-топика, в который публикуются сообщения.
+        /// </summary>
         private const string TopicName = "created_financial_reports";
 
+        /// <summary>
+        /// Экземпляр Kafka-продюсера, созданный через фабрику.
+        /// </summary>
+        private readonly IProducer<string, FinancialReportCreatedMessage> _producer;
+
+        /// <summary>
+        /// Логгер для регистрации событий и ошибок.
+        /// </summary>
+        private readonly ILogger<FinReportCreatedMessageProducer> _logger;
+
+        /// <summary>
+        /// Конструктор продюсера сообщений о создании финансового отчёта.
+        /// </summary>
+        /// <param name="producerFactory">Фабрика Kafka-продюсеров.</param>
+        /// <param name="logger">Логгер.</param>
         public FinReportCreatedMessageProducer(
-        IOptions<ApplicationOptions> appOptions,
-        ILogger<FinReportCreatedMessageProducer> logger)
-        : base(appOptions.Value.KafkaOptions, logger)
+            IKafkaProducerFactory producerFactory,
+            ILogger<FinReportCreatedMessageProducer> logger)
         {
+            _producer = producerFactory.Create<string, FinancialReportCreatedMessage>();
+            _logger = logger;
         }
 
-        //public FinReportCreatedMessageProducer(
-        //    ApplicationOptions applicationOptions,
-        //    ILogger logger) :
-        //    base(applicationOptions.KafkaOptions, logger)
-        //{
-
-        //}
-
+        /// <summary>
+        /// Отправляет сообщение в прописанный топик.
+        /// </summary>
+        /// <param name="message">Сообщение для отправки.</param>
+        /// <param name="cancellationToken">Токен отмены.</param>
         public async Task ProduceAsync(FinancialReportCreatedMessage message, CancellationToken cancellationToken)
         {
             try
             {
-                await Producer.ProduceAsync(TopicName, new Message<string, FinancialReportCreatedMessage>
+                await _producer.ProduceAsync(TopicName, new Message<string, FinancialReportCreatedMessage>
                 {
                     Key = message.ShareCardId.ToString(),
                     Value = message
                 }, cancellationToken);
-                var loggedKey = message.ShareCardId.ToString() != null ? message.ShareCardId.ToString() : "null";
-                Logger?.LogInformation($"Message for financial report with shareCardId {loggedKey} sent");
+
+                _logger.LogInformation("Kafka: сообщение для ShareCardId={ShareCardId} отправлено", message.ShareCardId);
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Logger?.LogError(e.Message);
+                _logger.LogError(ex, "Kafka: ошибка при отправке сообщения для ShareCardId={ShareCardId}", message.ShareCardId);
+                throw;
             }
         }
 
         public async Task ProduceAsync(int partitionId, FinancialReportCreatedMessage message, CancellationToken cancellationToken)
         {
             var partition = new TopicPartition(TopicName, new Partition(partitionId));
-            await Producer.ProduceAsync(partition, new Message<string, FinancialReportCreatedMessage>
+            try
             {
-                Key = message.ShareCardId.ToString(),
-                Value = message
-            }, cancellationToken);
-            Logger?.LogInformation($"Message financial report with shareCardId {message.ShareCardId.ToString()} sent");
+                await _producer.ProduceAsync(partition, new Message<string, FinancialReportCreatedMessage>
+                {
+                    Key = message.ShareCardId.ToString(),
+                    Value = message
+                }, cancellationToken);
+                _logger?.LogInformation($"Message financial report with shareCardId {message.ShareCardId.ToString()} sent");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Kafka: ошибка при отправке сообщения для ShareCardId={ShareCardId}", message.ShareCardId);
+                throw;
+            }
+            
         }
     }
 }

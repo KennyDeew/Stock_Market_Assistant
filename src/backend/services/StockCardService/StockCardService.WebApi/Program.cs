@@ -55,8 +55,8 @@ namespace StockMarketAssistant.StockCardService.WebApi
             });
 
             //Настройка конфигурации Kafka
-            builder.Services.Configure<ApplicationOptions>(
-                builder.Configuration.GetSection("ApplicationOptions"));
+            builder.Services.Configure<KafkaOptions>(
+                builder.Configuration.GetSection("KafkaOptions"));
 
             // Настройка логирования
             // ----------------------------------------------
@@ -73,7 +73,8 @@ namespace StockMarketAssistant.StockCardService.WebApi
             builder.Services.AddScoped(typeof(ISubRepository<Coupon, Guid>), typeof(CouponRepository));
             builder.Services.AddScoped(typeof(IMongoRepository<FinancialReport, Guid>), typeof(FinancialReportRepository));
             builder.Services.AddSingleton<IMongoDBContext, MongoDBContext>();
-            builder.Services.AddSingleton<FinReportCreatedMessageProducer>();
+            builder.Services.AddSingleton<IKafkaProducerFactory, KafkaProducerFactory>();
+            builder.Services.AddSingleton<IKafkaProducer<string, FinancialReportCreatedMessage>, FinReportCreatedMessageProducer>();
             builder.Services.AddScoped<IShareCardService, ShareCardService>();
             builder.Services.AddScoped<IBondCardService, BondCardservice>();
             builder.Services.AddScoped<ICryptoCardService, CryptoCardService>();
