@@ -8,7 +8,7 @@ namespace StockCardService.Infrastructure.Messaging.Kafka
     ///  Реализация Kafka-продюсера для отправки сообщений о публикации финансового отчета
     /// </summary>
     //public class FinReportCreatedMessageProducer : IKafkaProducer<string, FinancialReportCreatedMessage>
-    public class FinReportCreatedMessageProducer : IKafkaProducer<string, FinancialReportCreatedMessage>
+    public class FinReportCreatedMessageProducer : IKafkaProducer<string, FinancialReportCreatedMessage>, IDisposable 
     {
         /// <summary>
         /// Название Kafka-топика, в который публикуются сообщения.
@@ -24,6 +24,8 @@ namespace StockCardService.Infrastructure.Messaging.Kafka
         /// Логгер для регистрации событий и ошибок.
         /// </summary>
         private readonly ILogger<FinReportCreatedMessageProducer> _logger;
+
+        private bool _disposed;
 
         /// <summary>
         /// Конструктор продюсера сообщений о создании финансового отчёта.
@@ -80,6 +82,31 @@ namespace StockCardService.Infrastructure.Messaging.Kafka
                 throw;
             }
             
+        }
+
+        /// <summary>
+        /// Завершение работы продюсера и освобождение ресурсов.
+        /// </summary>
+        public void Dispose()
+        {
+            if (_disposed) return;
+
+            try
+            {
+                // Завершаем все отложенные сообщения (важно для корректной доставки)
+                _logger.LogInformation("KafkaProducer: сбрасываю буфер перед завершением работы...");
+                _producer.Flush(TimeSpan.FromSeconds(10));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка при попытке Flush Kafka-продюсера");
+            }
+            finally
+            {
+                _producer.Dispose();
+                _disposed = true;
+                _logger.LogInformation("KafkaProducer: соединение закрыто и ресурсы освобождены");
+            }
         }
     }
 }
