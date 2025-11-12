@@ -133,6 +133,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StockCardService.Infrastruc
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StockCardService.Infrastructure.MongoDb", "src\backend\services\StockCardService\StockCardService.Infrastructure.MongoDb\StockCardService.Infrastructure.MongoDb.csproj", "{E7867C0C-28E0-4675-AFD3-CEB1B8DC5BE2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StockCardService.Infrastructure.Integrations.Moex", "src\backend\services\StockCardService\StockCardService.Infrastructure.Integrations.Moex\StockCardService.Infrastructure.Integrations.Moex.csproj", "{C4CD6176-0C5A-484F-8F06-573F96E8AB1A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -527,6 +529,18 @@ Global
 		{E7867C0C-28E0-4675-AFD3-CEB1B8DC5BE2}.Release|x64.Build.0 = Release|Any CPU
 		{E7867C0C-28E0-4675-AFD3-CEB1B8DC5BE2}.Release|x86.ActiveCfg = Release|Any CPU
 		{E7867C0C-28E0-4675-AFD3-CEB1B8DC5BE2}.Release|x86.Build.0 = Release|Any CPU
+		{C4CD6176-0C5A-484F-8F06-573F96E8AB1A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C4CD6176-0C5A-484F-8F06-573F96E8AB1A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C4CD6176-0C5A-484F-8F06-573F96E8AB1A}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{C4CD6176-0C5A-484F-8F06-573F96E8AB1A}.Debug|x64.Build.0 = Debug|Any CPU
+		{C4CD6176-0C5A-484F-8F06-573F96E8AB1A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C4CD6176-0C5A-484F-8F06-573F96E8AB1A}.Debug|x86.Build.0 = Debug|Any CPU
+		{C4CD6176-0C5A-484F-8F06-573F96E8AB1A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C4CD6176-0C5A-484F-8F06-573F96E8AB1A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C4CD6176-0C5A-484F-8F06-573F96E8AB1A}.Release|x64.ActiveCfg = Release|Any CPU
+		{C4CD6176-0C5A-484F-8F06-573F96E8AB1A}.Release|x64.Build.0 = Release|Any CPU
+		{C4CD6176-0C5A-484F-8F06-573F96E8AB1A}.Release|x86.ActiveCfg = Release|Any CPU
+		{C4CD6176-0C5A-484F-8F06-573F96E8AB1A}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -589,6 +603,7 @@ Global
 		{5F74CA32-9AB8-4011-834A-8A3608AC8A7B} = {061E80F9-7EC6-4C32-947B-8E28C862C34D}
 		{D3DC0774-A99C-43A5-9881-5C4E97721AA6} = {2FB4AA13-2170-44D1-A977-065FA5380850}
 		{E7867C0C-28E0-4675-AFD3-CEB1B8DC5BE2} = {2FB4AA13-2170-44D1-A977-065FA5380850}
+		{C4CD6176-0C5A-484F-8F06-573F96E8AB1A} = {2FB4AA13-2170-44D1-A977-065FA5380850}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {C7DE2C96-9A08-45EC-9A91-EF711525ABF1}

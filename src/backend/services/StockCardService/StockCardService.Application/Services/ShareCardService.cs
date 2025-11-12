@@ -1,4 +1,5 @@
-﻿using StockCardService.Abstractions.Repositories;
+﻿using Microsoft.Extensions.Logging;
+using StockCardService.Abstractions.Repositories;
 using StockMarketAssistant.StockCardService.Application.DTOs._01_ShareCard;
 using StockMarketAssistant.StockCardService.Application.DTOs._01sub_Dividend;
 using StockMarketAssistant.StockCardService.Application.DTOs._01sub_Multiplier;
@@ -13,11 +14,26 @@ namespace StockMarketAssistant.StockCardService.Application.Services
     /// </summary>
     public class ShareCardService : IShareCardService
     {
+        /// <summary>
+        /// Репозиторий акций
+        /// </summary>
         private readonly IRepository<ShareCard, Guid> _shareCardRepository;
 
-        public ShareCardService(IRepository<ShareCard, Guid> shareCardRepository)
+        /// <summary>
+        /// Сервис для обновления цены облигации
+        /// </summary>
+        private readonly IStockPriceService _stockPriceService;
+
+        /// <summary>
+        /// Логгер для регистрации событий и ошибок.
+        /// </summary>
+        private readonly ILogger<ShareCardService> _logger;
+
+        public ShareCardService(IRepository<ShareCard, Guid> shareCardRepository, IStockPriceService stockPriceService, ILogger<ShareCardService> logger)
         {
             _shareCardRepository = shareCardRepository;
+            _stockPriceService = stockPriceService;
+            _logger = logger;
         }
 
         /// <summary>
@@ -228,7 +244,7 @@ namespace StockMarketAssistant.StockCardService.Application.Services
                 await semaphore.WaitAsync();
                 try
                 {
-                    var priceRequest = await MoexIssClient.GetCurrentPriceWithoutAuthAsync(card.Ticker);
+                    var priceRequest = await _stockPriceService.GetCurrentPriceAsync(card.Ticker, "shares", card.Board, CancellationToken.None);
                     if (priceRequest != null)
                     {
                         CardsAndPrices[card.Ticker] = (decimal)priceRequest;
@@ -236,7 +252,7 @@ namespace StockMarketAssistant.StockCardService.Application.Services
                 }
                 catch
                 {
-                    // todo Обработка ошибок (логирование или сохранение исключения)
+                    _logger.LogError($"Failed to get the actual price for ShareCard '{card.Ticker}'.");
                 }
                 finally
                 {

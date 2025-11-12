@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using StockCardService.Abstractions.Repositories;
 using StockCardService.Infrastructure.EntityFramework;
+using StockCardService.Infrastructure.Integrations.Moex;
 using StockCardService.Infrastructure.Messaging.Kafka;
 using StockCardService.Infrastructure.Messaging.Kafka.Options;
 using StockCardService.Infrastructure.Repositories;
@@ -72,6 +73,7 @@ namespace StockMarketAssistant.StockCardService.WebApi
             builder.Services.AddScoped(typeof(ISubRepository<Dividend, Guid>), typeof(DividendRepository));
             builder.Services.AddScoped(typeof(ISubRepository<Coupon, Guid>), typeof(CouponRepository));
             builder.Services.AddScoped(typeof(IMongoRepository<FinancialReport, Guid>), typeof(FinancialReportRepository));
+            builder.Services.AddScoped<IStockPriceService, MoexStockPriceService>();
             builder.Services.AddSingleton<IMongoDBContext, MongoDBContext>();
             builder.Services.AddSingleton<IKafkaProducerFactory, KafkaProducerFactory>();
             builder.Services.AddSingleton<IKafkaProducer<string, FinancialReportCreatedMessage>, FinReportCreatedMessageProducer>();

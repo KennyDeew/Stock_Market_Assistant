@@ -27,6 +27,7 @@
     <ProjectReference Include="..\..\..\..\StockMarketAssistant.ServiceDefaults\StockMarketAssistant.ServiceDefaults.csproj" />
     <ProjectReference Include="..\StockCardService.Application\StockCardService.Application.csproj" />
     <ProjectReference Include="..\StockCardService.Infrastructure.EntityFramework\StockCardService.Infrastructure.EntityFramework.csproj" />
+    <ProjectReference Include="..\StockCardService.Infrastructure.Integrations.Moex\StockCardService.Infrastructure.Integrations.Moex.csproj" />
     <ProjectReference Include="..\StockCardService.Infrastructure.MongoDb\StockCardService.Infrastructure.MongoDb.csproj" />
     <ProjectReference Include="..\StockCardService.Infrastructure.Repositories\StockCardService.Infrastructure.Repositories.csproj" />
   </ItemGroup>

@@ -1,12 +1,11 @@
 ﻿using AutoFixture;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using Moq;
 using StockCardService.Abstractions.Repositories;
 using StockMarketAssistant.StockCardService.Application.DTOs._01_ShareCard;
-using StockMarketAssistant.StockCardService.Application.DTOs._01sub_Dividend;
-using StockMarketAssistant.StockCardService.Application.DTOs._01sub_Multiplier;
+using StockMarketAssistant.StockCardService.Application.Interfaces;
 using StockMarketAssistant.StockCardService.Application.Services;
-using StockMarketAssistant.StockCardService.Domain.Interfaces;
 using StockMarketAssistant.StockCardService.Domain.Entities;
 using StockMarketAssistant.StockCardService.Tests.Builders;
 
@@ -16,13 +15,17 @@ namespace StockMarketAssistant.StockCardService.Tests.Application
     {
         private readonly Fixture _fixture;
         private readonly Mock<IRepository<ShareCard, Guid>> _shareCardRepositoryMock;
+        private readonly Mock<IStockPriceService> _stockPriceServiceMock;
+        private readonly Mock<ILogger<ShareCardService>> _loggerMock;
         private readonly ShareCardService _sut; // System Under Test
 
         public ShareCardServiceTests()
         {
             _fixture = new Fixture();
             _shareCardRepositoryMock = new Mock<IRepository<ShareCard, Guid>>();
-            _sut = new ShareCardService(_shareCardRepositoryMock.Object);
+            _stockPriceServiceMock = new Mock<IStockPriceService>();
+            _loggerMock = new Mock<ILogger<ShareCardService>>();
+            _sut = new ShareCardService(_shareCardRepositoryMock.Object, _stockPriceServiceMock.Object, _loggerMock.Object);
         }
 
         [Fact]
