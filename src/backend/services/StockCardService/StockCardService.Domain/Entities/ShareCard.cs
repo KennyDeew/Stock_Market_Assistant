@@ -3,7 +3,7 @@
 namespace StockMarketAssistant.StockCardService.Domain.Entities
 
 {
-    public class ShareCard : IEntity<Guid>
+    public class ShareCard : IEntity<Guid>, IStockEntity
     {
         /// <summary>
         /// Id акции
@@ -19,6 +19,11 @@ namespace StockMarketAssistant.StockCardService.Domain.Entities
         /// Наименование акции
         /// </summary>
         public required string Name { get; set; }
+
+        /// <summary>
+        /// Режим торгов (АКЦИИ - TQBR, КорпОбл - TQCB, ОФЗ - TQOB)
+        /// </summary>
+        public string Board => "TQBR";
 
         /// <summary>
         /// Описание акции

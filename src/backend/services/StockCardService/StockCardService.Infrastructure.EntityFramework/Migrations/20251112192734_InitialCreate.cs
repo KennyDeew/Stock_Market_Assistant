@@ -18,6 +18,7 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Ticker = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
                     Name = table.Column<string>(type: "text", nullable: false),
+                    Board = table.Column<string>(type: "text", nullable: false),
                     Description = table.Column<string>(type: "text", nullable: true),
                     MaturityPeriod = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Currency = table.Column<string>(type: "text", nullable: false),

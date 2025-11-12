@@ -28,6 +28,10 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Board")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("Currency")
                         .IsRequired()
                         .HasColumnType("text");

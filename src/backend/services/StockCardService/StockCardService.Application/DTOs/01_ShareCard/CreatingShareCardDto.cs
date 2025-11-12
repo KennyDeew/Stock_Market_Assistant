@@ -16,6 +16,11 @@
         public required string Name { get; set; }
 
         /// <summary>
+        /// Режим торгов (АКЦИИ - TQBR, КорпОбл - TQCB, ОФЗ - TQOB)
+        /// </summary>
+        public string Board => "TQBR";
+
+        /// <summary>
         /// Описание акции
         /// </summary>
         public string? Description { get; set; }
