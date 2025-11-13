@@ -33,6 +33,7 @@
         var pgStockCardDb = builder.AddPostgres("pg-stock-card-db")
             .WithImage("postgres:17.5")
             .WithHostPort(14052)
+            .WithPgWeb(n => n.WithHostPort(5001))
             .AddDatabase("stock-card-db");
         var mongoStockCardDb = builder.AddMongoDB("mongo-stock-card-db", 14053)
             //.WithLifetime(ContainerLifetime.Persistent)
