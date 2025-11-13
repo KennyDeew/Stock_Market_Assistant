@@ -1,4 +1,4 @@
-﻿using StockCardService.Domain.Entities;
+﻿using StockMarketAssistant.StockCardService.Domain.Interfaces;
 using System.Linq.Expressions;
 using System.Security.Cryptography;
 

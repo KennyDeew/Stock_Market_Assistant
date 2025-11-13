@@ -1,6 +1,6 @@
 ﻿using MongoDB.Driver;
 using StockCardService.Abstractions.Repositories;
-using StockCardService.Domain.Entities;
+using StockMarketAssistant.StockCardService.Domain.Interfaces;
 using System.Linq.Expressions;
 
 namespace StockMarketAssistant.StockCardService.Infrastructure.Repositories

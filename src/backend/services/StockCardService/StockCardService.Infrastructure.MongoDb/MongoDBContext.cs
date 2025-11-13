@@ -4,9 +4,9 @@ using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
 using MongoDB.Driver;
 using StockCardService.Abstractions.Repositories;
-using StockMarketAssistant.StockCardService.Infrastructure.EntityFramework.Settings;
+using StockMarketAssistant.StockCardService.Infrastructure.MongoDb.Settings;
 
-namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework
+namespace StockMarketAssistant.StockCardService.Infrastructure.MongoDb
 {
     public class MongoDBContext : IMongoDBContext
     {

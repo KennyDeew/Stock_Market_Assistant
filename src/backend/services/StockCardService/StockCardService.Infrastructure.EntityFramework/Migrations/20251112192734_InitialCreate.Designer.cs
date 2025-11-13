@@ -12,7 +12,7 @@ using StockMarketAssistant.StockCardService.Infrastructure.EntityFramework;
 namespace StockCardService.Infrastructure.EntityFramework.Migrations
 {
     [DbContext(typeof(StockCardDbContext))]
-    [Migration("20250919210008_InitialCreate")]
+    [Migration("20251112192734_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -30,6 +30,10 @@ namespace StockCardService.Infrastructure.EntityFramework.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<string>("Board")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<string>("Currency")
                         .IsRequired()

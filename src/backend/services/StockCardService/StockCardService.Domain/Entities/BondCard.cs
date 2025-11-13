@@ -1,9 +1,9 @@
-﻿using StockCardService.Domain.Entities;
+﻿using StockMarketAssistant.StockCardService.Domain.Interfaces;
 
 namespace StockMarketAssistant.StockCardService.Domain.Entities
 
 {
-    public class BondCard : IEntity<Guid>
+    public class BondCard : IEntity<Guid>, IStockEntity
     {
         /// <summary>
         /// Id облигации
@@ -19,6 +19,11 @@ namespace StockMarketAssistant.StockCardService.Domain.Entities
         /// Наименование облигации
         /// </summary>
         public required string Name { get; set; }
+
+        /// <summary>
+        /// Режим торгов (АКЦИИ - TQBR, КорпОбл - TQCB, ОФЗ - TQOB)
+        /// </summary>
+        public required string Board { get; set; }
 
         /// <summary>
         /// Описание облигации

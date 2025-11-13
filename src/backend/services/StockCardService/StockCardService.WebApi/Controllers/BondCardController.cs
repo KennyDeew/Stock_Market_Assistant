@@ -90,6 +90,7 @@ namespace StockCardService.WebApi.Controllers
                 Id = newBondCardId,
                 Ticker = request.Ticker,
                 Name = request.Name,
+                Board = request.Board,
                 Description = request.Description,
                 Currency = request.Currency,
                 FaceValue = request.FaceValue,
@@ -113,6 +114,19 @@ namespace StockCardService.WebApi.Controllers
         {
             var cre = BondCardMapper.ToDto(request);
             await _bondCardService.UpdateAsync(cre);
+            return Ok();
+        }
+
+        /// <summary>
+        /// Обновить все цены акций
+        /// </summary>
+        /// <returns></returns>
+        [HttpPut("UpdateAllPrices", Name = "UpdateBondCardPrices")]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> UpdateAllShareCardPriceAsync()
+        {
+            await _bondCardService.UpdateBondCardPricesAsync();
             return Ok();
         }
 

@@ -3,12 +3,17 @@ using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using StockCardService.Abstractions.Repositories;
 using StockCardService.Infrastructure.EntityFramework;
+using StockCardService.Infrastructure.Integrations.Moex;
+using StockCardService.Infrastructure.Messaging.Kafka;
+using StockCardService.Infrastructure.Messaging.Kafka.Options;
 using StockCardService.Infrastructure.Repositories;
 using StockMarketAssistant.StockCardService.Application.Interfaces;
 using StockMarketAssistant.StockCardService.Application.Services;
 using StockMarketAssistant.StockCardService.Domain.Entities;
+using StockMarketAssistant.StockCardService.Domain.Interfaces;
 using StockMarketAssistant.StockCardService.Infrastructure.EntityFramework;
-using StockMarketAssistant.StockCardService.Infrastructure.EntityFramework.Settings;
+using StockMarketAssistant.StockCardService.Infrastructure.MongoDb;
+using StockMarketAssistant.StockCardService.Infrastructure.MongoDb.Settings;
 using StockMarketAssistant.StockCardService.Infrastructure.Repositories;
 using StockMarketAssistant.StockCardService.WebApi.Helper;
 
@@ -50,6 +55,16 @@ namespace StockMarketAssistant.StockCardService.WebApi
                 options.DatabaseName = "finantial-report-db";
             });
 
+            //Настройка конфигурации Kafka
+            builder.Services.Configure<KafkaOptions>(
+                builder.Configuration.GetSection("KafkaOptions"));
+
+            // Настройка логирования
+            // ----------------------------------------------
+            builder.Logging.ClearProviders();   // Убираем стандартные провайдеры (например, Debug)
+            builder.Logging.AddConsole();       // Добавляем логирование в консоль
+            builder.Logging.AddDebug();         // (опционально) логирование в Visual Studio Output
+
             //IOC
             builder.Services.AddControllers();
             builder.Services.AddScoped(typeof(IRepository<ShareCard, Guid>), typeof(ShareCardRepository));
@@ -58,7 +73,10 @@ namespace StockMarketAssistant.StockCardService.WebApi
             builder.Services.AddScoped(typeof(ISubRepository<Dividend, Guid>), typeof(DividendRepository));
             builder.Services.AddScoped(typeof(ISubRepository<Coupon, Guid>), typeof(CouponRepository));
             builder.Services.AddScoped(typeof(IMongoRepository<FinancialReport, Guid>), typeof(FinancialReportRepository));
+            builder.Services.AddScoped<IStockPriceService, MoexStockPriceService>();
             builder.Services.AddSingleton<IMongoDBContext, MongoDBContext>();
+            builder.Services.AddSingleton<IKafkaProducerFactory, KafkaProducerFactory>();
+            builder.Services.AddSingleton<IKafkaProducer<string, FinancialReportCreatedMessage>, FinReportCreatedMessageProducer>();
             builder.Services.AddScoped<IShareCardService, ShareCardService>();
             builder.Services.AddScoped<IBondCardService, BondCardservice>();
             builder.Services.AddScoped<ICryptoCardService, CryptoCardService>();
@@ -101,7 +119,7 @@ namespace StockMarketAssistant.StockCardService.WebApi
             app.UseAuthorization();
             app.MapControllers();
 
-            app.MigrateDatabase<StockCardDbContext>();
+            //app.MigrateDatabase<StockCardDbContext>();
             //Заполняем БД объектами из FakeDataFactory
             using (var scope = app.Services.CreateScope())
             {

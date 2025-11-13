@@ -1,4 +1,4 @@
-﻿namespace StockMarketAssistant.StockCardService.Infrastructure.EntityFramework.Settings
+﻿namespace StockMarketAssistant.StockCardService.Infrastructure.MongoDb.Settings
 {
     public class MongoSettings
     {

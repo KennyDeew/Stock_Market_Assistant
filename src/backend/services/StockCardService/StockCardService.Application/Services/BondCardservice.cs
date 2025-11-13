@@ -1,8 +1,10 @@
-﻿using StockCardService.Abstractions.Repositories;
+﻿using Microsoft.Extensions.Logging;
+using StockCardService.Abstractions.Repositories;
 using StockMarketAssistant.StockCardService.Application.DTOs._02_BondCard;
 using StockMarketAssistant.StockCardService.Application.DTOs._02sub_Coupon;
 using StockMarketAssistant.StockCardService.Application.Interfaces;
 using StockMarketAssistant.StockCardService.Domain.Entities;
+using System.Collections.Concurrent;
 
 namespace StockMarketAssistant.StockCardService.Application.Services
 {
@@ -11,11 +13,26 @@ namespace StockMarketAssistant.StockCardService.Application.Services
     /// </summary>
     public class BondCardservice : IBondCardService
     {
+        /// <summary>
+        /// Репозиторий облигаций
+        /// </summary>
         private readonly IRepository<BondCard, Guid> _bondCardRepository;
 
-        public BondCardservice(IRepository<BondCard, Guid> bondCardRepository)
+        /// <summary>
+        /// Сервис для обновления цены облигации
+        /// </summary>
+        private readonly IStockPriceService _stockPriceService;
+
+        /// <summary>
+        /// Логгер для регистрации событий и ошибок.
+        /// </summary>
+        private readonly ILogger<BondCardservice> _logger;
+
+        public BondCardservice(IRepository<BondCard, Guid> bondCardRepository, IStockPriceService stockPriceService, ILogger<BondCardservice> logger)
         {
             _bondCardRepository = bondCardRepository;
+            _stockPriceService = stockPriceService;
+            _logger = logger;
         }
 
         /// <summary>
@@ -33,6 +50,7 @@ namespace StockMarketAssistant.StockCardService.Application.Services
                     Id = x.Id,
                     Ticker = x.Ticker,
                     Name = x.Name,
+                    Board = x.Board,
                     Description = x.Description,
                     MaturityPeriod = x.MaturityPeriod,
                     CurrentPrice = x.CurrentPrice,
@@ -71,6 +89,7 @@ namespace StockMarketAssistant.StockCardService.Application.Services
                 Id = bondCard.Id,
                 Ticker = bondCard.Ticker,
                 Name = bondCard.Name,
+                Board = bondCard.Board,
                 Description = bondCard.Description,
                 Currency = bondCard.Currency,
                 MaturityPeriod = bondCard.MaturityPeriod,
@@ -108,6 +127,7 @@ namespace StockMarketAssistant.StockCardService.Application.Services
                 Id = bondCard.Id,
                 Ticker = bondCard.Ticker,
                 Name = bondCard.Name,
+                Board = bondCard.Board,
                 Description = bondCard.Description,
                 Currency = bondCard.Currency,
                 MaturityPeriod = bondCard.MaturityPeriod,
@@ -145,6 +165,7 @@ namespace StockMarketAssistant.StockCardService.Application.Services
                 Id = bondCard.Id,
                 Ticker = bondCard.Ticker,
                 Name = bondCard.Name,
+                Board = bondCard.Board,
                 Description = bondCard.Description,
                 MaturityPeriod = bondCard.MaturityPeriod.ToString(),
                 Currency = bondCard.Currency,
@@ -167,6 +188,7 @@ namespace StockMarketAssistant.StockCardService.Application.Services
                 Id = Guid.NewGuid(),
                 Ticker = creatingBondCardDto.Ticker,
                 Name = creatingBondCardDto.Name,
+                Board = creatingBondCardDto.Board,
                 Description = creatingBondCardDto.Description,
                 Currency = creatingBondCardDto.Currency,
                 MaturityPeriod = creatingBondCardDto.MaturityPeriod,
@@ -195,6 +217,49 @@ namespace StockMarketAssistant.StockCardService.Application.Services
             bondCard.MaturityPeriod = updatingBondCardDto.MaturityPeriod;
             bondCard.Rating = updatingBondCardDto.Rating;
             await _bondCardRepository.UpdateAsync(bondCard);
+        }
+
+        /// <summary>
+        /// Обновить цену для всех облигаций
+        /// </summary>
+        /// <returns></returns>
+        public async Task UpdateBondCardPricesAsync()
+        {
+            var bondCards = await _bondCardRepository.GetAllAsync(CancellationToken.None);
+            var CardsAndPrices = new ConcurrentDictionary<string, decimal?>();
+            //параллелим определение цены актива с помощью МосБиржи. Число параллельных потоков - 5
+            using var semaphore = new SemaphoreSlim(5);
+            var tasks = bondCards.Select(async card =>
+            {
+                await semaphore.WaitAsync();
+                try
+                {
+                    var priceRequest = await _stockPriceService.GetCurrentPriceAsync(card.Ticker, "bonds", card.Board, CancellationToken.None);
+                    if (priceRequest != null)
+                    {
+                        //Цена облигации публикуется в процентах от номинала
+                        CardsAndPrices[card.Ticker] = (decimal)priceRequest * card.FaceValue / 100;
+                    }
+                }
+                catch
+                {
+                    _logger.LogError($"Failed to get the actual price for BondCard '{card.Ticker}'.");
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
+            });
+            await Task.WhenAll(tasks);
+            //Обновляем БД последовательно (т.к. работаем с одним DbContext)
+            foreach (var card in bondCards)
+            {
+                if (CardsAndPrices.TryGetValue(card.Ticker, out var price) && price != null)
+                {
+                    card.CurrentPrice = (decimal)price;
+                    await _bondCardRepository.UpdateAsync(card);
+                }
+            }
         }
 
         /// <summary>

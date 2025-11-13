@@ -19,6 +19,7 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
             {
                 Id = model.Id,
                 Name = model.Name,
+                Board = model.Board,
                 Ticker = model.Ticker,
                 Description = model.Description,
                 Currency = model.Currency,
@@ -40,6 +41,7 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
             return new CreatingBondCardDto
             {
                 Name = model.Name,
+                Board = model.Board,
                 Ticker = model.Ticker,
                 Description = model.Description,
                 Currency = model.Currency,
@@ -78,6 +80,7 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
             {
                 Id = model.Id,
                 Name = model.Name,
+                Board = model.Board,
                 Ticker = model.Ticker,
                 Description = model.Description,
                 Currency = model.Currency,
@@ -99,6 +102,7 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
             {
                 Id = dto.Id,
                 Name = dto.Name,
+                Board = dto.Board,
                 Ticker = dto.Ticker,
                 Description = dto.Description,
                 Currency = dto.Currency,
@@ -120,6 +124,7 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
             return new CreatingBondCardModel
             {
                 Name = dto.Name,
+                Board = dto.Board,
                 Ticker = dto.Ticker,
                 Description = dto.Description,
                 Currency = dto.Currency,
@@ -158,6 +163,7 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
             {
                 Id = dto.Id,
                 Name = dto.Name,
+                Board = dto.Board,
                 Ticker = dto.Ticker,
                 Description = dto.Description,
                 Currency = dto.Currency,

@@ -47,6 +47,12 @@ namespace StockMarketAssistant.StockCardService.Application.Interfaces
         Task UpdateAsync(UpdatingBondCardDto updatingBondCardDto);
 
         /// <summary>
+        /// Обновить цену для всех облигаций
+        /// </summary>
+        /// <returns></returns>
+        Task UpdateBondCardPricesAsync();
+
+        /// <summary>
         /// Удалить карточку облигации
         /// </summary>
         /// <param name="id">Идентификатор карточки облигации</param>
