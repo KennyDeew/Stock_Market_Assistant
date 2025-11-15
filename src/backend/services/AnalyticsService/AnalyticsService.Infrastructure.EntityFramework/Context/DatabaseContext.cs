@@ -1,22 +1,30 @@
 using Microsoft.EntityFrameworkCore;
+using StockMarketAssistant.AnalyticsService.Domain.Entities;
 
 namespace StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Context
 {
     /// <summary>
-    /// Контекст БД
+    /// Контекст базы данных для аналитического сервиса
     /// </summary>
     public class DatabaseContext(DbContextOptions<DatabaseContext> options) : DbContext(options)
     {
+        /// <summary>
+        /// Транзакции с активами
+        /// </summary>
+        public DbSet<AssetTransaction> AssetTransactions { get; set; }
+
+        /// <summary>
+        /// Рейтинги активов
+        /// </summary>
+        public DbSet<AssetRating> AssetRatings { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.ApplyConfigurationsFromAssembly(typeof(DatabaseContext).Assembly);
             base.OnModelCreating(modelBuilder);
-        }
 
-        //protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        //{
-        //    optionsBuilder.LogTo(Console.WriteLine, LogLevel.Information);
-        //}
+            // Применение конфигураций из сборки
+            modelBuilder.ApplyConfigurationsFromAssembly(typeof(DatabaseContext).Assembly);
+        }
     }
 }
 
