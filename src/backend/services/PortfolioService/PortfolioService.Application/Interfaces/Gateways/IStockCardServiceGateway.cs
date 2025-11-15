@@ -6,6 +6,8 @@ namespace StockMarketAssistant.PortfolioService.Application.Interfaces.Gateways
     {
         Task UpdateAllPricesForShareCardsAsync();
 
+        Task UpdateAllPricesForBondCardsAsync();
+
         Task<ShareCardShortModel?> GetShortShareCardModelByIdAsync(Guid id);
 
         Task<BondCardShortModel?> GetShortBondCardModelByIdAsync(Guid id);

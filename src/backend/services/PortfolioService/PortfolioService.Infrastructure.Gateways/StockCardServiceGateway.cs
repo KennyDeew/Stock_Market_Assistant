@@ -63,5 +63,22 @@ namespace StockMarketAssistant.PortfolioService.Infrastructure.Gateways
                 throw;
             }
         }
+
+        public async Task UpdateAllPricesForBondCardsAsync()
+        {
+            try
+            {
+                var response = await _httpClient.PutAsync($"api/v1/BondCard/UpdateAllPrices",
+                new StringContent(string.Empty));
+
+                response.EnsureSuccessStatusCode();
+                _logger.LogInformation("Цены облигаций успешно актуализированы");
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, "Ошибка при попытке обновления цен акций");
+                throw;
+            }
+        }
     }
 }
