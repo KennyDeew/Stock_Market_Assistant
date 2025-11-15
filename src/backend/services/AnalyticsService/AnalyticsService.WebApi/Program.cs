@@ -1,4 +1,7 @@
+using Microsoft.EntityFrameworkCore;
+using NSwag.AspNetCore;
 using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework;
+using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Context;
 
 namespace StockMarketAssistant.AnalyticsService.WebApi
 {
@@ -20,10 +23,52 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
                 builder.Services.ConfigureContext(connectionString);
             }
 
+            // Регистрация контроллеров
+            builder.Services.AddControllers();
+
+            // Настройка OpenAPI/Swagger
+            builder.Services.AddOpenApiDocument(options =>
+            {
+                options.Title = "Analytics Service API Doc";
+                options.Version = "1.0";
+            });
+
             var app = builder.Build();
 
+            // Автоматическое применение миграций
+            using (var scope = app.Services.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetService<DatabaseContext>();
+                if (dbContext is not null)
+                {
+                    try
+                    {
+                        dbContext.Database.Migrate(); // Применяет все pending миграции
+                    }
+                    catch
+                    {
+                        // Игнорируем ошибки миграций при первом запуске без базы данных
+                    }
+                }
+            }
+
+            // Configure the HTTP request pipeline
+            if (app.Environment.IsDevelopment())
+            {
+                app.UseOpenApi();
+                app.UseSwaggerUi(x =>
+                {
+                    x.DocExpansion = "list";
+                });
+            }
+
+            app.UseHttpsRedirection();
+            app.UseRouting();
+            app.UseAuthorization();
+
             app.MapDefaultEndpoints();
-            app.MapGet("/", () => "Hello World!");
+            app.MapControllers();
+            app.MapGet("/", () => "Analytics Service API - Use /swagger for API documentation");
 
             app.Run();
         }

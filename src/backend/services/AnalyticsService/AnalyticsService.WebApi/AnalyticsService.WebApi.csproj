@@ -16,11 +16,18 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1" />
+    <PackageReference Include="NSwag.AspNetCore" Version="14.4.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\StockMarketAssistant.ServiceDefaults\StockMarketAssistant.ServiceDefaults.csproj" />
     <ProjectReference Include="..\AnalyticsService.Infrastructure.EntityFramework\AnalyticsService.Infrastructure.EntityFramework.csproj" />
   </ItemGroup>
+
+  <Target Name="StopSolutionProcesses" BeforeTargets="Clean;Build">
+    <Exec Command="powershell.exe -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\stop-solution-processes.ps1&quot;"
+          ContinueOnError="true"
+          IgnoreExitCode="true" />
+  </Target>
 
 </Project>
