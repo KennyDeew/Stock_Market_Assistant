@@ -15,6 +15,19 @@ public abstract class Program
         // Добавляем сервисы Aspire
         builder.AddServiceDefaults();
 
+        // Читаем origin из переменной окружения
+        var frontendOrigin = builder.Configuration["FRONTEND_ORIGIN"] ?? "http://localhost:5173";
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("AllowFrontendApp", policy =>
+            {
+                policy
+                    .WithOrigins(frontendOrigin) // Разрешить источник фронтенда
+                    .AllowAnyHeader()            // Любой заголовок
+                    .AllowAnyMethod();           // GET, POST, PUT, DELETE
+            });
+        });
+
         // Отключаем авто-валидацию ModelState (будем формировать ошибку сами)
         builder.Services.Configure<ApiBehaviorOptions>(options =>
         {
@@ -40,8 +53,6 @@ public abstract class Program
 
         var app = builder.Build();
         
-        app.MapDefaultEndpoints();
-        
         // Глобальный обработчик исключений
         app.UseExceptionMiddleware();
 
@@ -59,6 +70,9 @@ public abstract class Program
                 options.SwaggerEndpoint("/openapi/v1.json", "AuthService API");
             });
         }
+        app.UseCors("AllowFrontendApp");
+
+        app.MapDefaultEndpoints();
 
         app.UseAuthentication();
         app.UseAuthorization();

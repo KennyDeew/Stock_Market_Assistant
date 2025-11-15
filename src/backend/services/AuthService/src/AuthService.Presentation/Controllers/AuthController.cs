@@ -111,7 +111,7 @@ public sealed class AuthController : ControllerBase
         [FromServices] RegisterHandler handler,
         CancellationToken ct)
     {
-        var command = new RegisterCommand(request.Email, request.Password, request.Email);
+        var command = new RegisterCommand(request.Email, request.Password, request.FullName);
         var result = await handler.Handle(command, ct);
 
         if (result.IsFailure)

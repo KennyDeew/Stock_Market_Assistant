@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using StockMarketAssistant.PortfolioService.Application.Interfaces;
 using StockMarketAssistant.PortfolioService.Application.Interfaces.Caching;
 using StockMarketAssistant.PortfolioService.Application.Interfaces.Gateways;
@@ -74,6 +74,20 @@ namespace StockMarketAssistant.PortfolioService.WebApi
                 httpClient.BaseAddress = new Uri("http://stockcardservice-api");
             })
             .AddServiceDiscovery();
+
+            // Читаем origin из переменной окружения
+            var frontendOrigin = builder.Configuration["FRONTEND_ORIGIN"] ?? "http://localhost:5173";
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowFrontendApp", policy =>
+                {
+                    policy
+                        .WithOrigins(frontendOrigin) // Разрешить источник фронтенда
+                        .AllowAnyHeader()            // Любой заголовок
+                        .AllowAnyMethod();           // GET, POST, PUT, DELETE
+                });
+            });
+
 
             builder.Services.AddControllers();
 

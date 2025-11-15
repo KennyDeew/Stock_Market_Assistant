@@ -65,6 +65,20 @@ namespace StockMarketAssistant.StockCardService.WebApi
             builder.Logging.AddConsole();       // Добавляем логирование в консоль
             builder.Logging.AddDebug();         // (опционально) логирование в Visual Studio Output
 
+            // Читаем origin из переменной окружения
+            var frontendOrigin = builder.Configuration["FRONTEND_ORIGIN"] ?? "http://localhost:5173";
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowFrontendApp", policy =>
+                {
+                    policy
+                        .WithOrigins(frontendOrigin) // Разрешить источник фронтенда
+                        .AllowAnyHeader()            // Любой заголовок
+                        .AllowAnyMethod();           // GET, POST, PUT, DELETE
+                });
+            });
+
+
             //IOC
             builder.Services.AddControllers();
             builder.Services.AddScoped(typeof(IRepository<ShareCard, Guid>), typeof(ShareCardRepository));
@@ -95,9 +109,6 @@ namespace StockMarketAssistant.StockCardService.WebApi
 
             var app = builder.Build();
 
-            app.MapDefaultEndpoints();
-
-            app.MapGet("/", () => Results.Redirect("/swagger"));
 
             //var StockCardServisConnectionString = builder.Configuration.GetConnectionString("pg-stock-card-db");
             //DbInitializer.Initialize(StockCardServisConnectionString);
@@ -111,13 +122,18 @@ namespace StockMarketAssistant.StockCardService.WebApi
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
-            app.UseHttpsRedirection();
-
 
             app.UseRouting();
-            app.UseCors();
+            app.UseCors("AllowFrontendApp");
+            //app.UseHttpsRedirection();
+
+            //app.UseAuthentication();
             app.UseAuthorization();
+
             app.MapControllers();
+            app.MapGet("/", () => Results.Redirect("/swagger"));
+            app.MapDefaultEndpoints();
+
 
             //app.MigrateDatabase<StockCardDbContext>();
             //Заполняем БД объектами из FakeDataFactory
