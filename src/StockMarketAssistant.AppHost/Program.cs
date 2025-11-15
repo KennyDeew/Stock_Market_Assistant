@@ -49,8 +49,10 @@
             .AddDatabase("notificationDb");
 
         // Связывание ресурсов с проектами
-        apiAuthService.WithReference(pgAuthDb)
-                      .WaitFor(pgAuthDb);
+        apiAuthService
+            .WithReference(pgAuthDb)
+            .WithEnvironment("ConnectionStrings__Database", pgAuthDb.Resource.ConnectionStringExpression)
+            .WaitFor(pgAuthDb);
 
         apiStockCardService
             .WithReference(redis)
@@ -64,16 +66,39 @@
             .WithReference(apiStockCardService)
             .WaitFor(pgPortfolioDb);
 
-        apiAuthService
-            .WithReference(pgAuthDb)
-            .WithEnvironment("ConnectionStrings__Database", pgAuthDb.Resource.ConnectionStringExpression);
-
         apiNotificationService
             .WithReference(notificationPostgres)
             .WithReference(kafka)
             .WaitFor(notificationPostgres)
             .WaitFor(kafka);
 
+        // Добавление React-приложения
+        //var webui = builder.AddExecutable(
+        //    name: "webui",
+        //    command: "npm",
+        //    args: ["run", "dev"],
+        //    workingDirectory: "../frontend")
+
+        var webui = builder.AddNpmApp("webui", "../frontend", scriptName: "dev")
+        .WithHttpEndpoint(
+            port: 5173,           // порт, который будет открыт
+            targetPort: 5173,     // порт, на котором слушает Vite
+            name: "http",
+            env: "PORT",
+            isProxied: false
+        )
+        .WithEnvironment("VITE_AUTH_API_URL", apiAuthService.GetEndpoint("http"))
+        .WithEnvironment("VITE_PORTFOLIO_API_URL", apiPortfolioService.GetEndpoint("http"))
+        .WithEnvironment("VITE_STOCKCARD_API_URL", apiStockCardService.GetEndpoint("http"))
+        .WithEnvironment("VITE_NOTIFICATION_API_URL", apiNotificationService.GetEndpoint("http"))
+        .WaitFor(apiAuthService)
+        .WaitFor(apiStockCardService);
+
+        var webuiUrl = webui.GetEndpoint("http"); // Получаем endpoint
+        // Передаём URL фронтенда в бэкенды для CORS
+        apiStockCardService.WithEnvironment("FRONTEND_ORIGIN", webuiUrl);
+        apiAuthService.WithEnvironment("FRONTEND_ORIGIN", webuiUrl);
+        apiPortfolioService.WithEnvironment("FRONTEND_ORIGIN", webuiUrl);
         builder.Build().Run();
     }
 }
