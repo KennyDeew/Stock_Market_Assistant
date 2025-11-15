@@ -29,7 +29,7 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
         [HttpGet]
         [ProducesResponseType(typeof(PaginatedResponse<PortfolioShortResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<PaginatedResponse<PortfolioShortResponse>>> GetPortfoliosAsync(
+        public async Task<ActionResult<PaginatedResponse<PortfolioShortResponse>>> GetPortfolios(
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10)
         {
@@ -77,6 +77,72 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при получении списка портфелей");
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                                 new { error = "InternalError", message = "Внутренняя ошибка сервера" });
+            }
+        }
+
+        /// <summary>
+        /// Получить список портфелей конкретного пользователя
+        /// </summary>
+        /// <param name="userId">ID пользователя</param>
+        /// <param name="page">Номер страницы (по умолчанию 1)</param>
+        /// <param name="pageSize">Размер страницы (по умолчанию 10, максимум 100)</param>
+        /// <returns>Пагинированный список портфелей пользователя</returns>
+        [HttpGet("user/{userId:guid}")]
+        [ProducesResponseType(typeof(PaginatedResponse<PortfolioShortResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<PaginatedResponse<PortfolioShortResponse>>> GetUserPortfolios(
+            Guid userId,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10)
+        {
+            _logger.LogDebug("Получение списка портфелей пользователя {UserId}. Страница: {Page}, Размер: {PageSize}",
+                userId, page, pageSize);
+
+            try
+            {
+                // Валидация параметров
+                if (page < 1)
+                {
+                    return BadRequest("Номер страницы должен быть больше 0");
+                }
+
+                if (pageSize < 1 || pageSize > 100)
+                {
+                    return BadRequest("Размер страницы должен быть от 1 до 100");
+                }
+
+                // Получаем портфели конкретного пользователя
+                var portfoliosDtos = await _portfolioAppService.GetByUserIdAsync(userId);
+
+                // Применяем пагинацию
+                var totalItems = portfoliosDtos.Count();
+                var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+
+                var pagedPortfolios = portfoliosDtos
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+
+                var portfolioResponses = pagedPortfolios.Select(p =>
+                    new PortfolioShortResponse(p.Id, p.UserId, p.Name, p.Currency));
+
+                var paginatedResponse = new PaginatedResponse<PortfolioShortResponse>(
+                    portfolioResponses,
+                    totalItems,
+                    page,
+                    pageSize,
+                    totalPages);
+
+                _logger.LogDebug("Получено {Count} портфелей пользователя {UserId} из {Total} на странице {Page}",
+                    pagedPortfolios.Count, userId, totalItems, page);
+
+                return Ok(paginatedResponse);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка при получении списка портфелей пользователя {UserId}", userId);
                 return StatusCode(StatusCodes.Status500InternalServerError,
                                  new { error = "InternalError", message = "Внутренняя ошибка сервера" });
             }
@@ -162,11 +228,17 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
                     Name = portfolioDto.Name,
                     Currency = portfolioDto.Currency,
                     Assets = [.. portfolioDto.Assets.Select(a => new PortfolioAssetShortResponse(
-                a.Id,
-                a.PortfolioId,
-                a.Ticker,
-                a.TotalQuantity,
-                a.AveragePurchasePrice))]
+                        a.Id,
+                        a.PortfolioId,
+                        a.StockCardId,
+                        a.Ticker,
+                        a.Name,
+                        a.TotalQuantity,
+                        a.AveragePurchasePrice,
+                        a.Currency)
+                    {
+                        AssetType = a.AssetType
+                    })]
                 };
 
                 return Ok(portfolioModel);

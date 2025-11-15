@@ -10,6 +10,7 @@ using StockMarketAssistant.PortfolioService.Infrastructure.EntityFramework.Conte
 using StockMarketAssistant.PortfolioService.Infrastructure.Gateways;
 using StockMarketAssistant.PortfolioService.Infrastructure.Repositories;
 using StockMarketAssistant.PortfolioService.WebApi.Infrastructure.Swagger;
+using System.Text;
 
 namespace StockMarketAssistant.PortfolioService.WebApi
 {
@@ -28,6 +29,14 @@ namespace StockMarketAssistant.PortfolioService.WebApi
 
             // Добавляем сервисы Aspire
             builder.AddServiceDefaults();
+
+            // Установка кодировки консоли
+            Console.OutputEncoding = Encoding.UTF8;
+            Console.InputEncoding = Encoding.UTF8;
+
+            // Настройка логгера
+            builder.Logging.AddConsole();
+            builder.Logging.SetMinimumLevel(LogLevel.Information);
             // Add services to the container.
 
             //if (builder.Environment.IsDevelopment())
@@ -86,9 +95,30 @@ namespace StockMarketAssistant.PortfolioService.WebApi
             });
 
             var app = builder.Build();
-            app.MapDefaultEndpoints();
 
-            app.MapDefaultEndpoints();
+            // Получаем сервис для отслеживания жизненного цикла
+            var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
+            var logger = app.Services.GetRequiredService<ILogger<Program>>();
+
+            // Регистрация обработчиков событий
+
+            lifetime.ApplicationStarted.Register(() =>
+            {
+                logger.LogInformation("=== Сервис портфелей успешно запущен ===");
+                logger.LogInformation("Время запуска: {StartUpTime}", DateTime.UtcNow);
+            });
+
+            lifetime.ApplicationStopping.Register(() =>
+            {
+                logger.LogWarning("=== Сервис портфелей останавливается ===");
+                logger.LogInformation("Выполнение завершающих операций...");
+            });
+
+            lifetime.ApplicationStopped.Register(() =>
+            {
+                logger.LogInformation("=== Сервис портфелей полностью остановлен ===");
+                logger.LogInformation("Время остановки: {ShutdownTime}", DateTime.UtcNow);
+            });
 
             // Автоматическое применение миграций
             using (var scope = app.Services.CreateScope())
@@ -109,10 +139,14 @@ namespace StockMarketAssistant.PortfolioService.WebApi
 
             }
 
-            app.UseHttpsRedirection();
-
             app.UseRouting();
+            app.UseCors("AllowFrontendApp");
+            app.MapDefaultEndpoints();
 
+
+            //app.UseHttpsRedirection();
+
+            //app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapControllers();

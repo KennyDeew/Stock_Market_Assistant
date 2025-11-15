@@ -22,6 +22,13 @@ namespace StockMarketAssistant.PortfolioService.Application.Interfaces
         Task<PortfolioDto?> GetByIdAsync(Guid id);
 
         /// <summary>
+        /// Получить все портфели пользователя
+        /// </summary>
+        /// <param name="userId">Идентификатор пользователя</param>
+        /// <returns>DTO портфеля</returns>
+        Task<IEnumerable<PortfolioShortDto>> GetByUserIdAsync(Guid userId);
+
+        /// <summary>
         /// Существует ли портфель
         /// </summary>
         /// <param name="id"></param>

@@ -23,7 +23,7 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
         /// <summary>
         /// Инвалидация записи кэша для портфеля ценных бумаг
         /// </summary>
-        /// <param name="assetId">Id актива</param>
+        /// <param name="portfolioId">Id портфеля</param>
         /// <returns></returns>
         private async Task InvalidatePortfolioCacheAsync(Guid portfolioId)
         {
@@ -72,6 +72,7 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                 }
                 await _portfolioRepository.DeleteAsync(portfolio);
                 await InvalidatePortfolioCacheAsync(id);
+                await _cache.RemoveAsync($"user_portfolios_short_{portfolio.UserId}");
                 return true;
             }
             catch (Exception ex)
@@ -105,10 +106,12 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
             var cacheKey = $"portfolio_{id}";
             try
             {
+                // Попытка получить из кэша
                 var cached = await _cache.GetAsync<PortfolioDto>(cacheKey);
                 if (cached != null)
                     return cached;
 
+                // Получаем портфель из БД с активами
                 Portfolio? portfolio = await _portfolioRepository.GetByIdAsync(id, p => p.Assets);
                 if (portfolio is null)
                 {
@@ -116,10 +119,39 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                     return null;
                 }
 
-                // Получаем все асинхронные задачи для активов
-                var assetTasks = portfolio.Assets.Select(a => _portfolioAssetAppService.GetByIdAsync(a.Id));
+                // Обрабатываем каждый актив с защитой от падений
+                var assetTasks = portfolio.Assets.Select(async a =>
+                {
+                    try
+                    {
+                        return await _portfolioAssetAppService.GetByIdAsync(a.Id);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(
+                            ex,
+                            "Не удалось загрузить актив {AssetId} (StockCardId: {StockCardId}, Type: {AssetType}) " +
+                            "для портфеля {PortfolioId}. Актив будет пропущен.",
+                            a.Id, a.StockCardId, a.AssetType, id);
+                        return null;
+                    }
+                });
                 // Дожидаемся завершения всех задач
                 var assets = await Task.WhenAll(assetTasks);
+
+                // Фильтруем успешные результаты
+                var validAssets = assets
+                    .Where(a => a is not null)
+                    .Cast<PortfolioAssetDto>()
+                    .OrderBy(a => a.AssetType)
+                    .ThenBy(a => a.Ticker)
+                    .ToList();
+
+                // Если все активы упали — вернём пустой список, а не ошибку
+                if (validAssets.Count == 0)
+                {
+                    _logger.LogWarning("Все активы портфеля {PortfolioId} не удалось загрузить. Возвращаем портфель без активов.", id);
+                }
 
                 var portfolioDto = new PortfolioDto
                 {
@@ -127,10 +159,7 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                     UserId = portfolio.UserId,
                     Name = portfolio.Name,
                     Currency = portfolio.Currency,
-                    Assets = [.. assets.Where(a => a is not null)
-                                         .Cast<PortfolioAssetDto>()
-                                         .OrderBy(a => a.AssetType)
-                                         .ThenBy(a => a.Ticker)]
+                    Assets = [.. validAssets]
                 };
 
                 await _cache.SetAsync(cacheKey, portfolioDto, _cacheExpiration);
@@ -138,7 +167,7 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Ошибка при получении портфеля по ID: {PortfolioId}", id);
+                _logger.LogError(ex, "Критическая ошибка при получении портфеля по ID: {PortfolioId}", id);
                 throw;
             }
         }
@@ -429,6 +458,58 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
 
             _logger.LogDebug("Реализованная доходность рассчитана: {RealizedProfitLoss}", realizedProfitLoss);
             return realizedProfitLoss;
+        }
+
+        /// <summary>
+        /// Получить перечень всех портфелей ценных бумаг для пользователя
+        /// </summary>
+        /// <param name="userId">Идентификатор пользователя</param>
+        /// <returns></returns>
+        public async Task<IEnumerable<PortfolioShortDto>> GetByUserIdAsync(Guid userId)
+        {
+            var cacheKey = $"user_portfolios_short_{userId}";
+            try
+            {
+                // Пробуем получить из кэша
+                var cached = await _cache.GetAsync<IEnumerable<PortfolioShortDto>>(cacheKey);
+                if (cached != null)
+                {
+                    _logger.LogDebug("Кэш найден для портфелей пользователя {UserId}", userId);
+                    return cached;
+                }
+
+                // Получаем портфели из репозитория
+                var portfolios = await _portfolioRepository.GetByUserIdAsync(userId);
+
+                if (!portfolios.Any())
+                {
+                    _logger.LogDebug("У пользователя {UserId} не найдено портфелей", userId);
+                    return [];
+                }
+
+                // Маппим в DTO
+                var result = portfolios.Select(p => new PortfolioShortDto
+                {
+                    Id = p.Id,
+                    UserId = p.UserId,
+                    Name = p.Name,
+                    Currency = p.Currency
+                }).ToList();
+
+                // Кэшируем результат
+                await _cache.SetAsync(cacheKey, result, _cacheExpiration);
+
+                _logger.LogDebug("Получено {Count} портфелей для пользователя {UserId} (краткая версия)",
+                    result.Count, userId);
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка при получении краткой информации о портфелях пользователя {UserId}", userId);
+                throw;
+            }
+
         }
     }
 }

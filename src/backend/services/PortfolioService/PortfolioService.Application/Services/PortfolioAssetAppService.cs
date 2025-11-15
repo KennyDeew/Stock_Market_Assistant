@@ -33,6 +33,16 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
         }
 
         /// <summary>
+        /// Инвалидация записи кэша для портфеля ценных бумаг
+        /// </summary>
+        /// <param name="portfolioId">Id портфеля</param>
+        /// <returns></returns>
+        private async Task InvalidatePortfolioCacheAsync(Guid portfolioId)
+        {
+            await _cache.RemoveAsync($"portfolio_{portfolioId}");
+        }
+
+        /// <summary>
         /// Получить информацию о ценной бумаге актива из внешнего сервиса StockCardService
         /// </summary>
         /// <param name="assetType">Тип финансового актива</param>
@@ -44,7 +54,7 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
             return assetType switch
             {
                 PortfolioAssetType.Share => await GetShareCardInfoAsync(stockCardId, toRetrieveCurrentPrice),
-                PortfolioAssetType.Bond => await GetBondCardInfoAsync(stockCardId),
+                PortfolioAssetType.Bond => await GetBondCardInfoAsync(stockCardId, toRetrieveCurrentPrice),
                 _ => new StockCardInfoDto(string.Empty, string.Empty, string.Empty)
             };
         }
@@ -62,8 +72,10 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
             return new StockCardInfoDto(shareCard.Ticker, shareCard.Name, shareCard.Description ?? string.Empty, toRetrieveCurrentPrice ? shareCard.CurrentPrice : null, shareCard.Currency);
         }
 
-        private async Task<StockCardInfoDto> GetBondCardInfoAsync(Guid stockCardId)
+        private async Task<StockCardInfoDto> GetBondCardInfoAsync(Guid stockCardId, bool toRetrieveCurrentPrice)
         {
+            if (toRetrieveCurrentPrice)
+                await _stockCardServiceGateway.UpdateAllPricesForBondCardsAsync();
             var bondCard = await _stockCardServiceGateway.GetShortBondCardModelByIdAsync(stockCardId);
             if (bondCard is null)
             {
@@ -110,6 +122,7 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                     cardInfo.Currency);
                 asset.Transactions.Add(initialTransaction);
                 PortfolioAsset createdAsset = await _portfolioAssetRepository.AddAsync(asset);
+                await InvalidatePortfolioCacheAsync(dto.PortfolioId);
 
                 return new PortfolioAssetDto(
                     createdAsset.Id,
@@ -150,6 +163,11 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                 }
                 await _portfolioAssetRepository.DeleteAsync(asset);
                 await InvalidateAssetCacheAsync(id);
+                Portfolio? portfolio = await _portfolioRepository.GetByIdAsync(asset.PortfolioId);
+                if (portfolio is not null)
+                {
+                    await InvalidatePortfolioCacheAsync(portfolio.Id);
+                }
                 return true;
             }
             catch (Exception ex)
@@ -191,6 +209,11 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                 if (remainingTransactions == 0)
                 {
                     await _portfolioAssetRepository.DeleteAsync(asset);
+                    Portfolio? portfolio = await _portfolioRepository.GetByIdAsync(asset.PortfolioId);
+                    if (portfolio is not null)
+                    {
+                        await InvalidatePortfolioCacheAsync(portfolio.Id);
+                    }
                 }
                 await InvalidateAssetCacheAsync(asset.Id); // данные изменились — кэш устарел
                 return true;
@@ -376,6 +399,11 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                 if (asset.TotalQuantity == 0)
                 {
                     await _portfolioAssetRepository.DeleteAsync(asset);
+                    Portfolio? portfolio = await _portfolioRepository.GetByIdAsync(asset.PortfolioId);
+                    if (portfolio is not null)
+                    {
+                        await InvalidatePortfolioCacheAsync(portfolio.Id);
+                    }
                 }
                 await InvalidateAssetCacheAsync(assetId); // данные изменились — кэш устарел
 

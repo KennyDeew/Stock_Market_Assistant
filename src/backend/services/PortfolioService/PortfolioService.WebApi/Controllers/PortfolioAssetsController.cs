@@ -47,8 +47,11 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
 
                 CreatingPortfolioAssetDto createDto = new(request.PortfolioId, request.StockCardId, request.AssetType, request.PurchasePricePerUnit, request.Quantity);
                 PortfolioAssetDto result = await _portfolioAssetAppService.CreateAsync(createDto);
-                PortfolioAssetShortResponse response = new(result.Id, result.PortfolioId, result.Ticker ?? string.Empty, result.TotalQuantity, result.AveragePurchasePrice);
-                return CreatedAtAction(nameof(GetPortfolioAssetById), new { id = response.Id }, response);
+                PortfolioAssetShortResponse response = new(result.Id, result.PortfolioId, result.StockCardId, result.Ticker ?? string.Empty, result.Name ?? string.Empty, result.TotalQuantity, result.AveragePurchasePrice, result.Currency) 
+                {
+                  AssetType = result.AssetType
+                };
+                return CreatedAtAction(nameof(GetPortfolioAssetById), new { assetId = response.Id }, response);
             }
             catch (Exception ex)
             {

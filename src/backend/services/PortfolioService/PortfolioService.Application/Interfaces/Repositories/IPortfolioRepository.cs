@@ -8,5 +8,9 @@ namespace StockMarketAssistant.PortfolioService.Application.Interfaces.Repositor
     /// </summary>
     public interface IPortfolioRepository: IRepository<Portfolio, Guid>
     {
+        /// <summary>
+        /// Получить все портфели пользователя
+        /// </summary>
+        Task<IEnumerable<Portfolio>> GetByUserIdAsync(Guid userId);
     }
 }
