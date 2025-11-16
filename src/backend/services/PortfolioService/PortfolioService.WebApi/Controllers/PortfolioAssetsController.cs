@@ -1,10 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using NSwag.Annotations;
 using StockMarketAssistant.PortfolioService.Application.DTOs;
 using StockMarketAssistant.PortfolioService.Application.Interfaces;
+using StockMarketAssistant.PortfolioService.WebApi.Mappings;
 using StockMarketAssistant.PortfolioService.WebApi.Models;
 using StockMarketAssistant.SharedLibrary.Enums;
-using StockMarketAssistant.PortfolioService.WebApi.Mappings;
 
 namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
 {
@@ -16,6 +17,7 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
     [Route("api/v1/portfolio-assets")]
     [Produces("application/json")]
     [OpenApiTag("PortfolioAssets")]
+    [Authorize(Roles = "USER")]
     public class PortfolioAssetsController(IPortfolioAppService portfolioAppService, IPortfolioAssetAppService portfolioAssetAppService, ILogger<PortfolioAssetsController> logger) : ControllerBase
     {
         private readonly IPortfolioAppService _portfolioAppService = portfolioAppService;
@@ -27,6 +29,7 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
         /// </summary>
         /// <param name="request">Параметры создаваемого актива ценной бумаги</param>
         /// <returns></returns>
+        [Authorize(Roles = "USER")]
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(PortfolioAssetShortResponse))]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
@@ -107,10 +110,10 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
         /// </summary>
         /// <param name="assetId">Id актива ценной бумаги из портфеля</param>
         /// <returns></returns>
+        [HttpDelete("{assetId:guid}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(string))]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        [HttpDelete("{assetId:guid}")]
         public async Task<IActionResult> DeletePortfolioAsset(Guid assetId)
         {
             try
@@ -332,10 +335,10 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
         /// <param name="assetId">Идентификатор актива</param>
         /// <param name="transactionId">Идентификатор транзакции</param>
         /// <returns></returns>
+        [HttpDelete("{assetId:guid}/transactions/{transactionId:guid}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(string))]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        [HttpDelete("{assetId:guid}/transactions/{transactionId:guid}")]
         public async Task<IActionResult> DeletePortfolioAssetTransaction(Guid assetId, Guid transactionId)
         {
             try

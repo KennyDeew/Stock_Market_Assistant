@@ -1,11 +1,10 @@
 ﻿using StockMarketAssistant.PortfolioService.Application.DTOs;
 using StockMarketAssistant.PortfolioService.WebApi.Models;
-using StockMarketAssistant.SharedLibrary.Enums;
 
 namespace StockMarketAssistant.PortfolioService.WebApi.Mappings
 {
     /// <summary>
-    /// Маппинг между DTO приложения и моделями контроллера
+    /// Маппинг между DTO приложения и моделями контроллера для доходностей портфеля и активов
     /// </summary>
     public static class ProfitLossMapping
     {

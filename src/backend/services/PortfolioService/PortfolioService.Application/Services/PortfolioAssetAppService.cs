@@ -4,8 +4,10 @@ using StockMarketAssistant.PortfolioService.Application.Interfaces;
 using StockMarketAssistant.PortfolioService.Application.Interfaces.Caching;
 using StockMarketAssistant.PortfolioService.Application.Interfaces.Gateways;
 using StockMarketAssistant.PortfolioService.Application.Interfaces.Repositories;
+using StockMarketAssistant.PortfolioService.Application.Interfaces.Security;
 using StockMarketAssistant.PortfolioService.Domain.Entities;
 using StockMarketAssistant.PortfolioService.Domain.Enums;
+using StockMarketAssistant.PortfolioService.Domain.Exceptions;
 using StockMarketAssistant.SharedLibrary.Enums;
 
 namespace StockMarketAssistant.PortfolioService.Application.Services
@@ -13,8 +15,9 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
     /// <summary>
     /// Сервис работы с финансовыми активами в портфеле
     /// </summary>
-    public class PortfolioAssetAppService(IPortfolioAssetRepository portfolioAssetRepository, IPortfolioRepository portfolioRepository, IStockCardServiceGateway stockCardServiceGateway, ICacheService cache, ILogger<PortfolioAssetAppService> logger) : IPortfolioAssetAppService
+    public class PortfolioAssetAppService(IPortfolioAssetRepository portfolioAssetRepository, IUserContext userContext, IPortfolioRepository portfolioRepository, IStockCardServiceGateway stockCardServiceGateway, ICacheService cache, ILogger<PortfolioAssetAppService> logger) : IPortfolioAssetAppService
     {
+        private readonly IUserContext _userContext = userContext;
         private readonly IPortfolioAssetRepository _portfolioAssetRepository = portfolioAssetRepository;
         private readonly IPortfolioRepository _portfolioRepository = portfolioRepository;
         private readonly IStockCardServiceGateway _stockCardServiceGateway = stockCardServiceGateway;
@@ -94,24 +97,38 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
         {
             try
             {
-                // Проверка перед созданием
-                if (!await _portfolioRepository.ExistsAsync(dto.PortfolioId))
-                    throw new InvalidOperationException($"Портфель с ID {dto.PortfolioId} не найден");
+                // Проверка существования портфеля
+                Portfolio? portfolio = await _portfolioRepository.GetByIdAsync(dto.PortfolioId);
+                if (portfolio == null)
+                {
+                    _logger.LogWarning("Портфель с ID {PortfolioId} не найден при создании актива", dto.PortfolioId);
+                    throw new KeyNotFoundException($"Портфель с ID {dto.PortfolioId} не найден");
+                }
+
+                // Проверка прав доступа: USER может создавать активы только в своих портфелях
+                if (!_userContext.IsAdmin && portfolio.UserId != _userContext.UserId)
+                {
+                    _logger.LogWarning(
+                        "Пользователь {CurrentUserId} пытается создать актив в чужом портфеле {PortfolioId}",
+                        _userContext.UserId, dto.PortfolioId);
+                    throw new KeyNotFoundException($"Портфель с ID {dto.PortfolioId} не найден");
+                }
+
+                // Проверка дубликата
                 PortfolioAsset? existingAsset = await _portfolioAssetRepository.GetByPortfolioAndStockCardAsync(dto.PortfolioId, dto.StockCardId);
                 if (existingAsset != null)
                 {
                     throw new InvalidOperationException($"Актив с StockCardId {dto.StockCardId} уже существует в портфеле");
                 }
+
                 if (dto.Quantity <= 0)
                 {
                     throw new ArgumentOutOfRangeException(nameof(dto), "Количество должно быть больше нуля");
                 }
 
                 PortfolioAsset asset = new(Guid.NewGuid(), dto.PortfolioId, dto.StockCardId, dto.AssetType);
-                // Вызов внешнего микросервиса карточки актива
                 var cardInfo = await GetStockCardInfoAsync(asset.AssetType, asset.StockCardId, false);
 
-                // Создаем начальную транзакцию
                 var initialTransaction = new PortfolioAssetTransaction(
                     Guid.NewGuid(),
                     asset.Id,
@@ -121,6 +138,7 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                     DateTime.UtcNow,
                     cardInfo.Currency);
                 asset.Transactions.Add(initialTransaction);
+
                 PortfolioAsset createdAsset = await _portfolioAssetRepository.AddAsync(asset);
                 await InvalidatePortfolioCacheAsync(dto.PortfolioId);
 
@@ -161,14 +179,33 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                     _logger.LogWarning("Актив портфеля с ID {AssetId} не найден при попытке удаления", id);
                     return false;
                 }
+
+                Portfolio? portfolio = await _portfolioRepository.GetByIdAsync(asset.PortfolioId);
+                if (portfolio == null)
+                {
+                    _logger.LogWarning("Портфель {PortfolioId} для актива {AssetId} не найден", asset.PortfolioId, id);
+                    throw new KeyNotFoundException("Портфель не найден");
+                }
+
+                // Проверка прав доступа
+                if (!_userContext.IsAdmin && portfolio.UserId != _userContext.UserId)
+                {
+                    _logger.LogWarning(
+                        "Пользователь {CurrentUserId} пытается удалить актив {AssetId} из чужого портфеля {PortfolioId}",
+                        _userContext.UserId, id, asset.PortfolioId);
+                    throw new SecurityException("Доступ запрещён");
+                }
+
                 await _portfolioAssetRepository.DeleteAsync(asset);
                 await InvalidateAssetCacheAsync(id);
-                Portfolio? portfolio = await _portfolioRepository.GetByIdAsync(asset.PortfolioId);
-                if (portfolio is not null)
-                {
-                    await InvalidatePortfolioCacheAsync(portfolio.Id);
-                }
+                await InvalidatePortfolioCacheAsync(portfolio.Id);
+
+                _logger.LogInformation("Актив {AssetId} успешно удалён из портфеля {PortfolioId}", id, portfolio.Id);
                 return true;
+            }
+            catch (SecurityException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -189,34 +226,50 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                 PortfolioAssetTransaction? transaction = await _portfolioAssetRepository.GetAssetTransactionByIdAsync(transactionId);
                 if (transaction is null)
                 {
-                    _logger.LogWarning("Транзакция с ID {TransactionId} не найдена при попытке удаления", transactionId);
+                    _logger.LogWarning("Транзакция с ID {TransactionId} не найдена", transactionId);
                     return false;
                 }
 
-                PortfolioAsset? asset = await _portfolioAssetRepository.GetByIdAsync(transaction.PortfolioAssetId, a => a.Transactions);
-                if (asset is null)
+                PortfolioAsset? asset = await _portfolioAssetRepository.GetByIdAsync(transaction.PortfolioAssetId);
+                if (asset == null)
                 {
                     _logger.LogWarning("Актив для транзакции {TransactionId} не найден", transactionId);
                     return false;
                 }
 
+                Portfolio? portfolio = await _portfolioRepository.GetByIdAsync(asset.PortfolioId);
+                if (portfolio == null)
+                {
+                    _logger.LogWarning("Портфель {PortfolioId} для актива {AssetId} не найден", asset.PortfolioId, asset.Id);
+                    throw new KeyNotFoundException("Портфель не найден");
+                }
+
+                // Проверка прав доступа
+                if (!_userContext.IsAdmin && portfolio.UserId != _userContext.UserId)
+                {
+                    _logger.LogWarning(
+                        "Пользователь {CurrentUserId} пытается удалить транзакцию {TransactionId} из чужого портфеля",
+                        _userContext.UserId, transactionId);
+                    throw new SecurityException("Доступ запрещён");
+                }
+
                 await _portfolioAssetRepository.DeleteAssetTransactionAsync(transactionId);
 
-                _logger.LogInformation("Транзакция {TransactionId} успешно удалена", transactionId);
-
-                // Проверяем, не нужно ли удалить актив после удаления транзакции
+                // Удаление актива, если транзакций не осталось
                 var remainingTransactions = await _portfolioAssetRepository.GetAssetTransactionsCountAsync(asset.Id);
                 if (remainingTransactions == 0)
                 {
                     await _portfolioAssetRepository.DeleteAsync(asset);
-                    Portfolio? portfolio = await _portfolioRepository.GetByIdAsync(asset.PortfolioId);
-                    if (portfolio is not null)
-                    {
-                        await InvalidatePortfolioCacheAsync(portfolio.Id);
-                    }
+                    await InvalidatePortfolioCacheAsync(portfolio.Id);
                 }
-                await InvalidateAssetCacheAsync(asset.Id); // данные изменились — кэш устарел
+
+                await InvalidateAssetCacheAsync(asset.Id);
+                _logger.LogInformation("Транзакция {TransactionId} успешно удалена", transactionId);
                 return true;
+            }
+            catch (SecurityException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -247,7 +300,22 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                     return null;
                 }
 
-                // Вызов внешнего микросервиса карточки актива
+                Portfolio? portfolio = await _portfolioRepository.GetByIdAsync(asset.PortfolioId);
+                if (portfolio == null)
+                {
+                    _logger.LogWarning("Портфель {PortfolioId} для актива {AssetId} не найден", asset.PortfolioId, id);
+                    return null;
+                }
+
+                // Проверка прав доступа
+                if (!_userContext.IsAdmin && portfolio.UserId != _userContext.UserId)
+                {
+                    _logger.LogWarning(
+                        "Пользователь {CurrentUserId} пытается получить доступ к активу {AssetId} в чужом портфеле {PortfolioId}",
+                        _userContext.UserId, id, asset.PortfolioId);
+                    return null;
+                }
+
                 var cardInfo = await GetStockCardInfoAsync(asset.AssetType, asset.StockCardId, false);
                 var assetDto = new PortfolioAssetDto(
                     asset.Id,
@@ -262,11 +330,11 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                     cardInfo.Currency,
                     asset.LastUpdated,
                     [.. asset.Transactions.OrderBy(t => t.TransactionDate).Select(t =>
-                new PortfolioAssetTransactionDto(
-                    t.Id, t.PortfolioAssetId, t.TransactionDate, t.TransactionType,
-                    t.Quantity, t.PricePerUnit, t.Currency))]
+                        new PortfolioAssetTransactionDto(
+                            t.Id, t.PortfolioAssetId, t.TransactionDate, t.TransactionType,
+                            t.Quantity, t.PricePerUnit, t.Currency))]
                 );
-                
+
                 await _cache.SetAsync(cacheKey, assetDto, _cacheExpiration);
                 return assetDto;
             }
@@ -286,7 +354,21 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
         {
             try
             {
-                return await _portfolioAssetRepository.ExistsAsync(id);
+                PortfolioAsset? asset = await _portfolioAssetRepository.GetByIdAsync(id);
+                if (asset == null) return false;
+
+                Portfolio? portfolio = await _portfolioRepository.GetByIdAsync(asset.PortfolioId);
+                if (portfolio == null) return false;
+
+                if (!_userContext.IsAdmin && portfolio.UserId != _userContext.UserId)
+                {
+                    _logger.LogWarning(
+                        "Пользователь {CurrentUserId} пытается проверить существование актива {AssetId} в чужом портфеле",
+                        _userContext.UserId, id);
+                    return false;
+                }
+
+                return true;
             }
             catch (Exception ex)
             {
@@ -305,7 +387,29 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
             try
             {
                 PortfolioAssetTransaction? transaction = await _portfolioAssetRepository.GetAssetTransactionByIdAsync(transactionId);
-                return transaction is null ? null : new PortfolioAssetTransactionDto(transaction.Id, transaction.PortfolioAssetId, transaction.TransactionDate, transaction.TransactionType, transaction.Quantity, transaction.PricePerUnit, transaction.Currency);
+                if (transaction == null)
+                {
+                    _logger.LogWarning("Транзакция с ID {TransactionId} не найдена", transactionId);
+                    return null;
+                }
+
+                PortfolioAsset? asset = await _portfolioAssetRepository.GetByIdAsync(transaction.PortfolioAssetId);
+                if (asset == null) return null;
+
+                Portfolio? portfolio = await _portfolioRepository.GetByIdAsync(asset.PortfolioId);
+                if (portfolio == null) return null;
+
+                if (!_userContext.IsAdmin && portfolio.UserId != _userContext.UserId)
+                {
+                    _logger.LogWarning(
+                        "Пользователь {CurrentUserId} пытается получить транзакцию {TransactionId} из чужого портфеля",
+                        _userContext.UserId, transactionId);
+                    return null;
+                }
+
+                return new PortfolioAssetTransactionDto(
+                    transaction.Id, transaction.PortfolioAssetId, transaction.TransactionDate,
+                    transaction.TransactionType, transaction.Quantity, transaction.PricePerUnit, transaction.Currency);
             }
             catch (Exception ex)
             {
@@ -323,6 +427,24 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
         {
             try
             {
+                PortfolioAsset? asset = await _portfolioAssetRepository.GetByIdAsync(assetId);
+                if (asset == null)
+                {
+                    _logger.LogWarning("Актив с ID {AssetId} не найден", assetId);
+                    return [];
+                }
+
+                Portfolio? portfolio = await _portfolioRepository.GetByIdAsync(asset.PortfolioId);
+                if (portfolio == null) return [];
+
+                if (!_userContext.IsAdmin && portfolio.UserId != _userContext.UserId)
+                {
+                    _logger.LogWarning(
+                        "Пользователь {CurrentUserId} пытается получить транзакции актива {AssetId} из чужого портфеля",
+                        _userContext.UserId, assetId);
+                    return [];
+                }
+
                 IEnumerable<PortfolioAssetTransaction> transactions = await _portfolioAssetRepository.GetAssetTransactionsByAssetIdAsync(assetId);
                 return transactions.Select(t =>
                     new PortfolioAssetTransactionDto(t.Id, t.PortfolioAssetId, t.TransactionDate, t.TransactionType, t.Quantity, t.PricePerUnit, t.Currency));
@@ -346,6 +468,20 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
         {
             try
             {
+                PortfolioAsset? asset = await _portfolioAssetRepository.GetByIdAsync(assetId);
+                if (asset == null) return [];
+
+                Portfolio? portfolio = await _portfolioRepository.GetByIdAsync(asset.PortfolioId);
+                if (portfolio == null) return [];
+
+                if (!_userContext.IsAdmin && portfolio.UserId != _userContext.UserId)
+                {
+                    _logger.LogWarning(
+                        "Пользователь {CurrentUserId} пытается получить транзакции актива {AssetId} за период из чужого портфеля",
+                        _userContext.UserId, assetId);
+                    return [];
+                }
+
                 var transactions = await _portfolioAssetRepository.GetAssetTransactionsByAssetIdAndPeriodAsync(assetId, startDate, endDate);
                 return transactions.Select(t =>
                     new PortfolioAssetTransactionDto(t.Id, t.PortfolioAssetId, t.TransactionDate, t.TransactionType, t.Quantity, t.PricePerUnit, t.Currency));
@@ -367,20 +503,24 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
         {
             try
             {
-                // Проверка перед созданием
                 PortfolioAsset? asset = await _portfolioAssetRepository.GetByIdAsync(assetId, a => a.Transactions) ?? throw new KeyNotFoundException($"Актив с ID {assetId} не найден");
+                Portfolio? portfolio = await _portfolioRepository.GetByIdAsync(asset.PortfolioId) ?? throw new KeyNotFoundException($"Портфель с ID {asset.PortfolioId} не найден");
+
+                // Проверка прав доступа
+                if (!_userContext.IsAdmin && portfolio.UserId != _userContext.UserId)
+                {
+                    _logger.LogWarning(
+                        "Пользователь {CurrentUserId} пытается добавить транзакцию к активу {AssetId} в чужом портфеле",
+                        _userContext.UserId, assetId);
+                    throw new KeyNotFoundException("Портфель не найден");
+                }
 
                 if (dto.Quantity <= 0)
-                {
                     throw new ArgumentOutOfRangeException(nameof(dto), "Количество должно быть больше нуля");
-                }
 
-                // Проверяем возможность продажи
                 if (dto.TransactionType == PortfolioAssetTransactionType.Sell && dto.Quantity > asset.TotalQuantity)
-                {
                     throw new InvalidOperationException("Недостаточно активов для продажи");
-                }
-                // Вызов внешнего микросервиса карточки актива
+
                 var cardInfo = await GetStockCardInfoAsync(asset.AssetType, asset.StockCardId, false);
 
                 PortfolioAssetTransaction transaction = new(
@@ -392,26 +532,24 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                     dto.TransactionDate ?? DateTime.UtcNow,
                     dto.Currency ?? cardInfo.Currency);
 
-                PortfolioAssetTransaction createdAssetTransaction = await _portfolioAssetRepository.AddAssetTransactionAsync(transaction);
+                PortfolioAssetTransaction createdTransaction = await _portfolioAssetRepository.AddAssetTransactionAsync(transaction);
                 asset.Transactions.Add(transaction);
 
-                // Проверяем, нужно ли удалять актив (количество стало 0)
                 if (asset.TotalQuantity == 0)
                 {
                     await _portfolioAssetRepository.DeleteAsync(asset);
-                    Portfolio? portfolio = await _portfolioRepository.GetByIdAsync(asset.PortfolioId);
-                    if (portfolio is not null)
-                    {
-                        await InvalidatePortfolioCacheAsync(portfolio.Id);
-                    }
+                    await InvalidatePortfolioCacheAsync(portfolio.Id);
                 }
-                await InvalidateAssetCacheAsync(assetId); // данные изменились — кэш устарел
 
-                return new PortfolioAssetTransactionDto(createdAssetTransaction.Id, createdAssetTransaction.PortfolioAssetId, createdAssetTransaction.TransactionDate, createdAssetTransaction.TransactionType, createdAssetTransaction.Quantity, createdAssetTransaction.PricePerUnit, createdAssetTransaction.Currency);
+                await InvalidateAssetCacheAsync(assetId);
+
+                return new PortfolioAssetTransactionDto(
+                    createdTransaction.Id, createdTransaction.PortfolioAssetId, createdTransaction.TransactionDate,
+                    createdTransaction.TransactionType, createdTransaction.Quantity, createdTransaction.PricePerUnit, createdTransaction.Currency);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Ошибка при создании актива");
+                _logger.LogError(ex, "Ошибка при создании транзакции");
                 throw;
             }
         }
@@ -422,7 +560,6 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
         /// <param name="transactionId"></param>
         /// <param name="updatingTransactionDto"></param>
         /// <returns></returns>
-        /// <exception cref="InvalidOperationException"></exception>
         public async Task UpdateAssetTransactionAsync(
             Guid transactionId,
             UpdatingPortfolioAssetTransactionDto updatingTransactionDto)
@@ -431,51 +568,54 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
 
             try
             {
-                // Валидация входных данных
                 if (updatingTransactionDto.Quantity <= 0)
-                {
-                    _logger.LogWarning("Попытка обновления транзакции с некорректным количеством: {Quantity}",
-                                     updatingTransactionDto.Quantity);
                     throw new ArgumentException("Количество должно быть больше нуля");
-                }
-
                 if (updatingTransactionDto.PricePerUnit < 0)
-                {
-                    _logger.LogWarning("Попытка обновления транзакции с отрицательной ценой: {Price}",
-                                     updatingTransactionDto.PricePerUnit);
                     throw new ArgumentException("Цена не может быть отрицательной");
-                }
 
                 PortfolioAssetTransaction? transaction = await _portfolioAssetRepository.GetAssetTransactionByIdAsync(transactionId);
-                if (transaction is null)
+                if (transaction == null)
                 {
                     _logger.LogWarning("Транзакция {TransactionId} не найдена", transactionId);
                     return;
                 }
 
-                var asset = await _portfolioAssetRepository.GetByIdAsync(transaction.PortfolioAssetId);
+                PortfolioAsset? asset = await _portfolioAssetRepository.GetByIdAsync(transaction.PortfolioAssetId);
                 if (asset == null)
                 {
-                    _logger.LogError("Актив не найден для транзакции {TransactionId}", transactionId);
+                    _logger.LogError("Актив для транзакции {TransactionId} не найден", transactionId);
                     throw new InvalidOperationException("Актив портфеля не найден");
                 }
 
-                // Обновляем транзакцию
+                Portfolio? portfolio = await _portfolioRepository.GetByIdAsync(asset.PortfolioId);
+                if (portfolio == null)
+                {
+                    _logger.LogWarning("Портфель {PortfolioId} для актива {AssetId} не найден", asset.PortfolioId, asset.Id);
+                    throw new KeyNotFoundException("Портфель не найден");
+                }
+
+                // Проверка прав доступа
+                if (!_userContext.IsAdmin && portfolio.UserId != _userContext.UserId)
+                {
+                    _logger.LogWarning(
+                        "Пользователь {CurrentUserId} пытается обновить транзакцию {TransactionId} в чужом портфеле",
+                        _userContext.UserId, transactionId);
+                    throw new SecurityException("Доступ запрещён");
+                }
+
                 transaction.TransactionType = updatingTransactionDto.TransactionType;
                 transaction.Quantity = updatingTransactionDto.Quantity;
                 transaction.PricePerUnit = updatingTransactionDto.PricePerUnit;
                 transaction.TransactionDate = updatingTransactionDto.TransactionDate;
                 transaction.Currency = updatingTransactionDto.Currency;
 
-                // Сохраняем изменения
                 await _portfolioAssetRepository.UpdateAssetTransactionAsync(transaction);
-                await InvalidateAssetCacheAsync(transaction.PortfolioAssetId); // данные изменились — кэш устарел
+                await InvalidateAssetCacheAsync(transaction.PortfolioAssetId);
 
                 _logger.LogInformation("Транзакция {TransactionId} успешно обновлена", transactionId);
             }
             catch (ArgumentException)
             {
-                // Пробрасываем валидационные исключения
                 throw;
             }
             catch (Exception ex)
@@ -486,8 +626,51 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
         }
 
         /// <summary>
-        /// Расчет текущей доходности
+        /// Получить информацию по доходности актива
         /// </summary>
+        /// <param name="assetId"></param>
+        /// <param name="calculationType"></param>
+        /// <returns></returns>
+        public async Task<PortfolioAssetProfitLossDto?> GetAssetProfitLossAsync(Guid assetId, CalculationType calculationType = CalculationType.Current)
+        {
+            try
+            {
+                _logger.LogInformation("Расчет доходности типа {CalculationType} для актива ID: {AssetId}", calculationType, assetId);
+                PortfolioAsset? asset = await _portfolioAssetRepository.GetByIdAsync(assetId, a => a.Transactions);
+                if (asset is null)
+                {
+                    _logger.LogWarning("Актив портфеля с ID {AssetId} не найден", assetId);
+                    return null;
+                }
+
+                Portfolio? portfolio = await _portfolioRepository.GetByIdAsync(asset.PortfolioId);
+                if (portfolio == null) return null;
+
+                if (!_userContext.IsAdmin && portfolio.UserId != _userContext.UserId)
+                {
+                    _logger.LogWarning(
+                        "Пользователь {CurrentUserId} пытается получить доходность актива {AssetId} в чужом портфеле",
+                        _userContext.UserId, assetId);
+                    return null;
+                }
+
+                var cardInfo = await GetStockCardInfoAsync(asset.AssetType, asset.StockCardId, true);
+
+                return calculationType switch
+                {
+                    CalculationType.Realized => CalculateRealizedProfitLoss(asset, cardInfo),
+                    _ => CalculateCurrentProfitLoss(asset, cardInfo)
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка при расчете доходности для актива ID: {AssetId}", assetId);
+                throw;
+            }
+        }
+
+        // --- Приватные методы для расчёта доходности (без изменений) ---
+
         private PortfolioAssetProfitLossDto CalculateCurrentProfitLoss(PortfolioAsset asset, StockCardInfoDto cardInfo)
         {
             var totalQuantity = asset.TotalQuantity;
@@ -508,29 +691,25 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                 _logger.LogWarning("Текущая доходность по активу {Ticker} не расчитана, так как не задана его текущая цена", cardInfo.Ticker);
 
             return new PortfolioAssetProfitLossDto(
-                    asset.Id,
-                    asset.PortfolioId,
-                    cardInfo.Ticker,
-                    cardInfo.Name,
-                    absoluteReturn,
-                    percentageReturn,
-                    investmentAmount,
-                    currentValue,
-                    cardInfo.Currency,
-                    totalQuantity,
-                    averagePurchasePrice,
-                    cardInfo.CurrentPrice,
-                    CalculationType.Current);
+                asset.Id,
+                asset.PortfolioId,
+                cardInfo.Ticker,
+                cardInfo.Name,
+                absoluteReturn,
+                percentageReturn,
+                investmentAmount,
+                currentValue,
+                cardInfo.Currency,
+                totalQuantity,
+                averagePurchasePrice,
+                cardInfo.CurrentPrice,
+                CalculationType.Current);
         }
 
-        /// <summary>
-        /// Расчет реализованной доходности
-        /// </summary>
         private PortfolioAssetProfitLossDto CalculateRealizedProfitLoss(PortfolioAsset asset, StockCardInfoDto cardInfo)
         {
             var realizedProfitLoss = CalculateRealizedProfitLoss(asset.Transactions);
             var totalInvestment = asset.TotalInvestment;
-
             var percentageReturn = totalInvestment == 0 ? 0 : decimal.Round(realizedProfitLoss / totalInvestment * 100);
 
             _logger.LogDebug("Расчет реализованной доходности для актива {Ticker}: реализованная прибыль={RealizedProfit}, общие инвестиции={TotalInvestment}",
@@ -552,9 +731,6 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                 CalculationType.Realized);
         }
 
-        /// <summary>
-        /// Расчет реализованной доходности по транзакциям (упрощенный FIFO)
-        /// </summary>
         private decimal CalculateRealizedProfitLoss(IEnumerable<PortfolioAssetTransaction> transactions)
         {
             var sellTransactions = transactions
@@ -600,42 +776,6 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
 
             _logger.LogDebug("Реализованная доходность рассчитана: {RealizedProfitLoss}", realizedProfitLoss);
             return realizedProfitLoss;
-        }
-
-        /// <summary>
-        /// Получить информацию по доходности актива
-        /// </summary>
-        /// <param name="assetId"></param>
-        /// <param name="calculationType"></param>
-        /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
-        public async Task<PortfolioAssetProfitLossDto?> GetAssetProfitLossAsync(Guid assetId, CalculationType calculationType = CalculationType.Current)
-        {
-            try
-            {
-                _logger.LogInformation("Расчет доходности типа {CalculationType} для актива ID: {AssetId}", calculationType, assetId);
-                PortfolioAsset ? asset = await _portfolioAssetRepository.GetByIdAsync(assetId, a => a.Transactions);
-                if (asset is null)
-                {
-                    _logger.LogWarning("Актив портфеля с ID {AssetId} не найден", assetId);
-                    return null;
-                }
-
-                // Вызов внешнего микросервиса карточки актива
-                var cardInfo = await GetStockCardInfoAsync(asset.AssetType, asset.StockCardId, true);
-
-                // Рассчитываем доходность в зависимости от метода расчета
-                return calculationType switch
-                {
-                    CalculationType.Realized => CalculateRealizedProfitLoss(asset, cardInfo),
-                    _ => CalculateCurrentProfitLoss(asset, cardInfo)
-                };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Ошибка при расчете доходности для актива ID: {AssetId}", assetId);
-                throw;
-            }
         }
     }
 }

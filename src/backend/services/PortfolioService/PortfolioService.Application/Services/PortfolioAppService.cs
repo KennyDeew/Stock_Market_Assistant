@@ -3,8 +3,10 @@ using StockMarketAssistant.PortfolioService.Application.DTOs;
 using StockMarketAssistant.PortfolioService.Application.Interfaces;
 using StockMarketAssistant.PortfolioService.Application.Interfaces.Caching;
 using StockMarketAssistant.PortfolioService.Application.Interfaces.Repositories;
+using StockMarketAssistant.PortfolioService.Application.Interfaces.Security;
 using StockMarketAssistant.PortfolioService.Domain.Entities;
 using StockMarketAssistant.PortfolioService.Domain.Enums;
+using StockMarketAssistant.PortfolioService.Domain.Exceptions;
 using StockMarketAssistant.SharedLibrary.Enums;
 
 namespace StockMarketAssistant.PortfolioService.Application.Services
@@ -12,8 +14,9 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
     /// <summary>
     /// Сервис работы с портфелями ценных бумаг
     /// </summary>
-    public class PortfolioAppService(IPortfolioRepository portfolioRepository, IPortfolioAssetAppService portfolioAssetAppService, ICacheService cache, ILogger<PortfolioAppService> logger) : IPortfolioAppService
+    public class PortfolioAppService(IPortfolioRepository portfolioRepository, IUserContext userContext, IPortfolioAssetAppService portfolioAssetAppService, ICacheService cache, ILogger<PortfolioAppService> logger) : IPortfolioAppService
     {
+        private readonly IUserContext _userContext = userContext;
         private readonly IPortfolioRepository _portfolioRepository = portfolioRepository;
         private readonly IPortfolioAssetAppService _portfolioAssetAppService = portfolioAssetAppService;
         private readonly ICacheService _cache = cache;
@@ -37,11 +40,17 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
         /// <returns>Идентификатор созданного портфеля</returns>
         public async Task<Guid> CreateAsync(CreatingPortfolioDto creatingPortfolioDto)
         {
-            Portfolio portfolio = new(Guid.NewGuid(), creatingPortfolioDto.UserId)
+            // Проверка: если USER — то UserId должен совпадать
+            if (!_userContext.IsAdmin && creatingPortfolioDto.UserId != _userContext.UserId)
             {
-                Name = creatingPortfolioDto.Name,
-                Currency = creatingPortfolioDto.Currency
-            };
+                _logger.LogWarning(
+                    "Пользователь {CurrentUserId} (роль: {Role}) пытается создать портфель от имени {TargetUserId}",
+                    _userContext.UserId, _userContext.Role, creatingPortfolioDto.UserId);
+
+                throw new SecurityException("Недопустимая операция: нельзя создавать портфели от имени других пользователей");
+            }
+
+            Portfolio portfolio = new(Guid.NewGuid(), creatingPortfolioDto.UserId, creatingPortfolioDto.Name, creatingPortfolioDto.Currency);
             try
             {
                 Portfolio createdPortfolio = await _portfolioRepository.AddAsync(portfolio);
@@ -70,10 +79,27 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                     _logger.LogWarning("Портфель с ID {PortfolioId} не найден для удаления", id);
                     return false;
                 }
+
+                // Проверка прав доступа: USER может удалять только свои портфели
+                if (!_userContext.IsAdmin && portfolio.UserId != _userContext.UserId)
+                {
+                    _logger.LogWarning(
+                        "Пользователь {CurrentUserId} пытается удалить портфель от имени пользователя {TargetUserId}",
+                        _userContext.UserId, portfolio.UserId);
+
+                    throw new SecurityException("Доступ запрещён");
+                }
+
                 await _portfolioRepository.DeleteAsync(portfolio);
                 await InvalidatePortfolioCacheAsync(id);
                 await _cache.RemoveAsync($"user_portfolios_short_{portfolio.UserId}");
+
+                _logger.LogInformation("Портфель {PortfolioId} успешно удалён пользователем {UserId}", id, _userContext.UserId);
                 return true;
+            }
+            catch (SecurityException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -88,12 +114,33 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
         /// <returns></returns>
         public async Task<IEnumerable<PortfolioDto>> GetAllAsync()
         {
-            IEnumerable<Portfolio> portfolios = await _portfolioRepository.GetAllAsync();
-            return portfolios.Select(p =>
-                new PortfolioDto() {
-                    Id = p.Id, UserId = p.UserId,
-                    Name = p.Name, Currency = p.Currency
-                });
+            // Только ADMIN может получать список всех портфелей
+            if (!_userContext.IsAdmin)
+            {
+                _logger.LogWarning(
+                    "Пользователь {CurrentUserId} пытается получить доступ к портфелям всех пользователей",
+                    _userContext.UserId);
+
+                throw new SecurityException("Доступ запрещён");
+            }
+
+            try
+            {
+                IEnumerable<Portfolio> portfolios = await _portfolioRepository.GetAllAsync();
+                return portfolios.Select(p =>
+                    new PortfolioDto
+                    {
+                        Id = p.Id,
+                        UserId = p.UserId,
+                        Name = p.Name,
+                        Currency = p.Currency
+                    });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка при получении списка всех портфелей");
+                throw;
+            }
         }
 
         /// <summary>
@@ -111,48 +158,40 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                 if (cached != null)
                     return cached;
 
-                // Получаем портфель из БД с активами
-                Portfolio? portfolio = await _portfolioRepository.GetByIdAsync(id, p => p.Assets);
+                Portfolio? portfolio = await _portfolioRepository.GetByIdWithAssetsAsync(id);
                 if (portfolio is null)
                 {
                     _logger.LogWarning("Портфель с ID {PortfolioId} не найден", id);
                     return null;
                 }
 
-                // Обрабатываем каждый актив с защитой от падений
-                var assetTasks = portfolio.Assets.Select(async a =>
+                // Проверка прав доступа: USER может читать только свои портфели
+                if (!_userContext.IsAdmin && portfolio.UserId != _userContext.UserId)
+                {
+                    _logger.LogWarning(
+                        "Пользователь {CurrentUserId} (роль: {Role}) пытается получить доступ к портфелю {PortfolioId}, принадлежащему {OwnerId}",
+                        _userContext.UserId, _userContext.Role, id, portfolio.UserId);
+
+                    // Не возвращаем 403 — чтобы не раскрывать существование портфеля
+                    // Возвращаем 404 — "не найден"
+                    return null;
+                }
+
+                // Теперь загружаем активы
+                var validAssets = new List<PortfolioAssetDto>();
+                foreach (var asset in portfolio.Assets)
                 {
                     try
                     {
-                        return await _portfolioAssetAppService.GetByIdAsync(a.Id);
+                        var dto = await _portfolioAssetAppService.GetByIdAsync(asset.Id);
+                        if (dto != null)
+                            validAssets.Add(dto);
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogWarning(
-                            ex,
-                            "Не удалось загрузить актив {AssetId} (StockCardId: {StockCardId}, Type: {AssetType}) " +
-                            "для портфеля {PortfolioId}. Актив будет пропущен.",
-                            a.Id, a.StockCardId, a.AssetType, id);
-                        return null;
+                        _logger.LogWarning(ex, "Не удалось загрузить актив {AssetId}", asset.Id);
                     }
-                });
-                // Дожидаемся завершения всех задач
-                var assets = await Task.WhenAll(assetTasks);
-
-                // Фильтруем успешные результаты
-                var validAssets = assets
-                    .Where(a => a is not null)
-                    .Cast<PortfolioAssetDto>()
-                    .OrderBy(a => a.AssetType)
-                    .ThenBy(a => a.Ticker)
-                    .ToList();
-
-                // Если все активы упали — вернём пустой список, а не ошибку
-                if (validAssets.Count == 0)
-                {
-                    _logger.LogWarning("Все активы портфеля {PortfolioId} не удалось загрузить. Возвращаем портфель без активов.", id);
                 }
-
                 var portfolioDto = new PortfolioDto
                 {
                     Id = portfolio.Id,
@@ -162,6 +201,7 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                     Assets = [.. validAssets]
                 };
 
+                // Сохраняем в кэш — только после успешной проверки
                 await _cache.SetAsync(cacheKey, portfolioDto, _cacheExpiration);
                 return portfolioDto;
             }
@@ -179,7 +219,27 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
         /// <returns></returns>
         public async Task<bool> ExistsAsync(Guid id)
         {
-            return await _portfolioRepository.ExistsAsync(id);
+            try
+            {
+                var portfolio = await _portfolioRepository.GetByIdAsync(id);
+                if (portfolio == null) return false;
+
+                // Проверка доступа: либо владелец, либо админ
+                if (!_userContext.IsAdmin && portfolio.UserId != _userContext.UserId)
+                {
+                    _logger.LogWarning(
+                        "Пользователь {CurrentUserId} пытается проверить существование чужого портфеля {PortfolioId}",
+                        _userContext.UserId, id);
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка при проверке существования портфеля с ID: {PortfolioId}", id);
+                return false;
+            }
         }
 
         /// <summary>
@@ -189,13 +249,48 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
         /// <param name="updatingPortfolioDto">DTO для редактирования портфеля</param>
         public async Task UpdateAsync(Guid id, UpdatingPortfolioDto updatingPortfolioDto)
         {
-            Portfolio? portfolio = await _portfolioRepository.GetByIdAsync(id);
-            if (portfolio is not null)
+            try
             {
+                // Получаем портфель из БД
+                Portfolio? portfolio = await _portfolioRepository.GetByIdAsync(id);
+                if (portfolio == null)
+                {
+                    _logger.LogWarning("Попытка обновить несуществующий портфель с ID: {PortfolioId}", id);
+                    throw new KeyNotFoundException($"Портфель с ID {id} не найден");
+                }
+
+                // Проверка прав доступа: USER может редактировать только свои портфели
+                if (!_userContext.IsAdmin && portfolio.UserId != _userContext.UserId)
+                {
+                    _logger.LogWarning(
+                        "Пользователь {CurrentUserId} (роль: {Role}) пытается изменить портфель {PortfolioId}, принадлежащий {OwnerId}",
+                        _userContext.UserId, _userContext.Role, id, portfolio.UserId);
+
+                    // Не раскрываем существование портфеля — выбрасываем KeyNotFoundException
+                    throw new KeyNotFoundException($"Портфель с ID {id} не найден");
+                }
+
+                // Обновляем данные
                 portfolio.Name = updatingPortfolioDto.Name;
                 portfolio.Currency = updatingPortfolioDto.Currency;
+
+                // Сохраняем изменения
                 await _portfolioRepository.UpdateAsync(portfolio);
+
+                // Сбрасываем кэш
                 await InvalidatePortfolioCacheAsync(id);
+
+                _logger.LogInformation("Портфель {PortfolioId} успешно обновлён пользователем {UserId}", id, _userContext.UserId);
+            }
+            catch (KeyNotFoundException)
+            {
+                // Перебрасываем — будет обработано в контроллере как NotFound (404)
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Критическая ошибка при обновлении портфеля с ID: {PortfolioId}", id);
+                throw;
             }
         }
 
@@ -212,10 +307,19 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                 _logger.LogInformation("Расчет доходности портфеля ID: {PortfolioId}, тип расчета: {CalculationType}",
                     id, calculationType);
 
-                Portfolio? portfolio = await _portfolioRepository.GetByIdAsync(id, p => p.Assets);
+                Portfolio? portfolio = await _portfolioRepository.GetByIdAsync(id);
                 if (portfolio is null)
                 {
                     _logger.LogWarning("Портфель с ID {PortfolioId} не найден", id);
+                    return null;
+                }
+
+                // Проверка прав доступа: USER может читать только свои портфели
+                if (!_userContext.IsAdmin && portfolio.UserId != _userContext.UserId)
+                {
+                    _logger.LogWarning(
+                        "Пользователь {CurrentUserId} пытается получить доходность чужого портфеля {PortfolioId}",
+                        _userContext.UserId, id);
                     return null;
                 }
 
@@ -277,28 +381,33 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
             {
                 _logger.LogInformation("Получение доходности активов портфеля ID: {id}", id);
 
-                Portfolio? portfolio = await _portfolioRepository.GetByIdAsync(id, p => p.Assets);
+                Portfolio? portfolio = await _portfolioRepository.GetByIdWithAssetsAndTransactionsAsync(id);
                 if (portfolio == null)
                 {
                     _logger.LogWarning("Портфель с ID {id} не найден", id);
                     return [];
                 }
 
-                // Получаем все активы портфеля
+                // Проверка прав доступа
+                if (!_userContext.IsAdmin && portfolio.UserId != _userContext.UserId)
+                {
+                    _logger.LogWarning("Пользователь {CurrentUserId} пытается получить доходность активов чужого портфеля {PortfolioId}", _userContext.UserId, id);
+                    return [];
+                }
+
                 if (portfolio.Assets.Count == 0)
                 {
                     _logger.LogWarning("В портфеле {id} не найдено активов", id);
                     return [];
                 }
 
-                decimal portfolioTotalValue = 0; // Общая стоимость портфеля для вычисления весов активов
-                var assetsProfitLoss = new List<PortfolioAssetProfitLossItemDto>(); // доходность для каждого актива
+                decimal portfolioTotalValue = 0;
+                var assetsProfitLoss = new List<PortfolioAssetProfitLossItemDto>();
 
                 foreach (var asset in portfolio.Assets)
                 {
                     try
                     {
-                        // Вызов внешнего микросервиса карточки актива
                         var cardInfo = await _portfolioAssetAppService.GetStockCardInfoAsync(asset.AssetType, asset.StockCardId, true);
                         if (cardInfo.CurrentPrice.HasValue)
                             portfolioTotalValue += asset.TotalQuantity * cardInfo.CurrentPrice.Value;
@@ -311,7 +420,6 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                     }
                 }
                 _logger.LogDebug("Общая стоимость портфеля рассчитана: {TotalValue}", portfolioTotalValue);
-
 
                 foreach (var asset in portfolio.Assets)
                 {
@@ -348,44 +456,29 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
         {
             try
             {
-                // Используем вычисляемые свойства из сущности
+                StockCardInfoDto cardInfo = await _portfolioAssetAppService.GetStockCardInfoAsync(asset.AssetType, asset.StockCardId, true);
                 int totalQuantity = asset.TotalQuantity;
                 decimal averagePurchasePrice = asset.AveragePurchasePrice;
-                decimal? currentValue = null;
-                // Вызов внешнего микросервиса карточки актива
-                StockCardInfoDto cardInfo = await _portfolioAssetAppService.GetStockCardInfoAsync(asset.AssetType, asset.StockCardId, true);
-                if (cardInfo.CurrentPrice.HasValue)
-                    currentValue = totalQuantity * cardInfo.CurrentPrice;
-                else
-                    _logger.LogWarning("Не удалось получить цену для актива {Ticker}, пропускаем в расчете общей стоимости", cardInfo.Ticker);
+                decimal? currentValue = cardInfo.CurrentPrice.HasValue ? totalQuantity * cardInfo.CurrentPrice.Value : null;
                 decimal investmentAmount = totalQuantity * averagePurchasePrice;
                 decimal absoluteReturn = 0;
                 decimal percentageReturn = 0;
 
-                // Выбираем метод расчета в зависимости от типа
                 if (calculationType == CalculationType.Realized)
                 {
-                    // Для реализованной доходности используем только завершенные сделки
                     decimal realizedProfitLoss = CalculateRealizedProfitLoss(asset.Transactions);
                     absoluteReturn = realizedProfitLoss;
                     percentageReturn = investmentAmount != 0 ? decimal.Round(absoluteReturn / investmentAmount * 100) : 0;
-
-                    // Для реализованной доходности не учитываем текущие позиции
                     currentValue = 0;
                     totalQuantity = 0;
                 }
                 else if (currentValue.HasValue)
                 {
-                    // Текущая доходность (по умолчанию)
                     absoluteReturn = currentValue.Value - investmentAmount;
                     percentageReturn = investmentAmount == 0 ? 0 : decimal.Round(absoluteReturn / investmentAmount * 100);
                 }
 
-                // Рассчитываем вес актива в портфеле
                 decimal? weightInPortfolio = portfolioTotalValue == 0 ? 0 : decimal.Round((currentValue ?? 0) / portfolioTotalValue * 100);
-
-                _logger.LogDebug("Рассчитана доходность актива {Ticker}: абсолютная={AbsoluteReturn}, процентная={PercentageReturn}%, вес={Weight}%",
-                    cardInfo.Ticker, absoluteReturn, percentageReturn, weightInPortfolio);
 
                 return new PortfolioAssetProfitLossItemDto(
                     asset.Id,
@@ -478,7 +571,17 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                     return cached;
                 }
 
-                // Получаем портфели из репозитория
+                // Проверка: USER может запрашивать только свои данные
+                if (!_userContext.IsAdmin && _userContext.UserId != userId)
+                {
+                    _logger.LogWarning(
+                        "Пользователь {CurrentUserId} пытается получить портфели пользователя {TargetUserId}",
+                        _userContext.UserId, userId);
+
+                    // Не возвращаем 403 — просто "не найдено"
+                    return [];
+                }
+
                 var portfolios = await _portfolioRepository.GetByUserIdAsync(userId);
 
                 if (!portfolios.Any())
@@ -487,7 +590,6 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                     return [];
                 }
 
-                // Маппим в DTO
                 var result = portfolios.Select(p => new PortfolioShortDto
                 {
                     Id = p.Id,
@@ -496,7 +598,6 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                     Currency = p.Currency
                 }).ToList();
 
-                // Кэшируем результат
                 await _cache.SetAsync(cacheKey, result, _cacheExpiration);
 
                 _logger.LogDebug("Получено {Count} портфелей для пользователя {UserId} (краткая версия)",
@@ -509,7 +610,6 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                 _logger.LogError(ex, "Ошибка при получении краткой информации о портфелях пользователя {UserId}", userId);
                 throw;
             }
-
         }
     }
 }

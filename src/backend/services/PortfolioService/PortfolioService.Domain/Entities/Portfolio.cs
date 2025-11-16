@@ -10,7 +10,7 @@ namespace StockMarketAssistant.PortfolioService.Domain.Entities
     /// </remarks>
     /// <param name="id">Id портфеля</param>
     /// <param name="userId">Id пользователя</param>
-    public class Portfolio(Guid id, Guid userId)
+    public class Portfolio(Guid id, Guid userId, string name, string currency = "RUB")
                 : BaseEntity<Guid>(id)
     {
 
@@ -22,12 +22,12 @@ namespace StockMarketAssistant.PortfolioService.Domain.Entities
         /// <summary>
         /// Наименование портфеля
         /// </summary>
-        public required string Name { get; set; }
+        public string Name { get; set; } = name;
 
         /// <summary>
         /// Валюта портфеля (RUB, USD и т.д.)
         /// </summary>
-        public required string Currency { get; set; }
+        public string Currency { get; set; } = currency;
 
         /// <summary>
         /// Набор активов в портфеле

@@ -13,8 +13,31 @@ namespace StockMarketAssistant.PortfolioService.Infrastructure.Repositories
     {
         public async Task<IEnumerable<Portfolio>> GetByUserIdAsync(Guid userId)
         {
-            var portfolios = await Data.Where(p => p.UserId == userId).ToListAsync();
+            var portfolios = await Data
+                .Where(p => p.UserId == userId)
+                .ToListAsync();
             return portfolios;
+        }
+
+        /// <summary>
+        /// Получить портфель пользователя с активами
+        /// </summary>
+        public async Task<Portfolio?> GetByIdWithAssetsAsync(Guid id)
+        {
+            return await Data
+                .Include(p => p.Assets)
+                .FirstOrDefaultAsync(p => p.Id == id);
+        }
+
+        /// <summary>
+        /// Получить портфель пользователя с активами и транзакциями
+        /// </summary>
+        public async Task<Portfolio?> GetByIdWithAssetsAndTransactionsAsync(Guid id)
+        {
+            return await Data
+                .Include(p => p.Assets)
+                .ThenInclude(a => a.Transactions)
+                .FirstOrDefaultAsync(p => p.Id == id);
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using NSwag.Annotations;
 using StockMarketAssistant.PortfolioService.Application.DTOs;
 using StockMarketAssistant.PortfolioService.Application.Interfaces;
@@ -26,6 +27,7 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
         /// <param name="page">Номер страницы (по умолчанию 1)</param>
         /// <param name="pageSize">Размер страницы (по умолчанию 10, максимум 100)</param>
         /// <returns>Пагинированный список портфелей</returns>
+        [Authorize(Roles = "ADMIN")]
         [HttpGet]
         [ProducesResponseType(typeof(PaginatedResponse<PortfolioShortResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -89,6 +91,7 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
         /// <param name="page">Номер страницы (по умолчанию 1)</param>
         /// <param name="pageSize">Размер страницы (по умолчанию 10, максимум 100)</param>
         /// <returns>Пагинированный список портфелей пользователя</returns>
+        [Authorize(Roles = "ADMIN,USER")]
         [HttpGet("user/{userId:guid}")]
         [ProducesResponseType(typeof(PaginatedResponse<PortfolioShortResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -153,6 +156,7 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
         /// </summary>
         /// <param name="request">Параметры создаваемого портфеля</param>
         /// <returns></returns>
+        [Authorize(Roles = "USER")]
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(PortfolioShortResponse))]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
@@ -206,6 +210,7 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
         /// </summary>
         /// <param name="id">Id портфеля</param>
         /// <returns></returns>
+        [Authorize(Roles = "ADMIN,USER")]
         [HttpGet("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(PortfolioResponse))]
         [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(string))]
@@ -256,6 +261,7 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
         /// </summary>
         /// <param name="id">Id портфеля</param>
         /// <param name="request">Данные для редактирования портфеля</param>
+        [Authorize(Roles = "USER")]
         [HttpPut("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
@@ -299,6 +305,7 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
         /// </summary>
         /// <param name="id">Id портфеля</param>
         /// <returns></returns>
+        [Authorize(Roles = "USER")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(string))]
         [HttpDelete("{id:guid}")]
@@ -337,6 +344,7 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
         /// Пример запроса:
         /// GET /api/v1/portfolios/{id}/profit-loss?calculationType=Current
         /// </remarks>
+        [Authorize(Roles = "USER")]
         [HttpGet("{id:guid}/profit-loss")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(PortfolioProfitLossResponse))]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -381,6 +389,7 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
         /// Пример запроса:
         /// GET /api/v1/portfolios/{id}/assets/profit-loss?calculationType=Realized
         /// </remarks>
+        [Authorize(Roles = "USER")]
         [HttpGet("{id:guid}/assets/profit-loss")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<PortfolioAssetProfitLossItemResponse>))]
         [ProducesResponseType(StatusCodes.Status404NotFound)]

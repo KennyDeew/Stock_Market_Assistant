@@ -133,6 +133,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StockCardService.Infrastruc
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{7F192046-4ABC-4139-B7B0-51489FB146FD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PortfolioService.Infrastructure.Security", "src\backend\services\PortfolioService\PortfolioService.Infrastructure.Security\PortfolioService.Infrastructure.Security.csproj", "{149787E2-FB65-46A6-885E-507D27D603F9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

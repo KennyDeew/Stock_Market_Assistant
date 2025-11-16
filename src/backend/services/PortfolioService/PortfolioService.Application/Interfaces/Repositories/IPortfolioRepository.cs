@@ -12,5 +12,16 @@ namespace StockMarketAssistant.PortfolioService.Application.Interfaces.Repositor
         /// Получить все портфели пользователя
         /// </summary>
         Task<IEnumerable<Portfolio>> GetByUserIdAsync(Guid userId);
+
+        /// <summary>
+        /// Получить портфель пользователя с активами
+        /// </summary>
+        Task<Portfolio?> GetByIdWithAssetsAsync(Guid id);
+
+        /// <summary>
+        /// Получить портфель пользователя с активами и транзакциями
+        /// </summary>
+        Task<Portfolio?> GetByIdWithAssetsAndTransactionsAsync(Guid id);
+
     }
 }

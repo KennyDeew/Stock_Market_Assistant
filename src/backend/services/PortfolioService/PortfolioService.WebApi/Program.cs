@@ -1,15 +1,20 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using StockMarketAssistant.PortfolioService.Application.Interfaces;
 using StockMarketAssistant.PortfolioService.Application.Interfaces.Caching;
 using StockMarketAssistant.PortfolioService.Application.Interfaces.Gateways;
 using StockMarketAssistant.PortfolioService.Application.Interfaces.Repositories;
+using StockMarketAssistant.PortfolioService.Application.Interfaces.Security;
 using StockMarketAssistant.PortfolioService.Application.Services;
 using StockMarketAssistant.PortfolioService.Infrastructure.Caching;
 using StockMarketAssistant.PortfolioService.Infrastructure.EntityFramework;
 using StockMarketAssistant.PortfolioService.Infrastructure.EntityFramework.Context;
 using StockMarketAssistant.PortfolioService.Infrastructure.Gateways;
 using StockMarketAssistant.PortfolioService.Infrastructure.Repositories;
+using StockMarketAssistant.PortfolioService.Infrastructure.Security;
 using StockMarketAssistant.PortfolioService.WebApi.Infrastructure.Swagger;
+using StockMarketAssistant.PortfolioService.WebApi.Middleware;
 using System.Text;
 
 namespace StockMarketAssistant.PortfolioService.WebApi
@@ -37,12 +42,28 @@ namespace StockMarketAssistant.PortfolioService.WebApi
             // Настройка логгера
             builder.Logging.AddConsole();
             builder.Logging.SetMinimumLevel(LogLevel.Information);
-            // Add services to the container.
 
-            //if (builder.Environment.IsDevelopment())
-            //{
-            //    builder.Configuration.AddUserSecrets<Program>();
-            //}
+            // Add services to the container.
+            var jwtSettings = builder.Configuration.GetSection("Jwt");
+
+            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme) // указание схемы аутентификации по умолчанию, именно по ней и будет происходить аутентификация
+                .AddJwtBearer(options => // регистрация Jwt-схемы аутентификации
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters()
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidIssuer = jwtSettings["Issuer"],
+                        ValidAudience = jwtSettings["Audience"],
+                        RoleClaimType = "Role",
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"]!))
+                    };
+                });
+            builder.Services.AddHttpContextAccessor();
+            builder.Services.AddScoped<IUserContext, UserContext>();
+            builder.Services.AddAuthorization();
 
             // Получаем строку подключения из Aspire
             var connectionString = builder.Configuration.GetConnectionString("portfolio-db");
@@ -65,9 +86,11 @@ namespace StockMarketAssistant.PortfolioService.WebApi
 
             builder.Services.AddScoped<IPortfolioRepository, PortfolioRepository>();
             builder.Services.AddScoped<IPortfolioAssetRepository, PortfolioAssetRepository>();
+            builder.Services.AddScoped<IAlertRepository, AlertRepository>();
 
             builder.Services.AddScoped<IPortfolioAppService, PortfolioAppService>();
             builder.Services.AddScoped<IPortfolioAssetAppService, PortfolioAssetAppService>();
+            builder.Services.AddScoped<IAlertAppService, AlertAppService>();
 
             builder.Services.AddHttpClient<IStockCardServiceGateway, StockCardServiceGateway>(httpClient =>
             {
@@ -157,10 +180,11 @@ namespace StockMarketAssistant.PortfolioService.WebApi
             app.UseCors("AllowFrontendApp");
             app.MapDefaultEndpoints();
 
-
+            app.UseMiddleware<SecurityExceptionMiddleware>();
             //app.UseHttpsRedirection();
 
-            //app.UseAuthentication();
+            // Аутентификация и авторизация
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapControllers();
