@@ -86,11 +86,9 @@ namespace StockMarketAssistant.PortfolioService.WebApi
 
             builder.Services.AddScoped<IPortfolioRepository, PortfolioRepository>();
             builder.Services.AddScoped<IPortfolioAssetRepository, PortfolioAssetRepository>();
-            builder.Services.AddScoped<IAlertRepository, AlertRepository>();
 
             builder.Services.AddScoped<IPortfolioAppService, PortfolioAppService>();
             builder.Services.AddScoped<IPortfolioAssetAppService, PortfolioAssetAppService>();
-            builder.Services.AddScoped<IAlertAppService, AlertAppService>();
 
             builder.Services.AddHttpClient<IStockCardServiceGateway, StockCardServiceGateway>(httpClient =>
             {
