@@ -221,3 +221,4 @@ namespace StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.M
     }
 }
 
+

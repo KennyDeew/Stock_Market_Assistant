@@ -29,8 +29,8 @@ internal class Program
             .WithImage("postgres:17.5")
             .WithDataVolume("analytics-pg-data")
             .WithHostPort(14051)
-            .AddDatabase("analytics-db");
-
+            .AddDatabase("analytics-db")
+            .WithCredentials("postgres", "xxxxxx");
         //var postgres = builder.AddPostgres("postgres").AddDatabase("stockcarddb");
         //var container = builder.AddDockerfile("gateway", "../backend/gateway/");
 
