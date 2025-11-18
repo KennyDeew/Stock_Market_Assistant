@@ -43,11 +43,23 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
                 {
                     try
                     {
-                        dbContext.Database.Migrate(); // Применяет все pending миграции
+                        // Проверяем, существует ли база данных
+                        if (dbContext.Database.CanConnect())
+                        {
+                            // Применяем миграции, если база существует
+                            dbContext.Database.Migrate();
+                        }
+                        else
+                        {
+                            // Создаем базу данных, если её нет (для первого запуска)
+                            dbContext.Database.EnsureCreated();
+                        }
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        // Игнорируем ошибки миграций при первом запуске без базы данных
+                        // Логируем ошибку, но не прерываем запуск приложения
+                        var logger = scope.ServiceProvider.GetService<ILogger<Program>>();
+                        logger?.LogWarning(ex, "Не удалось применить миграции базы данных. База данных будет создана при первом подключении.");
                     }
                 }
             }
