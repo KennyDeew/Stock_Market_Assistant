@@ -1,0 +1,148 @@
+services:
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.7.1
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - stock_network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.7.1
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9091:9091"       # для других контейнеров
+      - "29091:29091"     # для localhost снаружи
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_LISTENERS: INSIDE://0.0.0.0:9091,OUTSIDE://0.0.0.0:29091
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka:9091,OUTSIDE://localhost:29091
+      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+    networks:
+      - stock_network
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    depends_on:
+      - kafka
+      - zookeeper
+    ports:
+      - "8083:8080"
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9091
+      - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
+    networks:
+      - stock_network
+
+  stockcardservice-api:
+    image: docker.io/kennydew/stockcardservice-api:1.0.4
+    ports:
+      - 8080:8080
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__stock-card-db=Host=postgres-stockcard;Database=stock-card-db;Username=postgres;Password=password;Port=5432
+      - ConnectionStrings__finantial-report-db=mongodb://root:example@mongo-stockcard:27017/finantial-report-db?authSource=admin
+      #- ApplicationOptions__KafkaOptions__BootstrapServers=kafka1:9091,kafka2:9092,kafka3:9093
+      - KafkaOptions__BootstrapServers=kafka:9091
+    depends_on:
+      - postgres-stockcard
+      - mongo-stockcard
+      - kafka
+    networks:
+      - stock_network
+    command: >
+      sh -c "echo 'Waiting for PostgreSQL...' &&
+             sleep 5 &&
+             echo 'Applying migrations...' &&
+             dotnet ef database update --project /src/StockCardService.Infrastructure --startup-project /src/StockCardService.WebApi &&
+             echo 'Migrations applied. Starting API...' &&
+             dotnet StockCardService.WebApi.dll"
+
+  kafka-consumer:
+    image: kennydew/kafkaconsumer:1.0.0
+    container_name: kafka-consumer
+    depends_on:
+      - kafka
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - KafkaOptions__BootstrapServers=kafka:9091
+      - GroupId=notification_service
+    networks:
+      - stock_network
+    restart: always
+  
+  postgres-stockcard:
+    image: postgres:latest
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=stock-card-db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    networks:
+      - stock_network
+  
+  mongo-stockcard:
+    image: mongo:7
+    restart: always
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=example
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - stock_network
+
+  pgweb:
+    image: sosedoff/pgweb
+    restart: always
+    depends_on:
+      - postgres-stockcard
+    environment:
+      PGWEB_DATABASE_URL: "postgres://postgres:password@postgres-stockcard:5432/stock-card-db?sslmode=disable"
+    ports:
+      - "8081:8081"
+    command: ["--bind=0.0.0.0", "--listen=8081"]
+    networks:
+      - stock_network
+
+  mongo-express:
+    image: mongo-express
+    restart: always
+    depends_on:
+      - mongo-stockcard
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=mongo-stockcard
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=root
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=example
+      - ME_CONFIG_BASICAUTH_USERNAME=admin
+      - ME_CONFIG_BASICAUTH_PASSWORD=admin
+    ports:
+      - "8082:8081"
+    networks:
+      - stock_network
+
+volumes:
+  postgres_data:
+  mongo_data:
+
+networks:
+  stock_network:
+    driver: bridge

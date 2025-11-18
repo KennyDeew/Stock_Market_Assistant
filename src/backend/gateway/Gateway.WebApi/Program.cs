@@ -1,12 +1,11 @@
-﻿
-namespace StockMarketAssistant.Gateway.WebApi
+﻿namespace StockMarketAssistant.Gateway.WebApi
 {
     public class Program
     {
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
-
+            builder.AddServiceDefaults();
             // Add services to the container.
 
             builder.Services.AddControllers();
@@ -15,6 +14,7 @@ namespace StockMarketAssistant.Gateway.WebApi
             builder.Services.AddSwaggerGen();
 
             var app = builder.Build();
+            app.MapDefaultEndpoints();
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())

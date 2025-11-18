@@ -24,10 +24,4 @@
     <ProjectReference Include="..\AnalyticsService.Infrastructure.EntityFramework\AnalyticsService.Infrastructure.EntityFramework.csproj" />
   </ItemGroup>
 
-  <Target Name="StopSolutionProcesses" BeforeTargets="Clean;Build">
-    <Exec Command="powershell.exe -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\stop-solution-processes.ps1&quot;"
-          ContinueOnError="true"
-          IgnoreExitCode="true" />
-  </Target>
-
 </Project>

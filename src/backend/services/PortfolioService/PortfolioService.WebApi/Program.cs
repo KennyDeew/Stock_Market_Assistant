@@ -1,18 +1,33 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using StockMarketAssistant.PortfolioService.Application.Interfaces;
+using StockMarketAssistant.PortfolioService.Application.Interfaces.Caching;
+using StockMarketAssistant.PortfolioService.Application.Interfaces.Gateways;
 using StockMarketAssistant.PortfolioService.Application.Interfaces.Repositories;
+using StockMarketAssistant.PortfolioService.Application.Interfaces.Security;
 using StockMarketAssistant.PortfolioService.Application.Services;
+using StockMarketAssistant.PortfolioService.Infrastructure.Caching;
 using StockMarketAssistant.PortfolioService.Infrastructure.EntityFramework;
 using StockMarketAssistant.PortfolioService.Infrastructure.EntityFramework.Context;
+using StockMarketAssistant.PortfolioService.Infrastructure.Gateways;
 using StockMarketAssistant.PortfolioService.Infrastructure.Repositories;
+using StockMarketAssistant.PortfolioService.Infrastructure.Security;
+using StockMarketAssistant.PortfolioService.WebApi.Infrastructure.Swagger;
+using StockMarketAssistant.PortfolioService.WebApi.Middleware;
+using System.Text;
 
 namespace StockMarketAssistant.PortfolioService.WebApi
 {
+#pragma warning disable CS1591
     public class Program
+#pragma warning restore CS1591
     {
         private static readonly string[] customControllersOrder = ["Portfolios", "PortfolioAssets"];
 
+#pragma warning disable CS1591
         public static void Main(string[] args)
+#pragma warning restore CS1591
         {
 
             var builder = WebApplication.CreateBuilder(args);
@@ -20,12 +35,35 @@ namespace StockMarketAssistant.PortfolioService.WebApi
             // Добавляем сервисы Aspire
             builder.AddServiceDefaults();
 
-            // Add services to the container.
+            // Установка кодировки консоли
+            Console.OutputEncoding = Encoding.UTF8;
+            Console.InputEncoding = Encoding.UTF8;
 
-            //if (builder.Environment.IsDevelopment())
-            //{
-            //    builder.Configuration.AddUserSecrets<Program>();
-            //}
+            // Настройка логгера
+            builder.Logging.AddConsole();
+            builder.Logging.SetMinimumLevel(LogLevel.Information);
+
+            // Add services to the container.
+            var jwtSettings = builder.Configuration.GetSection("Jwt");
+
+            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme) // указание схемы аутентификации по умолчанию, именно по ней и будет происходить аутентификация
+                .AddJwtBearer(options => // регистрация Jwt-схемы аутентификации
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters()
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidIssuer = jwtSettings["Issuer"],
+                        ValidAudience = jwtSettings["Audience"],
+                        RoleClaimType = "Role",
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"]!))
+                    };
+                });
+            builder.Services.AddHttpContextAccessor();
+            builder.Services.AddScoped<IUserContext, UserContext>();
+            builder.Services.AddAuthorization();
 
             // Получаем строку подключения из Aspire
             var connectionString = builder.Configuration.GetConnectionString("portfolio-db");
@@ -38,7 +76,13 @@ namespace StockMarketAssistant.PortfolioService.WebApi
             }
 
             // Регистрация сервисов в DI
-            builder.Services.AddSingleton<IStockCardServiceClient, FakeStockCardServiceClient>(); // заглушка для сервиса StockCardService
+            // Регистрация распределённого кэша Redis
+            builder.Services.AddStackExchangeRedisCache(options =>
+            {
+                options.Configuration = builder.Configuration.GetConnectionString("cache");
+            });
+
+            builder.Services.AddScoped<ICacheService, RedisCacheService>();
 
             builder.Services.AddScoped<IPortfolioRepository, PortfolioRepository>();
             builder.Services.AddScoped<IPortfolioAssetRepository, PortfolioAssetRepository>();
@@ -46,14 +90,36 @@ namespace StockMarketAssistant.PortfolioService.WebApi
             builder.Services.AddScoped<IPortfolioAppService, PortfolioAppService>();
             builder.Services.AddScoped<IPortfolioAssetAppService, PortfolioAssetAppService>();
 
+            builder.Services.AddHttpClient<IStockCardServiceGateway, StockCardServiceGateway>(httpClient =>
+            {
+                httpClient.BaseAddress = new Uri("http://stockcardservice-api");
+            })
+            .AddServiceDiscovery();
+
+            // Читаем origin из переменной окружения
+            var frontendOrigin = builder.Configuration["FRONTEND_ORIGIN"] ?? "http://localhost:5173";
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowFrontendApp", policy =>
+                {
+                    policy
+                        .WithOrigins(frontendOrigin) // Разрешить источник фронтенда
+                        .AllowAnyHeader()            // Любой заголовок
+                        .AllowAnyMethod();           // GET, POST, PUT, DELETE
+                });
+            });
+
+
             builder.Services.AddControllers();
 
-            builder.Services.AddOpenApiDocument(options =>
+            builder.Services.AddOpenApiDocument(config =>
             {
-                options.Title = "Portfolio Service API Doc";
-                options.Version = "1.0";
-                options.PostProcess = (document) =>
+                config.SchemaSettings.SchemaProcessors.Add(new EnumDescriptionSchemaProcessor());
+                config.SchemaSettings.SchemaProcessors.Add(new DefaultValueSchemaProcessor());
+                config.PostProcess = (document) =>
                 {
+                    document.Info.Title = "Portfolio Service API";
+                    document.Info.Version = "v1";
                     document.Tags = document.Tags?
                         .OrderBy(t =>
                         {
@@ -64,6 +130,30 @@ namespace StockMarketAssistant.PortfolioService.WebApi
             });
 
             var app = builder.Build();
+
+            // Получаем сервис для отслеживания жизненного цикла
+            var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
+            var logger = app.Services.GetRequiredService<ILogger<Program>>();
+
+            // Регистрация обработчиков событий
+
+            lifetime.ApplicationStarted.Register(() =>
+            {
+                logger.LogInformation("=== Сервис портфелей успешно запущен ===");
+                logger.LogInformation("Время запуска: {StartUpTime}", DateTime.UtcNow);
+            });
+
+            lifetime.ApplicationStopping.Register(() =>
+            {
+                logger.LogWarning("=== Сервис портфелей останавливается ===");
+                logger.LogInformation("Выполнение завершающих операций...");
+            });
+
+            lifetime.ApplicationStopped.Register(() =>
+            {
+                logger.LogInformation("=== Сервис портфелей полностью остановлен ===");
+                logger.LogInformation("Время остановки: {ShutdownTime}", DateTime.UtcNow);
+            });
 
             // Автоматическое применение миграций
             using (var scope = app.Services.CreateScope())
@@ -84,10 +174,15 @@ namespace StockMarketAssistant.PortfolioService.WebApi
 
             }
 
-            app.UseHttpsRedirection();
-
             app.UseRouting();
+            app.UseCors("AllowFrontendApp");
+            app.MapDefaultEndpoints();
 
+            app.UseMiddleware<SecurityExceptionMiddleware>();
+            //app.UseHttpsRedirection();
+
+            // Аутентификация и авторизация
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapControllers();

@@ -1,4 +1,5 @@
 ﻿using StockMarketAssistant.PortfolioService.Application.DTOs;
+using StockMarketAssistant.SharedLibrary.Enums;
 
 namespace StockMarketAssistant.PortfolioService.Application.Interfaces
 {
@@ -19,6 +20,13 @@ namespace StockMarketAssistant.PortfolioService.Application.Interfaces
         /// <param name="id">Идентификатор портфеля</param>
         /// <returns>DTO портфеля</returns>
         Task<PortfolioDto?> GetByIdAsync(Guid id);
+
+        /// <summary>
+        /// Получить все портфели пользователя
+        /// </summary>
+        /// <param name="userId">Идентификатор пользователя</param>
+        /// <returns>DTO портфеля</returns>
+        Task<IEnumerable<PortfolioShortDto>> GetByUserIdAsync(Guid userId);
 
         /// <summary>
         /// Существует ли портфель
@@ -44,7 +52,22 @@ namespace StockMarketAssistant.PortfolioService.Application.Interfaces
         /// Удалить портфель
         /// </summary>
         /// <param name="id">Идентификатор портфеля</param>
-        Task DeleteAsync(Guid id);
+        Task<bool> DeleteAsync(Guid id);
 
+        /// <summary>
+        /// Получить расчет доходности портфеля по его ID с детализацией по активам
+        /// </summary>
+        /// <param name="portfolioId">Уникальный идентификатор портфеля</param>
+        /// <param name="calculationType">Тип расчета доходности (по умолчанию - текущая доходность)</param>
+        /// <returns>DTO с расчетом доходности портфеля и детализацией по активам</returns>
+        Task<PortfolioProfitLossDto?> GetPortfolioProfitLossAsync(Guid id, CalculationType calculationType = CalculationType.Current);
+
+        /// <summary>
+        /// Получить расчет доходности по всем активам портфеля
+        /// </summary>
+        /// <param name="portfolioId">Уникальный идентификатор портфеля</param>
+        /// <param name="calculationType">Тип расчета доходности (по умолчанию - текущая доходность)</param>
+        /// <returns>Коллекция DTO с расчетами доходности по каждому активу портфеля</returns>
+        Task<IEnumerable<PortfolioAssetProfitLossItemDto>> GetPortfolioAssetsProfitLossAsync(Guid id, CalculationType calculationType = CalculationType.Current);
     }
 }

@@ -1,30 +1,36 @@
-# См. статью по ссылке https://aka.ms/customizecontainer, чтобы узнать как настроить контейнер отладки и как Visual Studio использует этот Dockerfile для создания образов для ускорения отладки.
-
-# Этот этап используется при запуске из VS в быстром режиме (по умолчанию для конфигурации отладки)
+# Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
-USER $APP_UID
 WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
 
-
-# Этот этап используется для сборки проекта службы
+# Build
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["src/backend/services/StockCardService/StockCardService.WebApi/StockCardService.WebApi.csproj", "src/backend/services/StockCardService/StockCardService.WebApi/"]
-RUN dotnet restore "./src/backend/services/StockCardService/StockCardService.WebApi/StockCardService.WebApi.csproj"
-COPY . .
-WORKDIR "/src/src/backend/services/StockCardService/StockCardService.WebApi"
-RUN dotnet build "./StockCardService.WebApi.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
-# Этот этап используется для публикации проекта службы, который будет скопирован на последний этап
+# Путь относительно корня контекста (будем вызывать docker build из корня)
+COPY src/backend/services/StockCardService/StockCardService.WebApi/StockCardService.WebApi.csproj src/backend/services/StockCardService/StockCardService.WebApi/
+COPY src/backend/services/StockCardService/StockCardService.Application/StockCardService.Application.csproj src/backend/services/StockCardService/StockCardService.Application/
+COPY src/backend/services/StockCardService/StockCardService.Domain/StockCardService.Domain.csproj src/backend/services/StockCardService/StockCardService.Domain/
+COPY src/backend/services/StockCardService/StockCardService.Infrastructure.EntityFramework/StockCardService.Infrastructure.EntityFramework.csproj src/backend/services/StockCardService/StockCardService.Infrastructure.EntityFramework/
+
+# Восстанавливаем зависимости
+RUN dotnet restore "src/backend/services/StockCardService/StockCardService.WebApi/StockCardService.WebApi.csproj"
+
+# Копируем всё остальное
+COPY . .
+
+WORKDIR "/src/src/backend/services/StockCardService/StockCardService.WebApi"
+RUN dotnet build "StockCardService.WebApi.csproj" -c $BUILD_CONFIGURATION -o /app/build
+
+# Publish
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./StockCardService.WebApi.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "StockCardService.WebApi.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
-# Этот этап используется в рабочей среде или при запуске из VS в обычном режиме (по умолчанию, когда конфигурация отладки не используется)
-FROM base AS final
+# Runtime image
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "StockCardService.WebApi.dll"]

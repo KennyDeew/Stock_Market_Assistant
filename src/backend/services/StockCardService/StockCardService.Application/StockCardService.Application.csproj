@@ -8,9 +8,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="DTOs\" />
     <Folder Include="Interfaces\Repositories\" />
-    <Folder Include="Services\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\StockCardService.Abstractions.Repositories\StockCardService.Abstractions.Repositories.csproj" />
+    <ProjectReference Include="..\StockCardService.Infrastructure.Messaging.Kafka\StockCardService.Infrastructure.Messaging.Kafka.csproj" />
   </ItemGroup>
 
 </Project>

@@ -12,20 +12,24 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.7">
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.11" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.11">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1" />
-    <PackageReference Include="NSwag.AspNetCore" Version="14.4.0" />
+    <PackageReference Include="NSwag.AspNetCore" Version="14.6.2" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\StockMarketAssistant.ServiceDefaults\StockMarketAssistant.ServiceDefaults.csproj" />
     <ProjectReference Include="..\PortfolioService.Application\PortfolioService.Application.csproj" />
     <ProjectReference Include="..\PortfolioService.Domain\PortfolioService.Domain.csproj" />
+    <ProjectReference Include="..\PortfolioService.Infrastructure.Caching\PortfolioService.Infrastructure.Caching.csproj" />
     <ProjectReference Include="..\PortfolioService.Infrastructure.EntityFramework\PortfolioService.Infrastructure.EntityFramework.csproj" />
+    <ProjectReference Include="..\PortfolioService.Infrastructure.Gateways\PortfolioService.Infrastructure.Gateways.csproj" />
     <ProjectReference Include="..\PortfolioService.Infrastructure.Repositories\PortfolioService.Infrastructure.Repositories.csproj" />
+    <ProjectReference Include="..\PortfolioService.Infrastructure.Security\PortfolioService.Infrastructure.Security.csproj" />
   </ItemGroup>
 
 </Project>
