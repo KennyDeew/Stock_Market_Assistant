@@ -5,7 +5,7 @@
         var builder = DistributedApplication.CreateBuilder(args);
 
         // Добавление проектов
-        
+
         var apiGatewayService = builder.AddProject<Projects.Gateway_WebApi>("gateway-api");
         var apiAuthService = builder.AddProject<Projects.AuthService_WebApi>("authservice-api");
         var apiStockCardService = builder.AddProject<Projects.StockCardService_WebApi>("stockcardservice-api");
@@ -47,6 +47,15 @@
             .WithHostPort(14054)
             .WithPgWeb(n => n.WithHostPort(5000))
             .AddDatabase("notificationDb");
+        var pgAnalyticsDb = builder.AddPostgres("pg-analytics-db")
+            //.WithPgAdmin()
+            .WithImage("postgres:17.5")
+            .WithDataVolume("analytics-pg-data")
+            .WithHostPort(14051)
+            .AddDatabase("analytics-db")
+            .WithCredentials("postgres", "xxxxxx");
+        //var postgres = builder.AddPostgres("postgres").AddDatabase("stockcarddb");
+        //var container = builder.AddDockerfile("gateway", "../backend/gateway/");
 
         // Связывание ресурсов с проектами
         apiAuthService
@@ -93,6 +102,9 @@
         .WithEnvironment("VITE_NOTIFICATION_API_URL", apiNotificationService.GetEndpoint("http"))
         .WaitFor(apiAuthService)
         .WaitFor(apiStockCardService);
+        apiAnalyticsService.WithReference(pgAnalyticsDb)
+                           .WaitFor(pgAnalyticsDb);
+
 
         var webuiUrl = webui.GetEndpoint("http"); // Получаем endpoint
         // Передаём URL фронтенда в бэкенды для CORS
