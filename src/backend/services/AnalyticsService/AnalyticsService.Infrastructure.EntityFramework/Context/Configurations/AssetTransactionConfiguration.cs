@@ -37,7 +37,7 @@ namespace StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.C
             builder.HasIndex(x => x.TransactionTime);
 
             // Ограничения
-            builder.Property(x => x.Quantity).HasPrecision(18, 0);
+            // Quantity - integer, не требует HasPrecision
             builder.Property(x => x.PricePerUnit).HasPrecision(18, 4);
             builder.Property(x => x.TotalAmount).HasPrecision(18, 4);
         }

@@ -15,6 +15,9 @@ namespace StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework
             {
                 options.UseNpgsql(connectionString);
                 options.UseSnakeCaseNamingConvention();
+                // Отключаем предупреждение о незафиксированных изменениях модели
+                options.ConfigureWarnings(warnings =>
+                    warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
                 // options.UseLazyLoadingProxies();
             });
 

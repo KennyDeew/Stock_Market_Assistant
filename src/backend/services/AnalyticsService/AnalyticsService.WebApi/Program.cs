@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using NSwag.AspNetCore;
 using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework;
 using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Context;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace StockMarketAssistant.AnalyticsService.WebApi
 {
@@ -41,25 +42,48 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
                 var dbContext = scope.ServiceProvider.GetService<DatabaseContext>();
                 if (dbContext is not null)
                 {
+                    var logger = scope.ServiceProvider.GetService<ILogger<Program>>();
                     try
                     {
-                        // Проверяем, существует ли база данных
-                        if (dbContext.Database.CanConnect())
+                        logger?.LogInformation("Проверка подключения к базе данных...");
+
+                        // Проверяем подключение
+                        if (!dbContext.Database.CanConnect())
                         {
-                            // Применяем миграции, если база существует
-                            dbContext.Database.Migrate();
+                            logger?.LogWarning("Не удалось подключиться к базе данных. Миграции будут применены при следующем успешном подключении.");
+                            return;
                         }
-                        else
+
+                        // Проверяем, существует ли таблица истории миграций, и создаем её, если нет
+                        try
                         {
-                            // Создаем базу данных, если её нет (для первого запуска)
-                            dbContext.Database.EnsureCreated();
+                            // Пытаемся прочитать из таблицы истории миграций
+                            var _ = dbContext.Database.ExecuteSqlRaw("SELECT 1 FROM \"__EFMigrationsHistory\" LIMIT 1;");
                         }
+                        catch
+                        {
+                            // Таблица не существует, создаем её
+                            logger?.LogInformation("Таблица истории миграций не найдена. Создание таблицы...");
+                            dbContext.Database.ExecuteSqlRaw(@"
+                                CREATE TABLE IF NOT EXISTS ""__EFMigrationsHistory"" (
+                                    ""migration_id"" VARCHAR(150) NOT NULL,
+                                    ""product_version"" VARCHAR(32) NOT NULL,
+                                    CONSTRAINT ""pk___ef_migrations_history"" PRIMARY KEY (""migration_id"")
+                                );");
+                            logger?.LogInformation("Таблица истории миграций создана.");
+                        }
+
+                        logger?.LogInformation("Применение миграций базы данных...");
+
+                        // Применяем миграции - они создадут таблицы, если их нет
+                        dbContext.Database.Migrate();
+
+                        logger?.LogInformation("Миграции успешно применены.");
                     }
                     catch (Exception ex)
                     {
                         // Логируем ошибку, но не прерываем запуск приложения
-                        var logger = scope.ServiceProvider.GetService<ILogger<Program>>();
-                        logger?.LogWarning(ex, "Не удалось применить миграции базы данных. База данных будет создана при первом подключении.");
+                        logger?.LogError(ex, "Не удалось применить миграции базы данных. Проверьте подключение к базе данных и настройки.");
                     }
                 }
             }

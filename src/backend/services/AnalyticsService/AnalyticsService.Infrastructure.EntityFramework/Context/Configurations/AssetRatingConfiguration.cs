@@ -46,8 +46,7 @@ namespace StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.C
             // Ограничения
             builder.Property(x => x.TotalBuyAmount).HasPrecision(18, 4);
             builder.Property(x => x.TotalSellAmount).HasPrecision(18, 4);
-            builder.Property(x => x.TotalBuyQuantity).HasPrecision(18, 0);
-            builder.Property(x => x.TotalSellQuantity).HasPrecision(18, 0);
+            // TotalBuyQuantity и TotalSellQuantity - integer, не требуют HasPrecision
         }
     }
 }
