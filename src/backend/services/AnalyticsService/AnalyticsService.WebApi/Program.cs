@@ -10,8 +10,6 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
-            builder.AddServiceDefaults();
-
 
             // Добавляем сервисы Aspire
             builder.AddServiceDefaults();
@@ -36,7 +34,6 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
             });
 
             var app = builder.Build();
-            app.MapDefaultEndpoints();
 
             // Автоматическое применение миграций
             using (var scope = app.Services.CreateScope())

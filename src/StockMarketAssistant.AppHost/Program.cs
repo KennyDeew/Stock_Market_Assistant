@@ -10,7 +10,7 @@
         var apiAuthService = builder.AddProject<Projects.AuthService_WebApi>("authservice-api");
         var apiStockCardService = builder.AddProject<Projects.StockCardService_WebApi>("stockcardservice-api");
         var apiPortfolioService = builder.AddProject<Projects.PortfolioService_WebApi>("portfolioservice-api");
-        //var apiAnalyticsService = builder.AddProject<Projects.AnalyticsService_WebApi>("analyticsservice-api");
+        var apiAnalyticsService = builder.AddProject<Projects.AnalyticsService_WebApi>("analyticsservice-api");
         var apiNotificationService = builder.AddProject<Projects.NotificationService>("notificationservice-api");
 
         // Добавление ресурсов
@@ -51,9 +51,10 @@
             //.WithPgAdmin()
             .WithImage("postgres:17.5")
             .WithDataVolume("analytics-pg-data")
-            .WithHostPort(14051)
-            .AddDatabase("analytics-db")
-            .WithCredentials("postgres", "xxxxxx");
+            .WithHostPort(14055)
+            .WithEnvironment("POSTGRES_USER", "postgres")
+            .WithEnvironment("POSTGRES_PASSWORD", "xxx")
+            .AddDatabase("analytics-db");
         //var postgres = builder.AddPostgres("postgres").AddDatabase("stockcarddb");
         //var container = builder.AddDockerfile("gateway", "../backend/gateway/");
 
