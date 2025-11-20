@@ -53,7 +53,7 @@
             .WithDataVolume("analytics-pg-data")
             .WithHostPort(14055)
             .WithEnvironment("POSTGRES_USER", "postgres")
-            .WithEnvironment("POSTGRES_PASSWORD", "xxx")
+            // Пароль будет сгенерирован Aspire автоматически и будет одинаковым в контейнере и строке подключения
             .AddDatabase("analytics-db");
         //var postgres = builder.AddPostgres("postgres").AddDatabase("stockcarddb");
         //var container = builder.AddDockerfile("gateway", "../backend/gateway/");
@@ -103,8 +103,13 @@
         .WithEnvironment("VITE_NOTIFICATION_API_URL", apiNotificationService.GetEndpoint("http"))
         .WaitFor(apiAuthService)
         .WaitFor(apiStockCardService);
-        apiAnalyticsService.WithReference(pgAnalyticsDb)
-                           .WaitFor(pgAnalyticsDb);
+        // Используем явную строку подключения с паролем "xxx"
+        // WithEnvironment после WithReference перезапишет ConnectionStringExpression от Aspire
+        apiAnalyticsService
+//            .WithEnvironment("ConnectionStrings__analytics-db",
+  //              "Host=localhost;Port=14055;Database=analytics-db;Username=postgres;Password=xxx")
+            .WithReference(pgAnalyticsDb)
+            .WaitFor(pgAnalyticsDb);
 
 
         var webuiUrl = webui.GetEndpoint("http"); // Получаем endpoint
