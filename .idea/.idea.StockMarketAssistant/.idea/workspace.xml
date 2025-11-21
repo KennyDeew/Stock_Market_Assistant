@@ -27,12 +27,6 @@
   <component name="ChangeListManager">
     <list default="true" id="8f399dae-69ec-4c70-bc93-dde266a5c0d7" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.StockMarketAssistant/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.StockMarketAssistant/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/backend/services/AnalyticsService/AnalyticsService.Infrastructure.EntityFramework/Context/Configurations/AssetRatingConfiguration.cs" beforeDir="false" afterPath="$PROJECT_DIR$/src/backend/services/AnalyticsService/AnalyticsService.Infrastructure.EntityFramework/Context/Configurations/AssetRatingConfiguration.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/backend/services/AnalyticsService/AnalyticsService.Infrastructure.EntityFramework/Context/Configurations/AssetTransactionConfiguration.cs" beforeDir="false" afterPath="$PROJECT_DIR$/src/backend/services/AnalyticsService/AnalyticsService.Infrastructure.EntityFramework/Context/Configurations/AssetTransactionConfiguration.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/backend/services/AnalyticsService/AnalyticsService.Infrastructure.EntityFramework/EntityFrameworkInstaller.cs" beforeDir="false" afterPath="$PROJECT_DIR$/src/backend/services/AnalyticsService/AnalyticsService.Infrastructure.EntityFramework/EntityFrameworkInstaller.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/backend/services/AnalyticsService/AnalyticsService.Infrastructure.EntityFramework/Migrations/20250101120000_InitialCreate.cs" beforeDir="false" afterPath="$PROJECT_DIR$/src/backend/services/AnalyticsService/AnalyticsService.Infrastructure.EntityFramework/Migrations/20250101120000_InitialCreate.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/backend/services/AnalyticsService/AnalyticsService.Infrastructure.EntityFramework/Migrations/DatabaseContextModelSnapshot.cs" beforeDir="false" afterPath="$PROJECT_DIR$/src/backend/services/AnalyticsService/AnalyticsService.Infrastructure.EntityFramework/Migrations/DatabaseContextModelSnapshot.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/backend/services/AnalyticsService/AnalyticsService.WebApi/Program.cs" beforeDir="false" afterPath="$PROJECT_DIR$/src/backend/services/AnalyticsService/AnalyticsService.WebApi/Program.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

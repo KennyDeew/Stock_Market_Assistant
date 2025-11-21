@@ -19,6 +19,19 @@
         var kafka = builder.AddKafka("kafka")
             .WithKafkaUI(kafka => kafka.WithHostPort(9100));
 
+        var openSearch = builder.AddContainer("opensearch", "opensearchproject/opensearch:2.11.0")
+            .WithEnvironment("discovery.type", "single-node")
+            .WithEnvironment("plugins.security.disabled", "true")
+            .WithEnvironment("OPENSEARCH_INITIAL_ADMIN_PASSWORD", "admin")
+            .WithHttpEndpoint(9200, 9200)
+            .WithHttpEndpoint(9600, 9600, name: "performance-analyzer");
+
+        var openSearchDashboards = builder.AddContainer("opensearch-dashboards", "opensearchproject/opensearch-dashboards:2.11.0")
+            .WithEnvironment("OPENSEARCH_HOSTS", "http://opensearch:9200")
+            .WithEnvironment("DISABLE_SECURITY_DASHBOARDS_PLUGIN", "true")
+            .WithHttpEndpoint(5601, 5601)
+            .WaitFor(openSearch);
+
         var pgPortfolioDb = builder.AddPostgres("pg-portfolio-db")
             //.WithPgAdmin()
             .WithImage("postgres:17.5")
@@ -79,8 +92,10 @@
         apiNotificationService
             .WithReference(notificationPostgres)
             .WithReference(kafka)
+            .WithEnvironment("OpenSearchConfig__Url", openSearch.GetEndpoint("http"))
             .WaitFor(notificationPostgres)
-            .WaitFor(kafka);
+            .WaitFor(kafka)
+            .WaitFor(openSearch);
 
         // Добавление React-приложения
         //var webui = builder.AddExecutable(
@@ -109,7 +124,9 @@
 //            .WithEnvironment("ConnectionStrings__analytics-db",
   //              "Host=localhost;Port=14055;Database=analytics-db;Username=postgres;Password=xxx")
             .WithReference(pgAnalyticsDb)
-            .WaitFor(pgAnalyticsDb);
+            .WithEnvironment("OpenSearchConfig__Url", openSearch.GetEndpoint("http"))
+            .WaitFor(pgAnalyticsDb)
+            .WaitFor(openSearch);
 
 
         var webuiUrl = webui.GetEndpoint("http"); // Получаем endpoint

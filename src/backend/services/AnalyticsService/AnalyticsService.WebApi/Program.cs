@@ -3,6 +3,11 @@ using NSwag.AspNetCore;
 using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework;
 using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Context;
 using Microsoft.EntityFrameworkCore.Storage;
+using Serilog;
+using Serilog.Events;
+using Serilog.Sinks.OpenSearch;
+using AutoRegisterTemplateVersion = Serilog.Sinks.OpenSearch.AutoRegisterTemplateVersion;
+using CertificateValidations = OpenSearch.Net.CertificateValidations;
 
 namespace StockMarketAssistant.AnalyticsService.WebApi
 {
@@ -12,8 +17,38 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            // Очищаем стандартные провайдеры логирования
+            builder.Logging.ClearProviders();
+
+            // Включаем отладочное логирование Serilog
+            Serilog.Debugging.SelfLog.Enable(msg => Console.WriteLine(msg));
+
             // Добавляем сервисы Aspire
             builder.AddServiceDefaults();
+
+            // Настройка Serilog с OpenSearch
+            var username = builder.Configuration.GetSection("OpenSearchConfig:Username").Value;
+            var password = builder.Configuration.GetSection("OpenSearchConfig:Password").Value;
+            var openSearchUrl = builder.Configuration.GetSection("OpenSearchConfig:Url").Value ?? "https://localhost:9200";
+
+            var serilogLogger = new LoggerConfiguration()
+                .WriteTo.Console()
+                .WriteTo.OpenSearch(new OpenSearchSinkOptions(new Uri(openSearchUrl))
+                {
+                    AutoRegisterTemplateVersion = AutoRegisterTemplateVersion.OSv1,
+                    MinimumLogEventLevel = LogEventLevel.Verbose,
+                    TypeName = "_doc",
+                    InlineFields = false,
+                    ModifyConnectionSettings = x =>
+                        x.BasicAuthentication(username, password)
+                            .ServerCertificateValidationCallback(CertificateValidations.AllowAll)
+                            .ServerCertificateValidationCallback((o, certificate, chain, errors) => true),
+                    IndexFormat = "analytics-service-{0:yyyy.MM.dd}",
+                })
+                .CreateLogger();
+
+            // Добавляем Serilog в систему логирования
+            builder.Logging.AddSerilog(serilogLogger);
 
             // Получаем строку подключения из Aspire
             var connectionString = builder.Configuration.GetConnectionString("analytics-db");
