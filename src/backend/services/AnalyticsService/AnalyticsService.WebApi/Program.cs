@@ -1,4 +1,6 @@
 using Confluent.Kafka;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using NSwag.AspNetCore;
@@ -72,6 +74,11 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
             {
                 builder.Services.ConfigureContext(connectionString);
             }
+
+            // Регистрация FluentValidation
+            builder.Services.AddValidatorsFromAssemblyContaining<Application.Validators.GetTopAssetsRequestValidator>();
+            builder.Services.AddFluentValidationAutoValidation();
+            builder.Services.AddFluentValidationClientsideAdapters();
 
             // Регистрация контроллеров
             builder.Services.AddControllers();
