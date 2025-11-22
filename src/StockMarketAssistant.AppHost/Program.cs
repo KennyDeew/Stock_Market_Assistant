@@ -124,8 +124,12 @@
 //            .WithEnvironment("ConnectionStrings__analytics-db",
   //              "Host=localhost;Port=14055;Database=analytics-db;Username=postgres;Password=xxx")
             .WithReference(pgAnalyticsDb)
+            .WithReference(kafka)
+            .WithReference(apiPortfolioService)
             .WithEnvironment("OpenSearchConfig__Url", openSearch.GetEndpoint("http"))
+            .WithEnvironment("PortfolioService__BaseUrl", apiPortfolioService.GetEndpoint("http"))
             .WaitFor(pgAnalyticsDb)
+            .WaitFor(kafka)
             .WaitFor(openSearch);
 
 

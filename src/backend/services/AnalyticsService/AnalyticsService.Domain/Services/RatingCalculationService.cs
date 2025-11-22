@@ -93,6 +93,7 @@ namespace StockMarketAssistant.AnalyticsService.Domain.Services
             }
 
             // Обновление статистики
+            // Временно устанавливаем ранги = 1, они будут пересчитаны через AssignRanks
             rating.UpdateStatistics(
                 buyTransactionCount: buyCount,
                 sellTransactionCount: sellCount,
@@ -100,8 +101,8 @@ namespace StockMarketAssistant.AnalyticsService.Domain.Services
                 totalSellAmount: totalSellAmount,
                 totalBuyQuantity: totalBuyQuantity,
                 totalSellQuantity: totalSellQuantity,
-                transactionCountRank: 0, // Будет назначен позже через AssignRanks
-                transactionAmountRank: 0  // Будет назначен позже через AssignRanks
+                transactionCountRank: 1, // Временно 1, будет пересчитан через AssignRanks
+                transactionAmountRank: 1  // Временно 1, будет пересчитан через AssignRanks
             );
 
             return rating;
@@ -134,9 +135,10 @@ namespace StockMarketAssistant.AnalyticsService.Domain.Services
 
             for (int i = 0; i < sortedByCount.Count; i++)
             {
+                // Временно устанавливаем amountRank = 1, будет обновлено ниже
                 sortedByCount[i].AssignRanks(
                     countRank: i + 1,
-                    amountRank: 0); // Временно 0, будет обновлено ниже
+                    amountRank: 1);
             }
 
             // Ранжирование по сумме транзакций (Buy + Sell)
