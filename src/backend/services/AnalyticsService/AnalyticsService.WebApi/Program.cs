@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using NSwag.AspNetCore;
 using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework;
-using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Context;
+using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Persistence;
 using Microsoft.EntityFrameworkCore.Storage;
 using Serilog;
 using Serilog.Events;
@@ -74,7 +74,7 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
             // Автоматическое применение миграций
             using (var scope = app.Services.CreateScope())
             {
-                var dbContext = scope.ServiceProvider.GetService<DatabaseContext>();
+                var dbContext = scope.ServiceProvider.GetService<AnalyticsDbContext>();
                 if (dbContext is not null)
                 {
                     var logger = scope.ServiceProvider.GetService<ILogger<Program>>();
