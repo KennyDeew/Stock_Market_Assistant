@@ -1,8 +1,11 @@
+using System.Text;
 using Confluent.Kafka;
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.IdentityModel.Tokens;
 using NSwag.AspNetCore;
 using Polly;
 using Polly.Extensions.Http;
@@ -18,6 +21,7 @@ using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Http;
 using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Jobs;
 using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Kafka;
 using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Persistence;
+using StockMarketAssistant.AnalyticsService.WebApi.Middleware;
 using Microsoft.EntityFrameworkCore.Storage;
 using Serilog;
 using Serilog.Events;
@@ -80,14 +84,43 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
             builder.Services.AddFluentValidationAutoValidation();
             builder.Services.AddFluentValidationClientsideAdapters();
 
+            // Настройка JWT Bearer Authentication
+            var jwtSettings = builder.Configuration.GetSection("Jwt");
+            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters()
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidIssuer = jwtSettings["Issuer"],
+                        ValidAudience = jwtSettings["Audience"],
+                        RoleClaimType = "Role",
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"] ?? string.Empty))
+                    };
+                });
+            builder.Services.AddAuthorization();
+
             // Регистрация контроллеров
             builder.Services.AddControllers();
 
-            // Настройка OpenAPI/Swagger
+            // Настройка OpenAPI/Swagger с JWT Bearer
             builder.Services.AddOpenApiDocument(options =>
             {
                 options.Title = "Analytics Service API Doc";
                 options.Version = "1.0";
+                options.AddSecurity("Bearer", new NSwag.OpenApiSecurityScheme
+                {
+                    Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+                    Name = "Authorization",
+                    In = NSwag.OpenApiSecurityApiKeyLocation.Header,
+                    Type = NSwag.OpenApiSecuritySchemeType.ApiKey,
+                    Scheme = "Bearer"
+                });
+                // Применяем Bearer security ко всем операциям, которые требуют авторизации
+                options.OperationProcessors.Add(new NSwag.Generation.Processors.Security.AspNetCoreOperationSecurityScopeProcessor("Bearer"));
             });
 
             // Конфигурация Kafka
@@ -204,6 +237,10 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
             }
 
             // Configure the HTTP request pipeline
+
+            // Глобальная обработка исключений (должна быть первой в pipeline)
+            app.UseMiddleware<GlobalExceptionMiddleware>();
+
             if (app.Environment.IsDevelopment())
             {
                 app.UseOpenApi();
@@ -215,6 +252,9 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
 
             app.UseHttpsRedirection();
             app.UseRouting();
+
+            // Аутентификация должна быть перед авторизацией
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapDefaultEndpoints();
