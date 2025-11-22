@@ -9,6 +9,8 @@ using StockMarketAssistant.AnalyticsService.Domain.Events;
 using StockMarketAssistant.AnalyticsService.Domain.Services;
 using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework;
 using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Events;
+using StockMarketAssistant.AnalyticsService.Application.Services;
+using StockMarketAssistant.AnalyticsService.Application.UseCases;
 using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Events.Handlers;
 using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Http;
 using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Jobs;
@@ -100,6 +102,15 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
 
             // Регистрация Domain Services
             builder.Services.AddScoped<RatingCalculationService>();
+
+            // Регистрация Application Services
+            builder.Services.AddScoped<AssetRatingAggregationService>();
+
+            // Регистрация Use Cases
+            builder.Services.AddScoped<GetTopBoughtAssetsUseCase>();
+            builder.Services.AddScoped<GetTopSoldAssetsUseCase>();
+            builder.Services.AddScoped<GetPortfolioHistoryUseCase>();
+            builder.Services.AddScoped<ComparePortfoliosUseCase>();
 
             // Регистрация EventBus как Singleton
             builder.Services.AddSingleton<IEventBus, InMemoryEventBus>();
