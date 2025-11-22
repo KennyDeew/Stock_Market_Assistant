@@ -1,12 +1,16 @@
 using Confluent.Kafka;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using NSwag.AspNetCore;
+using Polly;
+using Polly.Extensions.Http;
 using StockMarketAssistant.AnalyticsService.Application.Interfaces;
 using StockMarketAssistant.AnalyticsService.Domain.Events;
 using StockMarketAssistant.AnalyticsService.Domain.Services;
 using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework;
 using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Events;
 using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Events.Handlers;
+using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Http;
 using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Jobs;
 using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Kafka;
 using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Persistence;
@@ -103,6 +107,22 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
             // Регистрация Event Handlers
             builder.Services.AddScoped<IEventHandler<TransactionReceivedEvent>, TransactionReceivedEventHandler>();
 
+            // Регистрация Memory Cache
+            builder.Services.AddMemoryCache();
+
+            // Регистрация HTTP клиента для PortfolioService
+            var portfolioServiceUrl = builder.Configuration.GetSection("PortfolioService:BaseUrl").Value
+                ?? builder.Configuration["Services:PortfolioService"]
+                ?? "http://localhost:5000";
+
+            builder.Services.AddHttpClient<IPortfolioServiceClient, PortfolioServiceClient>(client =>
+            {
+                client.BaseAddress = new Uri(portfolioServiceUrl);
+                client.Timeout = TimeSpan.FromSeconds(30);
+            })
+            .AddPolicyHandler(GetRetryPolicy())
+            .AddPolicyHandler(GetCircuitBreakerPolicy());
+
             // Регистрация Background Services
             builder.Services.AddHostedService<TransactionConsumer>();
             builder.Services.AddHostedService<AssetRatingAggregationJob>();
@@ -184,6 +204,35 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
             app.MapGet("/", () => "Analytics Service API - Use /swagger for API documentation");
 
             app.Run();
+        }
+
+        /// <summary>
+        /// Получить политику Retry для HTTP клиента
+        /// </summary>
+        private static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
+        {
+            return HttpPolicyExtensions
+                .HandleTransientHttpError()
+                .OrResult(msg => msg.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+                .WaitAndRetryAsync(
+                    retryCount: 3,
+                    sleepDurationProvider: retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+                    onRetry: (outcome, timespan, retryCount, context) =>
+                    {
+                        // Логирование будет в PortfolioServiceClient
+                    });
+        }
+
+        /// <summary>
+        /// Получить политику Circuit Breaker для HTTP клиента
+        /// </summary>
+        private static IAsyncPolicy<HttpResponseMessage> GetCircuitBreakerPolicy()
+        {
+            return HttpPolicyExtensions
+                .HandleTransientHttpError()
+                .CircuitBreakerAsync(
+                    handledEventsAllowedBeforeBreaking: 5,
+                    durationOfBreak: TimeSpan.FromSeconds(30));
         }
     }
 }
