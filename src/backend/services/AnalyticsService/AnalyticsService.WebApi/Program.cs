@@ -1,6 +1,8 @@
+using Confluent.Kafka;
 using Microsoft.EntityFrameworkCore;
 using NSwag.AspNetCore;
 using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework;
+using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Kafka;
 using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Persistence;
 using Microsoft.EntityFrameworkCore.Storage;
 using Serilog;
@@ -68,6 +70,26 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
                 options.Title = "Analytics Service API Doc";
                 options.Version = "1.0";
             });
+
+            // Конфигурация Kafka
+            builder.Services.Configure<KafkaConfiguration>(
+                builder.Configuration.GetSection("Kafka"));
+
+            // Регистрация Kafka Consumer и Producer через Aspire
+            builder.AddKafkaProducer<string, string>("kafka");
+            builder.AddKafkaConsumer<string, string>("kafka", options =>
+            {
+                var kafkaConfig = builder.Configuration.GetSection("Kafka").Get<KafkaConfiguration>();
+                if (kafkaConfig != null)
+                {
+                    options.Config.GroupId = kafkaConfig.ConsumerGroup;
+                    options.Config.AutoOffsetReset = AutoOffsetReset.Earliest;
+                    options.Config.EnableAutoCommit = false;
+                }
+            });
+
+            // Регистрация TransactionConsumer как HostedService
+            builder.Services.AddHostedService<TransactionConsumer>();
 
             var app = builder.Build();
 
