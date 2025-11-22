@@ -47,23 +47,30 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
             builder.AddServiceDefaults();
 
             // Настройка Serilog с OpenSearch
-            var username = builder.Configuration.GetSection("OpenSearchConfig:Username").Value;
-            var password = builder.Configuration.GetSection("OpenSearchConfig:Password").Value;
-            var openSearchUrl = builder.Configuration.GetSection("OpenSearchConfig:Url").Value ?? "https://localhost:9200";
+            var openSearchUrl = builder.Configuration.GetSection("OpenSearchConfig:Url").Value
+                ?? builder.Configuration["Services:opensearch"]
+                ?? "http://localhost:9200";
+
+            // Убираем https, если есть (OpenSearch работает по http)
+            if (openSearchUrl.StartsWith("https://"))
+            {
+                openSearchUrl = openSearchUrl.Replace("https://", "http://");
+            }
 
             var serilogLogger = new LoggerConfiguration()
                 .WriteTo.Console()
                 .WriteTo.OpenSearch(new OpenSearchSinkOptions(new Uri(openSearchUrl))
                 {
                     AutoRegisterTemplateVersion = AutoRegisterTemplateVersion.OSv1,
-                    MinimumLogEventLevel = LogEventLevel.Verbose,
+                    MinimumLogEventLevel = LogEventLevel.Information, // Изменено с Verbose на Information для меньшего объема логов
                     TypeName = "_doc",
                     InlineFields = false,
-                    ModifyConnectionSettings = x =>
-                        x.BasicAuthentication(username, password)
-                            .ServerCertificateValidationCallback(CertificateValidations.AllowAll)
-                            .ServerCertificateValidationCallback((o, certificate, chain, errors) => true),
+                    // Не используем BasicAuthentication, так как security отключен в OpenSearch
+                    // ModifyConnectionSettings = x => x.BasicAuthentication(username, password),
                     IndexFormat = "analytics-service-{0:yyyy.MM.dd}",
+                    // Добавляем обработку ошибок
+                    FailureCallback = e => Console.WriteLine($"OpenSearch sink error: {e.Exception?.Message ?? e.MessageTemplate?.Text ?? "Unknown error"}"),
+                    EmitEventFailure = EmitEventFailureHandling.WriteToSelfLog | EmitEventFailureHandling.WriteToFailureSink | EmitEventFailureHandling.RaiseCallback,
                 })
                 .CreateLogger();
 

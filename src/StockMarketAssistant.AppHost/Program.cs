@@ -138,6 +138,29 @@
         apiStockCardService.WithEnvironment("FRONTEND_ORIGIN", webuiUrl);
         apiAuthService.WithEnvironment("FRONTEND_ORIGIN", webuiUrl);
         apiPortfolioService.WithEnvironment("FRONTEND_ORIGIN", webuiUrl);
-        builder.Build().Run();
+
+        var app = builder.Build();
+
+        // Открываем OpenSearch Dashboards в браузере после запуска (с задержкой для инициализации)
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(TimeSpan.FromSeconds(10)); // Ждем 10 секунд для инициализации контейнера
+            try
+            {
+                // Используем фиксированный URL, так как порт известен
+                var openSearchDashboardsUrl = "http://localhost:5601";
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = openSearchDashboardsUrl,
+                    UseShellExecute = true
+                });
+            }
+            catch
+            {
+                // Игнорируем ошибки открытия браузера
+            }
+        });
+
+        app.Run();
     }
 }
