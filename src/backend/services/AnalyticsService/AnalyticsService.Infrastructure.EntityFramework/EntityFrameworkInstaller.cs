@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using StockMarketAssistant.AnalyticsService.Application.Interfaces.Repositories;
 using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Persistence;
+using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Persistence.Repositories;
 
 namespace StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework
 {
@@ -10,7 +12,7 @@ namespace StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework
     public static class EntityFrameworkInstaller
     {
         /// <summary>
-        /// Настройка контекста базы данных
+        /// Настройка контекста базы данных и репозиториев
         /// </summary>
         /// <param name="services">Коллекция сервисов</param>
         /// <param name="connectionString">Строка подключения к базе данных</param>
@@ -29,6 +31,10 @@ namespace StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework
                     warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
                 // options.UseLazyLoadingProxies();
             });
+
+            // Регистрация репозиториев
+            services.AddScoped<IAssetTransactionRepository, AssetTransactionRepository>();
+            services.AddScoped<IAssetRatingRepository, AssetRatingRepository>();
 
             return services;
         }
