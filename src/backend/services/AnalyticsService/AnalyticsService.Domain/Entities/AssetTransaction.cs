@@ -61,6 +61,45 @@ namespace StockMarketAssistant.AnalyticsService.Domain.Entities
         }
 
         /// <summary>
+        /// Factory method для создания транзакции (соответствует требованиям)
+        /// </summary>
+        /// <param name="portfolioId">Идентификатор портфеля</param>
+        /// <param name="stockCardId">Идентификатор актива</param>
+        /// <param name="transactionType">Тип транзакции (Buy/Sell)</param>
+        /// <param name="quantity">Количество активов</param>
+        /// <param name="price">Цена за единицу</param>
+        /// <param name="transactionDate">Дата транзакции</param>
+        /// <returns>Созданная транзакция</returns>
+        /// <exception cref="ArgumentException">Если параметры невалидны</exception>
+        public static AssetTransaction Create(
+            Guid portfolioId,
+            Guid stockCardId,
+            TransactionType transactionType,
+            decimal quantity,
+            decimal price,
+            DateTime transactionDate)
+        {
+            ValidateTransactionParameters(portfolioId, stockCardId, quantity, price, transactionDate);
+
+            var transaction = new AssetTransaction
+            {
+                Id = Guid.NewGuid(),
+                PortfolioId = portfolioId,
+                StockCardId = stockCardId,
+                AssetType = AssetType.Share, // Значение по умолчанию, можно расширить при необходимости
+                TransactionType = transactionType,
+                Quantity = (int)quantity, // Приведение к int для обратной совместимости
+                PricePerUnit = price,
+                TotalAmount = quantity * price,
+                TransactionTime = transactionDate,
+                Currency = "RUB",
+                Metadata = null
+            };
+
+            return transaction;
+        }
+
+        /// <summary>
         /// Factory method для создания транзакции покупки
         /// </summary>
         /// <param name="portfolioId">Идентификатор портфеля</param>
@@ -84,6 +123,11 @@ namespace StockMarketAssistant.AnalyticsService.Domain.Entities
             string? metadata = null)
         {
             ValidateTransactionParameters(portfolioId, stockCardId, quantity, pricePerUnit, currency);
+
+            if (transactionTime > DateTime.UtcNow.AddMinutes(1))
+            {
+                throw new ArgumentException("Время транзакции не может быть в будущем", nameof(transactionTime));
+            }
 
             var transaction = new AssetTransaction
             {
@@ -128,6 +172,11 @@ namespace StockMarketAssistant.AnalyticsService.Domain.Entities
         {
             ValidateTransactionParameters(portfolioId, stockCardId, quantity, pricePerUnit, currency);
 
+            if (transactionTime > DateTime.UtcNow.AddMinutes(1))
+            {
+                throw new ArgumentException("Время транзакции не может быть в будущем", nameof(transactionTime));
+            }
+
             var transaction = new AssetTransaction
             {
                 Id = Guid.NewGuid(),
@@ -147,7 +196,43 @@ namespace StockMarketAssistant.AnalyticsService.Domain.Entities
         }
 
         /// <summary>
-        /// Валидация параметров транзакции
+        /// Валидация параметров транзакции (базовая версия для метода Create)
+        /// </summary>
+        private static void ValidateTransactionParameters(
+            Guid portfolioId,
+            Guid stockCardId,
+            decimal quantity,
+            decimal price,
+            DateTime transactionDate)
+        {
+            if (portfolioId == Guid.Empty)
+            {
+                throw new ArgumentException("Идентификатор портфеля не может быть пустым", nameof(portfolioId));
+            }
+
+            if (stockCardId == Guid.Empty)
+            {
+                throw new ArgumentException("Идентификатор актива не может быть пустым", nameof(stockCardId));
+            }
+
+            if (quantity <= 0)
+            {
+                throw new ArgumentException("Количество активов должно быть больше нуля", nameof(quantity));
+            }
+
+            if (price < 0)
+            {
+                throw new ArgumentException("Цена за единицу не может быть отрицательной", nameof(price));
+            }
+
+            if (transactionDate > DateTime.UtcNow.AddMinutes(1))
+            {
+                throw new ArgumentException("Дата транзакции не может быть в будущем", nameof(transactionDate));
+            }
+        }
+
+        /// <summary>
+        /// Валидация параметров транзакции (расширенная версия для CreateBuyTransaction/CreateSellTransaction)
         /// </summary>
         private static void ValidateTransactionParameters(
             Guid portfolioId,
@@ -171,9 +256,9 @@ namespace StockMarketAssistant.AnalyticsService.Domain.Entities
                 throw new ArgumentException("Количество активов должно быть больше нуля", nameof(quantity));
             }
 
-            if (pricePerUnit <= 0)
+            if (pricePerUnit < 0)
             {
-                throw new ArgumentException("Цена за единицу должна быть больше нуля", nameof(pricePerUnit));
+                throw new ArgumentException("Цена за единицу не может быть отрицательной", nameof(pricePerUnit));
             }
 
             if (string.IsNullOrWhiteSpace(currency))

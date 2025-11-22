@@ -116,7 +116,7 @@ namespace StockMarketAssistant.AnalyticsService.Domain.Entities
             DateTime periodStart,
             DateTime periodEnd)
         {
-            ValidateRatingParameters(portfolioId, stockCardId, ticker, name, periodStart, periodEnd);
+            ValidateRatingParameters(portfolioId, stockCardId, ticker, name, periodStart, periodEnd, AnalysisContext.Portfolio);
 
             var rating = new AssetRating
             {
@@ -154,7 +154,7 @@ namespace StockMarketAssistant.AnalyticsService.Domain.Entities
             DateTime periodStart,
             DateTime periodEnd)
         {
-            ValidateRatingParameters(Guid.Empty, stockCardId, ticker, name, periodStart, periodEnd);
+            ValidateRatingParameters(Guid.Empty, stockCardId, ticker, name, periodStart, periodEnd, AnalysisContext.Global);
 
             var rating = new AssetRating
             {
@@ -171,6 +171,106 @@ namespace StockMarketAssistant.AnalyticsService.Domain.Entities
             };
 
             return rating;
+        }
+
+        /// <summary>
+        /// Обновить счётчики транзакций и суммы (соответствует требованиям)
+        /// </summary>
+        /// <param name="buyCount">Количество транзакций покупки</param>
+        /// <param name="sellCount">Количество транзакций продажи</param>
+        /// <param name="buyAmount">Общая стоимость покупок</param>
+        /// <param name="sellAmount">Общая стоимость продаж</param>
+        /// <exception cref="ArgumentException">Если параметры невалидны</exception>
+        public void UpdateCounts(int buyCount, int sellCount, decimal buyAmount, decimal sellAmount)
+        {
+            if (buyCount < 0)
+            {
+                throw new ArgumentException("Количество транзакций покупки не может быть отрицательным", nameof(buyCount));
+            }
+
+            if (sellCount < 0)
+            {
+                throw new ArgumentException("Количество транзакций продажи не может быть отрицательным", nameof(sellCount));
+            }
+
+            if (buyAmount < 0)
+            {
+                throw new ArgumentException("Общая стоимость покупок не может быть отрицательной", nameof(buyAmount));
+            }
+
+            if (sellAmount < 0)
+            {
+                throw new ArgumentException("Общая стоимость продаж не может быть отрицательной", nameof(sellAmount));
+            }
+
+            BuyTransactionCount = buyCount;
+            SellTransactionCount = sellCount;
+            TotalBuyAmount = buyAmount;
+            TotalSellAmount = sellAmount;
+            MarkAsUpdated();
+        }
+
+        /// <summary>
+        /// Назначить ранги (соответствует требованиям)
+        /// </summary>
+        /// <param name="countRank">Рейтинг по количеству транзакций</param>
+        /// <param name="amountRank">Рейтинг по стоимости транзакций</param>
+        /// <exception cref="ArgumentException">Если параметры невалидны</exception>
+        public void AssignRanks(int countRank, int amountRank)
+        {
+            if (countRank <= 0)
+            {
+                throw new ArgumentException("Рейтинг по количеству транзакций должен быть больше нуля", nameof(countRank));
+            }
+
+            if (amountRank <= 0)
+            {
+                throw new ArgumentException("Рейтинг по стоимости транзакций должен быть больше нуля", nameof(amountRank));
+            }
+
+            TransactionCountRank = countRank;
+            TransactionAmountRank = amountRank;
+            MarkAsUpdated();
+        }
+
+        /// <summary>
+        /// Отметить как обновлённый (соответствует требованиям)
+        /// </summary>
+        public void MarkAsUpdated()
+        {
+            LastUpdated = DateTime.UtcNow;
+            UpdateTimestamp();
+        }
+
+        /// <summary>
+        /// Создать копию рейтинга для инкрементального обновления (соответствует требованиям)
+        /// </summary>
+        /// <returns>Новая копия рейтинга</returns>
+        public AssetRating Clone()
+        {
+            var clone = new AssetRating
+            {
+                Id = Guid.NewGuid(),
+                StockCardId = StockCardId,
+                AssetType = AssetType,
+                Ticker = Ticker,
+                Name = Name,
+                PeriodStart = PeriodStart,
+                PeriodEnd = PeriodEnd,
+                BuyTransactionCount = BuyTransactionCount,
+                SellTransactionCount = SellTransactionCount,
+                TotalBuyAmount = TotalBuyAmount,
+                TotalSellAmount = TotalSellAmount,
+                TotalBuyQuantity = TotalBuyQuantity,
+                TotalSellQuantity = TotalSellQuantity,
+                TransactionCountRank = TransactionCountRank,
+                TransactionAmountRank = TransactionAmountRank,
+                LastUpdated = LastUpdated,
+                Context = Context,
+                PortfolioId = PortfolioId
+            };
+
+            return clone;
         }
 
         /// <summary>
@@ -225,14 +325,14 @@ namespace StockMarketAssistant.AnalyticsService.Domain.Entities
                 throw new ArgumentException("Общее количество проданных активов не может быть отрицательным", nameof(totalSellQuantity));
             }
 
-            if (transactionCountRank < 0)
+            if (transactionCountRank <= 0)
             {
-                throw new ArgumentException("Рейтинг по количеству транзакций не может быть отрицательным", nameof(transactionCountRank));
+                throw new ArgumentException("Рейтинг по количеству транзакций должен быть больше нуля", nameof(transactionCountRank));
             }
 
-            if (transactionAmountRank < 0)
+            if (transactionAmountRank <= 0)
             {
-                throw new ArgumentException("Рейтинг по стоимости транзакций не может быть отрицательным", nameof(transactionAmountRank));
+                throw new ArgumentException("Рейтинг по стоимости транзакций должен быть больше нуля", nameof(transactionAmountRank));
             }
 
             BuyTransactionCount = buyTransactionCount;
@@ -256,11 +356,23 @@ namespace StockMarketAssistant.AnalyticsService.Domain.Entities
             string ticker,
             string name,
             DateTime periodStart,
-            DateTime periodEnd)
+            DateTime periodEnd,
+            AnalysisContext context)
         {
-            if (portfolioId != Guid.Empty && portfolioId == Guid.Empty)
+            // Валидация PortfolioId в зависимости от контекста
+            if (context == AnalysisContext.Portfolio)
             {
-                throw new ArgumentException("Идентификатор портфеля не может быть пустым для рейтинга портфеля", nameof(portfolioId));
+                if (portfolioId == Guid.Empty)
+                {
+                    throw new ArgumentException("Идентификатор портфеля обязателен для рейтинга портфеля", nameof(portfolioId));
+                }
+            }
+            else if (context == AnalysisContext.Global)
+            {
+                if (portfolioId != Guid.Empty)
+                {
+                    throw new ArgumentException("Идентификатор портфеля должен быть null для глобального рейтинга", nameof(portfolioId));
+                }
             }
 
             if (stockCardId == Guid.Empty)
