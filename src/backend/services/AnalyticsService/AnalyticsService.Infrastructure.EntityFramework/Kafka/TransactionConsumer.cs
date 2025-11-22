@@ -4,9 +4,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using StockMarketAssistant.AnalyticsService.Application.Interfaces;
 using StockMarketAssistant.AnalyticsService.Application.Interfaces.Repositories;
 using StockMarketAssistant.AnalyticsService.Domain.Entities;
 using StockMarketAssistant.AnalyticsService.Domain.Enums;
+using StockMarketAssistant.AnalyticsService.Domain.Events;
 
 namespace StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Kafka
 {
@@ -20,19 +22,22 @@ namespace StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.K
         private readonly ILogger<TransactionConsumer> _logger;
         private readonly IServiceProvider _serviceProvider;
         private readonly IProducer<string, string>? _dlqProducer;
+        private readonly IEventBus? _eventBus;
 
         public TransactionConsumer(
             IConsumer<string, string> consumer,
             IOptions<KafkaConfiguration> config,
             ILogger<TransactionConsumer> logger,
             IServiceProvider serviceProvider,
-            IProducer<string, string>? dlqProducer = null)
+            IProducer<string, string>? dlqProducer = null,
+            IEventBus? eventBus = null)
         {
             _consumer = consumer;
             _config = config.Value;
             _logger = logger;
             _serviceProvider = serviceProvider;
             _dlqProducer = dlqProducer;
+            _eventBus = eventBus;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -136,10 +141,21 @@ namespace StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.K
                         assetTransaction.TransactionType,
                         assetTransaction.Quantity);
 
-                    processedMessages.Add(consumeResult);
+                    // Публикация события TransactionReceivedEvent после сохранения
+                    if (_eventBus != null)
+                    {
+                        var transactionEvent = new TransactionReceivedEvent(assetTransaction);
+                        await _eventBus.PublishAsync(transactionEvent, cancellationToken);
+                        _logger.LogInformation(
+                            "Событие TransactionReceivedEvent опубликовано: TransactionId={TransactionId}",
+                            assetTransaction.Id);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("EventBus не настроен, событие TransactionReceivedEvent не будет опубликовано");
+                    }
 
-                    // TODO: Публикация события TransactionReceivedEvent после сохранения
-                    // await PublishTransactionReceivedEventAsync(assetTransaction, cancellationToken);
+                    processedMessages.Add(consumeResult);
                 }
                 catch (Exception ex)
                 {

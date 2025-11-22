@@ -1,7 +1,13 @@
 using Confluent.Kafka;
 using Microsoft.EntityFrameworkCore;
 using NSwag.AspNetCore;
+using StockMarketAssistant.AnalyticsService.Application.Interfaces;
+using StockMarketAssistant.AnalyticsService.Domain.Events;
+using StockMarketAssistant.AnalyticsService.Domain.Services;
 using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework;
+using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Events;
+using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Events.Handlers;
+using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Jobs;
 using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Kafka;
 using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Persistence;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -88,10 +94,24 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
                 }
             });
 
-            // Регистрация TransactionConsumer как HostedService
+            // Регистрация Domain Services
+            builder.Services.AddScoped<RatingCalculationService>();
+
+            // Регистрация EventBus как Singleton
+            builder.Services.AddSingleton<IEventBus, InMemoryEventBus>();
+
+            // Регистрация Event Handlers
+            builder.Services.AddScoped<IEventHandler<TransactionReceivedEvent>, TransactionReceivedEventHandler>();
+
+            // Регистрация Background Services
             builder.Services.AddHostedService<TransactionConsumer>();
+            builder.Services.AddHostedService<AssetRatingAggregationJob>();
 
             var app = builder.Build();
+
+            // Подписка обработчиков на события после построения приложения
+            var eventBus = app.Services.GetRequiredService<IEventBus>();
+            eventBus.Subscribe<TransactionReceivedEvent, TransactionReceivedEventHandler>();
 
             // Автоматическое применение миграций
             using (var scope = app.Services.CreateScope())
