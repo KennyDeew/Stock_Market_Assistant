@@ -128,17 +128,40 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
                 builder.Configuration.GetSection("Kafka"));
 
             // Регистрация Kafka Consumer и Producer через Aspire
-            builder.AddKafkaProducer<string, string>("kafka");
-            builder.AddKafkaConsumer<string, string>("kafka", options =>
+            // Делаем Kafka опциональным - не блокируем запуск приложения при недоступности Kafka
+            var kafkaConfig = builder.Configuration.GetSection("Kafka").Get<KafkaConfiguration>();
+            if (kafkaConfig != null && !string.IsNullOrEmpty(kafkaConfig.BootstrapServers))
             {
-                var kafkaConfig = builder.Configuration.GetSection("Kafka").Get<KafkaConfiguration>();
-                if (kafkaConfig != null)
+                try
                 {
-                    options.Config.GroupId = kafkaConfig.ConsumerGroup;
-                    options.Config.AutoOffsetReset = AutoOffsetReset.Earliest;
-                    options.Config.EnableAutoCommit = false;
+                    // Настройка таймаутов для предотвращения блокировки при недоступности Kafka
+                    builder.AddKafkaProducer<string, string>("kafka", options =>
+                    {
+                        // Уменьшаем таймауты для быстрого обнаружения недоступности брокера
+                        options.Config.SocketTimeoutMs = 5000; // 5 секунд вместо 10
+                        options.Config.MessageTimeoutMs = 5000; // 5 секунд
+                        // Отключаем автоматический запрос версии API (может вызывать таймауты)
+                        options.Config.ApiVersionRequest = false;
+                    });
+
+                    builder.AddKafkaConsumer<string, string>("kafka", options =>
+                    {
+                        options.Config.GroupId = kafkaConfig.ConsumerGroup;
+                        options.Config.AutoOffsetReset = AutoOffsetReset.Earliest;
+                        options.Config.EnableAutoCommit = false;
+                        // Уменьшаем таймауты для быстрого обнаружения недоступности брокера
+                        options.Config.SocketTimeoutMs = 5000;
+                        // Отключаем автоматический запрос версии API
+                        options.Config.ApiVersionRequest = false;
+                    });
                 }
-            });
+                catch (Exception ex)
+                {
+                    // Логируем ошибку, но не блокируем запуск приложения
+                    var logger = LoggerFactory.Create(b => b.AddConsole()).CreateLogger<Program>();
+                    logger.LogWarning(ex, "Не удалось зарегистрировать Kafka. Приложение будет работать без Kafka.");
+                }
+            }
 
             // Регистрация Domain Services
             builder.Services.AddScoped<RatingCalculationService>();
@@ -175,7 +198,12 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
             .AddPolicyHandler(GetCircuitBreakerPolicy());
 
             // Регистрация Background Services
-            builder.Services.AddHostedService<TransactionConsumer>();
+            // Kafka Consumer регистрируется только если Kafka настроен
+            if (kafkaConfig != null && !string.IsNullOrEmpty(kafkaConfig.BootstrapServers))
+            {
+                builder.Services.AddHostedService<TransactionConsumer>();
+            }
+
             builder.Services.AddHostedService<AssetRatingAggregationJob>();
 
             var app = builder.Build();

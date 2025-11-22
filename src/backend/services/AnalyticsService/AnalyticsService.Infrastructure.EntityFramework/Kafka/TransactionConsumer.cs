@@ -9,6 +9,7 @@ using StockMarketAssistant.AnalyticsService.Application.Interfaces.Repositories;
 using StockMarketAssistant.AnalyticsService.Domain.Entities;
 using StockMarketAssistant.AnalyticsService.Domain.Enums;
 using StockMarketAssistant.AnalyticsService.Domain.Events;
+using KafkaException = Confluent.Kafka.KafkaException;
 
 namespace StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Kafka
 {
@@ -43,7 +44,16 @@ namespace StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.K
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             _logger.LogInformation("Запуск Kafka Consumer для топика: {Topic}", _config.Topic);
-            _consumer.Subscribe(_config.Topic);
+
+            try
+            {
+                _consumer.Subscribe(_config.Topic);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Не удалось подписаться на топик {Topic}. Consumer будет остановлен.", _config.Topic);
+                return; // Выходим, если не удалось подписаться
+            }
 
             try
             {
@@ -79,8 +89,14 @@ namespace StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.K
                     }
                     catch (ConsumeException ex)
                     {
-                        _logger.LogError(ex, "Ошибка при потреблении сообщений из Kafka");
-                        await Task.Delay(1000, stoppingToken);
+                        _logger.LogError(ex, "Ошибка при потреблении сообщений из Kafka: {Reason}", ex.Error?.Reason);
+                        // Увеличиваем задержку при ошибках подключения
+                        await Task.Delay(5000, stoppingToken);
+                    }
+                    catch (KafkaException ex)
+                    {
+                        _logger.LogError(ex, "Kafka ошибка: {Error}", ex.Message);
+                        await Task.Delay(5000, stoppingToken);
                     }
                     catch (OperationCanceledException)
                     {
@@ -96,8 +112,15 @@ namespace StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.K
             }
             finally
             {
-                _consumer.Close();
-                _logger.LogInformation("Kafka Consumer остановлен");
+                try
+                {
+                    _consumer.Close();
+                    _logger.LogInformation("Kafka Consumer остановлен");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Ошибка при закрытии Kafka Consumer");
+                }
             }
         }
 
