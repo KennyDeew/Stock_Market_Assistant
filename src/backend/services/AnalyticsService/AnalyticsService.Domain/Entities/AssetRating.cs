@@ -1,3 +1,5 @@
+using StockMarketAssistant.AnalyticsService.Domain.Enums;
+
 namespace StockMarketAssistant.AnalyticsService.Domain.Entities
 {
     /// <summary>
@@ -128,7 +130,7 @@ namespace StockMarketAssistant.AnalyticsService.Domain.Entities
                 Name = name,
                 PeriodStart = periodStart,
                 PeriodEnd = periodEnd,
-                Context = AnalysisContext.Portfolio,
+                Context = AnalysisContext.Portfolio, // Portfolio = 2
                 LastUpdated = DateTime.UtcNow
             };
 
@@ -166,7 +168,7 @@ namespace StockMarketAssistant.AnalyticsService.Domain.Entities
                 Name = name,
                 PeriodStart = periodStart,
                 PeriodEnd = periodEnd,
-                Context = AnalysisContext.Global,
+                Context = AnalysisContext.Global, // Global = 1
                 LastUpdated = DateTime.UtcNow
             };
 
@@ -412,13 +414,5 @@ namespace StockMarketAssistant.AnalyticsService.Domain.Entities
         }
     }
 
-    /// <summary>
-    /// Контекст анализа
-    /// </summary>
-    public enum AnalysisContext
-    {
-        Portfolio = 1,  // Анализ в контексте портфеля
-        Global = 2      // Глобальный анализ по всем портфелям
-    }
 }
 

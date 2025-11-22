@@ -1,3 +1,5 @@
+using StockMarketAssistant.AnalyticsService.Domain.Enums;
+
 namespace StockMarketAssistant.AnalyticsService.Domain.Entities
 {
     /// <summary>
@@ -283,13 +285,5 @@ namespace StockMarketAssistant.AnalyticsService.Domain.Entities
         Crypto = 3      // Криптовалюта
     }
 
-    /// <summary>
-    /// Тип транзакции
-    /// </summary>
-    public enum TransactionType
-    {
-        Buy = 1,        // Покупка
-        Sell = 2        // Продажа
-    }
 }
 
