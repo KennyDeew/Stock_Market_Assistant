@@ -16,17 +16,14 @@ namespace StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.J
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<AssetRatingAggregationJob> _logger;
-        private readonly RatingCalculationService _ratingCalculationService;
         private readonly TimeSpan _interval = TimeSpan.FromMinutes(15);
 
         public AssetRatingAggregationJob(
             IServiceProvider serviceProvider,
-            ILogger<AssetRatingAggregationJob> logger,
-            RatingCalculationService ratingCalculationService)
+            ILogger<AssetRatingAggregationJob> logger)
         {
             _serviceProvider = serviceProvider;
             _logger = logger;
-            _ratingCalculationService = ratingCalculationService;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -61,6 +58,7 @@ namespace StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.J
 
             using var scope = _serviceProvider.CreateScope();
             var ratingRepository = scope.ServiceProvider.GetRequiredService<IAssetRatingRepository>();
+            var ratingCalculationService = scope.ServiceProvider.GetRequiredService<RatingCalculationService>();
 
             // Определяем период для агрегации (последние 30 дней)
             var period = Period.LastMonth(DateTime.UtcNow);
@@ -68,6 +66,7 @@ namespace StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.J
             // Пересчитываем ранги для Global контекста
             await RecalculateRanksForContextAsync(
                 ratingRepository,
+                ratingCalculationService,
                 period,
                 AnalysisContext.Global,
                 portfolioId: null,
@@ -91,6 +90,7 @@ namespace StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.J
             {
                 await RecalculateRanksForContextAsync(
                     ratingRepository,
+                    ratingCalculationService,
                     period,
                     AnalysisContext.Portfolio,
                     portfolioId,
@@ -109,6 +109,7 @@ namespace StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.J
         /// </summary>
         private async Task RecalculateRanksForContextAsync(
             IAssetRatingRepository ratingRepository,
+            RatingCalculationService ratingCalculationService,
             Period period,
             AnalysisContext context,
             Guid? portfolioId,
@@ -133,7 +134,7 @@ namespace StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.J
             }
 
             // Пересчитываем ранги используя RatingCalculationService
-            _ratingCalculationService.AssignRanks(ratingsList);
+            ratingCalculationService.AssignRanks(ratingsList);
 
             // Сохраняем обновленные рейтинги
             foreach (var rating in ratingsList)

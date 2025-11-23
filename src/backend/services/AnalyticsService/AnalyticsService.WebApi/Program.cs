@@ -1,5 +1,6 @@
 using System.Text;
 using Confluent.Kafka;
+using Confluent.Kafka.Admin;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -215,6 +216,24 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
 
             var app = builder.Build();
 
+            // Создание Kafka топика, если он не существует (асинхронно, не блокируем запуск)
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(TimeSpan.FromSeconds(5)); // Ждем инициализации Kafka
+                var kafkaConfigForTopic = app.Configuration.GetSection("Kafka").Get<KafkaConfiguration>();
+                if (kafkaConfigForTopic != null && !string.IsNullOrEmpty(kafkaConfigForTopic.BootstrapServers) && !string.IsNullOrEmpty(kafkaConfigForTopic.Topic))
+                {
+                    try
+                    {
+                        await EnsureKafkaTopicExistsAsync(kafkaConfigForTopic.BootstrapServers, kafkaConfigForTopic.Topic, app.Logger);
+                    }
+                    catch (Exception ex)
+                    {
+                        app.Logger.LogWarning(ex, "Не удалось создать/проверить топик Kafka {Topic}. Consumer попытается создать его автоматически при подписке.", kafkaConfigForTopic.Topic);
+                    }
+                }
+            });
+
             // Подписка обработчиков на события после построения приложения
             var eventBus = app.Services.GetRequiredService<IEventBus>();
             eventBus.Subscribe<TransactionReceivedEvent, TransactionReceivedEventHandler>();
@@ -234,34 +253,37 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
                         if (!dbContext.Database.CanConnect())
                         {
                             logger?.LogWarning("Не удалось подключиться к базе данных. Миграции будут применены при следующем успешном подключении.");
-                            return;
+                            // Не используем return здесь, так как Build() уже был вызван
+                            // Просто пропускаем применение миграций
                         }
-
-                        // Проверяем, существует ли таблица истории миграций, и создаем её, если нет
-                        try
+                        else
                         {
-                            // Пытаемся прочитать из таблицы истории миграций
-                            var _ = dbContext.Database.ExecuteSqlRaw("SELECT 1 FROM \"__EFMigrationsHistory\" LIMIT 1;");
+                            // Проверяем, существует ли таблица истории миграций, и создаем её, если нет
+                            try
+                            {
+                                // Пытаемся прочитать из таблицы истории миграций
+                                var _ = dbContext.Database.ExecuteSqlRaw("SELECT 1 FROM \"__EFMigrationsHistory\" LIMIT 1;");
+                            }
+                            catch
+                            {
+                                // Таблица не существует, создаем её
+                                logger?.LogInformation("Таблица истории миграций не найдена. Создание таблицы...");
+                                dbContext.Database.ExecuteSqlRaw(@"
+                                    CREATE TABLE IF NOT EXISTS ""__EFMigrationsHistory"" (
+                                        ""migration_id"" VARCHAR(150) NOT NULL,
+                                        ""product_version"" VARCHAR(32) NOT NULL,
+                                        CONSTRAINT ""pk___ef_migrations_history"" PRIMARY KEY (""migration_id"")
+                                    );");
+                                logger?.LogInformation("Таблица истории миграций создана.");
+                            }
+
+                            logger?.LogInformation("Применение миграций базы данных...");
+
+                            // Применяем миграции - они создадут таблицы, если их нет
+                            dbContext.Database.Migrate();
+
+                            logger?.LogInformation("Миграции успешно применены.");
                         }
-                        catch
-                        {
-                            // Таблица не существует, создаем её
-                            logger?.LogInformation("Таблица истории миграций не найдена. Создание таблицы...");
-                            dbContext.Database.ExecuteSqlRaw(@"
-                                CREATE TABLE IF NOT EXISTS ""__EFMigrationsHistory"" (
-                                    ""migration_id"" VARCHAR(150) NOT NULL,
-                                    ""product_version"" VARCHAR(32) NOT NULL,
-                                    CONSTRAINT ""pk___ef_migrations_history"" PRIMARY KEY (""migration_id"")
-                                );");
-                            logger?.LogInformation("Таблица истории миграций создана.");
-                        }
-
-                        logger?.LogInformation("Применение миграций базы данных...");
-
-                        // Применяем миграции - они создадут таблицы, если их нет
-                        dbContext.Database.Migrate();
-
-                        logger?.LogInformation("Миграции успешно применены.");
                     }
                     catch (Exception ex)
                     {
@@ -326,6 +348,64 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
                 .CircuitBreakerAsync(
                     handledEventsAllowedBeforeBreaking: 5,
                     durationOfBreak: TimeSpan.FromSeconds(30));
+        }
+
+        /// <summary>
+        /// Создает Kafka топик, если он не существует
+        /// </summary>
+        private static async Task EnsureKafkaTopicExistsAsync(string bootstrapServers, string topicName, Microsoft.Extensions.Logging.ILogger logger)
+        {
+            if (string.IsNullOrEmpty(bootstrapServers) || string.IsNullOrEmpty(topicName))
+            {
+                logger.LogWarning("Не указаны BootstrapServers или Topic для создания топика Kafka");
+                return;
+            }
+
+            try
+            {
+                var adminConfig = new AdminClientConfig
+                {
+                    BootstrapServers = bootstrapServers,
+                    SocketTimeoutMs = 5000
+                };
+
+                using var adminClient = new AdminClientBuilder(adminConfig).Build();
+
+                // Проверяем подключение к Kafka
+                try
+                {
+                    var metadata = adminClient.GetMetadata(TimeSpan.FromSeconds(5));
+                    var topicExists = metadata.Topics.Any(t => t.Topic == topicName);
+
+                    if (!topicExists)
+                    {
+                        logger.LogInformation("Топик {Topic} не существует. Создание топика...", topicName);
+
+                        var topicSpec = new TopicSpecification
+                        {
+                            Name = topicName,
+                            NumPartitions = 1,
+                            ReplicationFactor = 1
+                        };
+
+                        await adminClient.CreateTopicsAsync(new[] { topicSpec });
+                        logger.LogInformation("Топик {Topic} успешно создан.", topicName);
+                    }
+                    else
+                    {
+                        logger.LogInformation("Топик {Topic} уже существует.", topicName);
+                    }
+                }
+                catch (KafkaException kex)
+                {
+                    logger.LogWarning(kex, "Не удалось подключиться к Kafka для проверки/создания топика {Topic}. Kafka может быть недоступен или еще не инициализирован. Топик будет создан автоматически при первой записи.", topicName);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Не удалось создать/проверить топик {Topic} на {BootstrapServers}. Убедитесь, что Kafka доступен. Топик будет создан автоматически при первой записи или при подписке Consumer.", topicName, bootstrapServers);
+                // Не пробрасываем исключение, чтобы не блокировать запуск приложения
+            }
         }
     }
 }

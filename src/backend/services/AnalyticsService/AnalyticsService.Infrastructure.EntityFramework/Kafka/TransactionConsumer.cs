@@ -45,14 +45,60 @@ namespace StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.K
         {
             _logger.LogInformation("Запуск Kafka Consumer для топика: {Topic}", _config.Topic);
 
-            try
+            // Пытаемся подписаться на топик с повторными попытками
+            int retryCount = 0;
+            const int maxRetries = 10;
+            const int retryDelaySeconds = 5;
+
+            while (retryCount < maxRetries && !stoppingToken.IsCancellationRequested)
             {
-                _consumer.Subscribe(_config.Topic);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Не удалось подписаться на топик {Topic}. Consumer будет остановлен.", _config.Topic);
-                return; // Выходим, если не удалось подписаться
+                try
+                {
+                    _consumer.Subscribe(_config.Topic);
+                    _logger.LogInformation("Успешно подписались на топик {Topic}", _config.Topic);
+                    break; // Успешно подписались, выходим из цикла
+                }
+                catch (KafkaException kex)
+                {
+                    retryCount++;
+                    if (kex.Error.Code == ErrorCode.UnknownTopicOrPart)
+                    {
+                        _logger.LogWarning(
+                            "Топик {Topic} не существует (попытка {Retry}/{MaxRetries}). Ожидание создания топика...",
+                            _config.Topic, retryCount, maxRetries);
+                    }
+                    else
+                    {
+                        _logger.LogWarning(
+                            "Ошибка при подписке на топик {Topic} (попытка {Retry}/{MaxRetries}): {Error}",
+                            _config.Topic, retryCount, maxRetries, kex.Error.Reason);
+                    }
+
+                    if (retryCount >= maxRetries)
+                    {
+                        _logger.LogError(
+                            "Не удалось подписаться на топик {Topic} после {MaxRetries} попыток. Consumer будет остановлен. Убедитесь, что топик создан.",
+                            _config.Topic, maxRetries);
+                        return;
+                    }
+
+                    await Task.Delay(TimeSpan.FromSeconds(retryDelaySeconds), stoppingToken);
+                }
+                catch (Exception ex)
+                {
+                    retryCount++;
+                    _logger.LogWarning(
+                        "Ошибка при подписке на топик {Topic} (попытка {Retry}/{MaxRetries}): {Error}",
+                        _config.Topic, retryCount, maxRetries, ex.Message);
+
+                    if (retryCount >= maxRetries)
+                    {
+                        _logger.LogError(ex, "Не удалось подписаться на топик {Topic} после {MaxRetries} попыток. Consumer будет остановлен.", _config.Topic, maxRetries);
+                        return;
+                    }
+
+                    await Task.Delay(TimeSpan.FromSeconds(retryDelaySeconds), stoppingToken);
+                }
             }
 
             try
@@ -89,14 +135,56 @@ namespace StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.K
                     }
                     catch (ConsumeException ex)
                     {
-                        _logger.LogError(ex, "Ошибка при потреблении сообщений из Kafka: {Reason}", ex.Error?.Reason);
-                        // Увеличиваем задержку при ошибках подключения
-                        await Task.Delay(5000, stoppingToken);
+                        if (ex.Error?.Code == ErrorCode.UnknownTopicOrPart)
+                        {
+                            _logger.LogWarning(
+                                "Топик {Topic} недоступен. Ожидание создания топика... (попытка переподключения через 10 секунд)",
+                                _config.Topic);
+                            // Пытаемся переподписаться
+                            try
+                            {
+                                _consumer.Unsubscribe();
+                                await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
+                                _consumer.Subscribe(_config.Topic);
+                                _logger.LogInformation("Переподписка на топик {Topic} выполнена", _config.Topic);
+                            }
+                            catch (Exception rex)
+                            {
+                                _logger.LogWarning(rex, "Не удалось переподписаться на топик {Topic}", _config.Topic);
+                                await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
+                            }
+                        }
+                        else
+                        {
+                            _logger.LogError(ex, "Ошибка при потреблении сообщений из Kafka: {Reason}", ex.Error?.Reason);
+                            await Task.Delay(5000, stoppingToken);
+                        }
                     }
                     catch (KafkaException ex)
                     {
-                        _logger.LogError(ex, "Kafka ошибка: {Error}", ex.Message);
-                        await Task.Delay(5000, stoppingToken);
+                        if (ex.Error?.Code == ErrorCode.UnknownTopicOrPart)
+                        {
+                            _logger.LogWarning(
+                                "Топик {Topic} недоступен. Ожидание создания топика... (попытка переподключения через 10 секунд)",
+                                _config.Topic);
+                            try
+                            {
+                                _consumer.Unsubscribe();
+                                await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
+                                _consumer.Subscribe(_config.Topic);
+                                _logger.LogInformation("Переподписка на топик {Topic} выполнена", _config.Topic);
+                            }
+                            catch (Exception rex)
+                            {
+                                _logger.LogWarning(rex, "Не удалось переподписаться на топик {Topic}", _config.Topic);
+                                await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
+                            }
+                        }
+                        else
+                        {
+                            _logger.LogError(ex, "Kafka ошибка: {Error}", ex.Message);
+                            await Task.Delay(5000, stoppingToken);
+                        }
                     }
                     catch (OperationCanceledException)
                     {
