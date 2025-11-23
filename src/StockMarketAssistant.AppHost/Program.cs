@@ -10,7 +10,7 @@
         var apiAuthService = builder.AddProject<Projects.AuthService_WebApi>("authservice-api");
         var apiStockCardService = builder.AddProject<Projects.StockCardService_WebApi>("stockcardservice-api");
         var apiPortfolioService = builder.AddProject<Projects.PortfolioService_WebApi>("portfolioservice-api");
-        //var apiAnalyticsService = builder.AddProject<Projects.AnalyticsService_WebApi>("analyticsservice-api");
+        var apiAnalyticsService = builder.AddProject<Projects.AnalyticsService_WebApi>("analyticsservice-api");
         var apiNotificationService = builder.AddProject<Projects.NotificationService>("notificationservice-api");
 
         // Добавление ресурсов
@@ -18,6 +18,19 @@
 
         var kafka = builder.AddKafka("kafka")
             .WithKafkaUI(kafka => kafka.WithHostPort(9100));
+
+        var openSearch = builder.AddContainer("opensearch", "opensearchproject/opensearch:2.11.0")
+            .WithEnvironment("discovery.type", "single-node")
+            .WithEnvironment("plugins.security.disabled", "true")
+            .WithEnvironment("OPENSEARCH_INITIAL_ADMIN_PASSWORD", "admin")
+            .WithHttpEndpoint(9200, 9200)
+            .WithHttpEndpoint(9600, 9600, name: "performance-analyzer");
+
+        var openSearchDashboards = builder.AddContainer("opensearch-dashboards", "opensearchproject/opensearch-dashboards:2.11.0")
+            .WithEnvironment("OPENSEARCH_HOSTS", "http://opensearch:9200")
+            .WithEnvironment("DISABLE_SECURITY_DASHBOARDS_PLUGIN", "true")
+            .WithHttpEndpoint(5601, 5601)
+            .WaitFor(openSearch);
 
         var pgPortfolioDb = builder.AddPostgres("pg-portfolio-db")
             //.WithPgAdmin()
@@ -51,9 +64,10 @@
             //.WithPgAdmin()
             .WithImage("postgres:17.5")
             .WithDataVolume("analytics-pg-data")
-            .WithHostPort(14051)
-            .AddDatabase("analytics-db")
-            .WithCredentials("postgres", "xxxxxx");
+            .WithHostPort(14055)
+            .WithEnvironment("POSTGRES_USER", "postgres")
+            // Пароль будет сгенерирован Aspire автоматически и будет одинаковым в контейнере и строке подключения
+            .AddDatabase("analytics-db");
         //var postgres = builder.AddPostgres("postgres").AddDatabase("stockcarddb");
         //var container = builder.AddDockerfile("gateway", "../backend/gateway/");
 
@@ -78,8 +92,10 @@
         apiNotificationService
             .WithReference(notificationPostgres)
             .WithReference(kafka)
+            .WithEnvironment("OpenSearchConfig__Url", openSearch.GetEndpoint("http"))
             .WaitFor(notificationPostgres)
-            .WaitFor(kafka);
+            .WaitFor(kafka)
+            .WaitFor(openSearch);
 
         // Добавление React-приложения
         //var webui = builder.AddExecutable(
@@ -102,8 +118,19 @@
         .WithEnvironment("VITE_NOTIFICATION_API_URL", apiNotificationService.GetEndpoint("http"))
         .WaitFor(apiAuthService)
         .WaitFor(apiStockCardService);
-        apiAnalyticsService.WithReference(pgAnalyticsDb)
-                           .WaitFor(pgAnalyticsDb);
+        // Используем явную строку подключения с паролем "xxx"
+        // WithEnvironment после WithReference перезапишет ConnectionStringExpression от Aspire
+        apiAnalyticsService
+//            .WithEnvironment("ConnectionStrings__analytics-db",
+  //              "Host=localhost;Port=14055;Database=analytics-db;Username=postgres;Password=xxx")
+            .WithReference(pgAnalyticsDb)
+            .WithReference(kafka)
+            .WithReference(apiPortfolioService)
+            .WithEnvironment("OpenSearchConfig__Url", openSearch.GetEndpoint("http"))
+            .WithEnvironment("PortfolioService__BaseUrl", apiPortfolioService.GetEndpoint("http"))
+            .WaitFor(pgAnalyticsDb)
+            .WaitFor(kafka)
+            .WaitFor(openSearch);
 
 
         var webuiUrl = webui.GetEndpoint("http"); // Получаем endpoint
@@ -111,6 +138,29 @@
         apiStockCardService.WithEnvironment("FRONTEND_ORIGIN", webuiUrl);
         apiAuthService.WithEnvironment("FRONTEND_ORIGIN", webuiUrl);
         apiPortfolioService.WithEnvironment("FRONTEND_ORIGIN", webuiUrl);
-        builder.Build().Run();
+
+        var app = builder.Build();
+
+        // Открываем OpenSearch Dashboards в браузере после запуска (с задержкой для инициализации)
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(TimeSpan.FromSeconds(10)); // Ждем 10 секунд для инициализации контейнера
+            try
+            {
+                // Используем фиксированный URL, так как порт известен
+                var openSearchDashboardsUrl = "http://localhost:5601";
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = openSearchDashboardsUrl,
+                    UseShellExecute = true
+                });
+            }
+            catch
+            {
+                // Игнорируем ошибки открытия браузера
+            }
+        });
+
+        app.Run();
     }
 }
