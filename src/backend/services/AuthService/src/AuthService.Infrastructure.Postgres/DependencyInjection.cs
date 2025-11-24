@@ -45,6 +45,8 @@ public static class DependencyInjection
             .AddIdentityCore<User>(options =>
             {
                 options.User.RequireUniqueEmail = true;
+                options.User.AllowedUserNameCharacters =
+                    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+ абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
             })
             .AddRoles<Role>()
             .AddEntityFrameworkStores<PostgresDbContext>();
