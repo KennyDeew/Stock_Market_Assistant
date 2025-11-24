@@ -57,6 +57,7 @@ public class JwtTokenProvider : ITokenProvider
         var claims = new List<Claim>
         {
             new Claim(CustomClaims.Id, user.Id.ToString()),
+            new Claim(CustomClaims.UserName, user.UserName ?? string.Empty),
             new Claim(CustomClaims.Jti, jti.ToString()),
             new Claim(CustomClaims.Email, user.Email ?? string.Empty),
         };
