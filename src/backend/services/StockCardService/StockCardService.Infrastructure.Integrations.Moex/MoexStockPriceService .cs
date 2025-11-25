@@ -36,14 +36,25 @@ namespace StockCardService.Infrastructure.Integrations.Moex
             // Корень (root) является массивом
             JsonElement root = doc.RootElement;
             // Если корень — массив, ищем массив "marketdata" или "marketdata_yields"
-            var marketProperty = market == "bonds" ? "marketdata_yields" : "marketdata";
-            var priceProperty = market == "bonds" ? "PRICE" : "LAST";
-            var typestr = root.ValueKind.ToString();
-
-            _logger.LogInformation($"Start. marketProperty - {marketProperty},priceProperty - {priceProperty} type - {typestr}");
-            if (!root.TryGetProperty(marketProperty, out var marketData))
+            var fieldName = "securities";
+            var propName = "PREVWAPRICE";
+            if (board == "TQOB")
             {
-                _logger.LogWarning("Response does not contain property '{MarketProperty}'", marketProperty);
+                fieldName = "marketdata_yields";
+                propName = "PRICE";
+            }
+            else if (board == "TQBR")
+            {
+                fieldName = "marketdata";
+                propName = "LAST";
+            }
+
+            //var typestr = root.ValueKind.ToString();
+            //_logger.LogInformation($"Start. fieldName - {fieldName},propName - {propName} type - {typestr}");
+
+            if (!root.TryGetProperty(fieldName, out var marketData))
+            {
+                _logger.LogWarning("Response does not contain property '{fieldName}'", fieldName);
                 return null;
             }
 
@@ -51,16 +62,16 @@ namespace StockCardService.Infrastructure.Integrations.Moex
             if (!marketData.TryGetProperty("columns", out var columnsElem) ||
                 !marketData.TryGetProperty("data", out var dataElem))
             {
-                _logger.LogWarning("'{MarketProperty}' does not contain expected fields", marketProperty);
+                _logger.LogWarning("'{fieldName}' does not contain expected fields", fieldName);
                 return null;
             }
 
             var columns = columnsElem.EnumerateArray().Select(c => c.GetString()).ToList();
-            var priceIndex = columns.IndexOf(priceProperty);
+            var priceIndex = columns.IndexOf(propName);
 
             if (priceIndex < 0)
             {
-                _logger.LogWarning("'{PriceProperty}' not found in columns", priceProperty);
+                _logger.LogWarning("'{propName}' not found in columns", propName);
                 return null;
             }
             // Берём первую строку данных (если есть)

@@ -87,6 +87,8 @@ namespace StockMarketAssistant.StockCardService.WebApi
             builder.Services.AddScoped(typeof(ISubRepository<Dividend, Guid>), typeof(DividendRepository));
             builder.Services.AddScoped(typeof(ISubRepository<Coupon, Guid>), typeof(CouponRepository));
             builder.Services.AddScoped(typeof(IMongoRepository<FinancialReport, Guid>), typeof(FinancialReportRepository));
+            builder.Services.AddHttpClient<IMoexCardService, MoexCardService>();
+            builder.Services.AddScoped<IDbInitializer, DbInitializer>();
             builder.Services.AddScoped<IStockPriceService, MoexStockPriceService>();
             builder.Services.AddSingleton<IMongoDBContext, MongoDBContext>();
             builder.Services.AddSingleton<IKafkaProducerFactory, KafkaProducerFactory>();
@@ -135,12 +137,12 @@ namespace StockMarketAssistant.StockCardService.WebApi
             app.MapDefaultEndpoints();
 
 
-            //app.MigrateDatabase<StockCardDbContext>();
+            app.MigrateDatabase<StockCardDbContext>();
             //Заполняем БД объектами из FakeDataFactory
             using (var scope = app.Services.CreateScope())
             {
-                var dbContext = scope.ServiceProvider.GetRequiredService<StockCardDbContext>();
-                DbInitializer.Initialize(dbContext);
+                var initializer = scope.ServiceProvider.GetRequiredService<IDbInitializer>();
+                initializer.InitializeAsync(CancellationToken.None).GetAwaiter().GetResult();
             }
             app.Run();
         }

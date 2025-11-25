@@ -96,6 +96,11 @@ services:
       - postgres_data:/var/lib/postgresql/data/
     networks:
       - stock_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d stock-card-db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
   
   mongo-stockcard:
     image: mongo:7
