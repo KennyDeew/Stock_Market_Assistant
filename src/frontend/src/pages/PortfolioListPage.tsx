@@ -20,7 +20,8 @@ import {
 import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Pagination from '@mui/material/Pagination';
-import EditPortfolioModal from '../components/EditPortfolioModal'; // ✅ Подключаем модальное окно
+import EditPortfolioModal from '../components/EditPortfolioModal';
+import AppLayout from '../components/AppLayout';
 
 export default function PortfolioListPage() {
   const { isAuthenticated } = useAuth();
@@ -83,7 +84,7 @@ export default function PortfolioListPage() {
     return null;
   }
 
-  // 🔹 Обработчик сохранения изменений
+  // Обработчик сохранения изменений
   const handleSave = async (id: string, data: { name: string; currency: string }) => {
     try {
       await portfolioApi.update(id, data);
@@ -99,213 +100,215 @@ export default function PortfolioListPage() {
   };
 
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
-      {/* Заголовок */}
-      <Typography variant="h4" component="h1" gutterBottom fontWeight={600} color="text.primary">
-        Мои портфели
-      </Typography>
+    <AppLayout>
+      <Container>
+        {/* Заголовок */}
+        <Typography variant="h4" component="h1" gutterBottom fontWeight={600} color="text.primary">
+          Мои портфели
+        </Typography>
 
-      {/* Ошибка */}
-      {error && (
-        <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
-          {error}
-        </Alert>
-      )}
+        {/* Ошибка */}
+        {error && (
+          <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
+            {error}
+          </Alert>
+        )}
 
-      {/* Загрузка */}
-      {loading ? (
-        <Box display="flex" justifyContent="center" my={6}>
-          <CircularProgress size={28} color="primary" />
-        </Box>
-      ) : (
-        <>
-          {/* Таблица портфелей */}
-          <Paper
-            sx={{
-              borderRadius: 3,
-              overflow: 'hidden',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-              border: `1px solid ${theme.palette.divider}`,
-            }}
-          >
-            <Table>
-              <TableHead>
-                <TableRow sx={{ backgroundColor: 'background.paper' }}>
-                  <TableCell
-                    sx={{
-                      fontWeight: 600,
-                      color: 'text.primary',
-                      borderBottom: `2px solid ${theme.palette.divider}`,
-                      px: 3,
-                      py: 2,
-                    }}
-                  >
-                    Название
-                  </TableCell>
-                  <TableCell
-                    align="left"
-                    sx={{
-                      fontWeight: 600,
-                      color: 'text.primary',
-                      borderBottom: `2px solid ${theme.palette.divider}`,
-                      px: 3,
-                      py: 2,
-                    }}
-                  >
-                    Валюта
-                  </TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{
-                      fontWeight: 600,
-                      color: 'text.primary',
-                      borderBottom: `2px solid ${theme.palette.divider}`,
-                      px: 3,
-                      py: 2,
-                    }}
-                  >
-                    Действия
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {portfolios.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={3} align="center" sx={{ py: 4 }}>
-                      <Typography color="text.secondary">У вас пока нет портфелей</Typography>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  portfolios.map((p) => (
-                    <TableRow
-                      key={p.id}
-                      hover
+        {/* Загрузка */}
+        {loading ? (
+          <Box display="flex" justifyContent="center" my={6}>
+            <CircularProgress size={28} color="primary" />
+          </Box>
+        ) : (
+          <>
+            {/* Таблица портфелей */}
+            <Paper
+              sx={{
+                borderRadius: 3,
+                overflow: 'hidden',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                border: `1px solid ${theme.palette.divider}`,
+              }}
+            >
+              <Table>
+                <TableHead>
+                  <TableRow sx={{ backgroundColor: 'background.paper' }}>
+                    <TableCell
                       sx={{
-                        '&:hover': {
-                          backgroundColor: 'rgba(52, 152, 219, 0.04)',
-                        },
-                        '&:nth-of-type(even)': {
-                          backgroundColor: 'background.default',
-                        },
+                        fontWeight: 600,
+                        color: 'text.primary',
+                        borderBottom: `2px solid ${theme.palette.divider}`,
+                        px: 3,
+                        py: 2,
                       }}
                     >
-                      {/* Название портфеля */}
-                      <TableCell sx={{ px: 3, py: 2 }}>
-                        <Button
-                          onClick={() => navigate(`/portfolios/${p.id}`)}
-                          sx={{
-                            fontWeight: 500,
-                            color: 'text.primary',
-                            textAlign: 'left',
-                            justifyContent: 'flex-start',
-                            padding: 0,
-                            minWidth: 0,
-                            '&:hover': {
-                              backgroundColor: 'transparent',
-                              textDecoration: 'underline',
-                            },
-                          }}
-                        >
-                          {p.name}
-                        </Button>
-                      </TableCell>
-
-                      {/* Валюта */}
-                      <TableCell sx={{ px: 3, py: 2 }} align="left">
-                        <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
-                          {p.currency || '—'}
-                        </Typography>
-                      </TableCell>
-
-                      {/* Действия */}
-                      <TableCell align="right" sx={{ px: 3, py: 2 }}>
-                        <Button
-                          size="small"
-                          color="primary"
-                          variant="outlined"
-                          onClick={() => setEditingPortfolio(p)} // 🔹 Открываем модалку
-                          sx={{
-                            textTransform: 'none',
-                            borderRadius: 2,
-                            px: 1.5,
-                            minWidth: 'auto',
-                          }}
-                        >
-                          Редактировать
-                        </Button>
+                      Название
+                    </TableCell>
+                    <TableCell
+                      align="left"
+                      sx={{
+                        fontWeight: 600,
+                        color: 'text.primary',
+                        borderBottom: `2px solid ${theme.palette.divider}`,
+                        px: 3,
+                        py: 2,
+                      }}
+                    >
+                      Валюта
+                    </TableCell>
+                    <TableCell
+                      align="right"
+                      sx={{
+                        fontWeight: 600,
+                        color: 'text.primary',
+                        borderBottom: `2px solid ${theme.palette.divider}`,
+                        px: 3,
+                        py: 2,
+                      }}
+                    >
+                      Действия
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {portfolios.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={3} align="center" sx={{ py: 4 }}>
+                        <Typography color="text.secondary">У вас пока нет портфелей</Typography>
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </Paper>
+                  ) : (
+                    portfolios.map((p) => (
+                      <TableRow
+                        key={p.id}
+                        hover
+                        sx={{
+                          '&:hover': {
+                            backgroundColor: 'rgba(52, 152, 219, 0.04)',
+                          },
+                          '&:nth-of-type(even)': {
+                            backgroundColor: 'background.default',
+                          },
+                        }}
+                      >
+                        {/* Название портфеля */}
+                        <TableCell sx={{ px: 3, py: 2 }}>
+                          <Button
+                            onClick={() => navigate(`/portfolios/${p.id}`)}
+                            sx={{
+                              fontWeight: 500,
+                              color: 'text.primary',
+                              textAlign: 'left',
+                              justifyContent: 'flex-start',
+                              padding: 0,
+                              minWidth: 0,
+                              '&:hover': {
+                                backgroundColor: 'transparent',
+                                textDecoration: 'underline',
+                              },
+                            }}
+                          >
+                            {p.name}
+                          </Button>
+                        </TableCell>
 
-          {/* Пагинация */}
-          {total > pageSize && (
-            <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
-              <Pagination
-                count={Math.ceil(total / pageSize)}
-                page={page}
-                onChange={handlePageChange}
+                        {/* Валюта */}
+                        <TableCell sx={{ px: 3, py: 2 }} align="left">
+                          <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+                            {p.currency || '—'}
+                          </Typography>
+                        </TableCell>
+
+                        {/* Действия */}
+                        <TableCell align="right" sx={{ px: 3, py: 2 }}>
+                          <Button
+                            size="small"
+                            color="primary"
+                            variant="outlined"
+                            onClick={() => setEditingPortfolio(p)} // 🔹 Открываем модалку
+                            sx={{
+                              textTransform: 'none',
+                              borderRadius: 2,
+                              px: 1.5,
+                              minWidth: 'auto',
+                            }}
+                          >
+                            Редактировать
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </Paper>
+
+            {/* Пагинация */}
+            {total > pageSize && (
+              <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
+                <Pagination
+                  count={Math.ceil(total / pageSize)}
+                  page={page}
+                  onChange={handlePageChange}
+                  color="primary"
+                  showFirstButton
+                  showLastButton
+                  size="large"
+                  siblingCount={1}
+                  boundaryCount={1}
+                />
+              </Box>
+            )}
+
+            {/* Кнопки */}
+            <Box mt={5} textAlign="center">
+              <Button
+                variant="contained"
                 color="primary"
-                showFirstButton
-                showLastButton
+                onClick={() => navigate('/portfolios/create')}
+                sx={{
+                  mr: 2,
+                  px: 4,
+                  py: 1.2,
+                  fontWeight: 600,
+                  borderRadius: 3,
+                  textTransform: 'none',
+                  fontSize: '1rem',
+                }}
                 size="large"
-                siblingCount={1}
-                boundaryCount={1}
-              />
+              >
+                Создать портфель
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={() => navigate('/')}
+                sx={{
+                  px: 4,
+                  py: 1.2,
+                  fontWeight: 500,
+                  borderRadius: 3,
+                  textTransform: 'none',
+                  borderColor: 'primary.main',
+                  color: 'primary.main',
+                }}
+                size="large"
+              >
+                На главную
+              </Button>
             </Box>
-          )}
+          </>
+        )}
 
-          {/* Кнопки */}
-          <Box mt={5} textAlign="center">
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={() => navigate('/portfolios/create')}
-              sx={{
-                mr: 2,
-                px: 4,
-                py: 1.2,
-                fontWeight: 600,
-                borderRadius: 3,
-                textTransform: 'none',
-                fontSize: '1rem',
-              }}
-              size="large"
-            >
-              Создать портфель
-            </Button>
-            <Button
-              variant="outlined"
-              onClick={() => navigate('/')}
-              sx={{
-                px: 4,
-                py: 1.2,
-                fontWeight: 500,
-                borderRadius: 3,
-                textTransform: 'none',
-                borderColor: 'primary.main',
-                color: 'primary.main',
-              }}
-              size="large"
-            >
-              На главную
-            </Button>
-          </Box>
-        </>
-      )}
-
-      {/* 🔹 Модальное окно редактирования */}
-      {editingPortfolio && (
-        <EditPortfolioModal
-          open={true}
-          onClose={() => setEditingPortfolio(null)}
-          portfolio={editingPortfolio}
-          onSave={handleSave}
-        />
-      )}
-    </Container>
+        {/* 🔹 Модальное окно редактирования */}
+        {editingPortfolio && (
+          <EditPortfolioModal
+            open={true}
+            onClose={() => setEditingPortfolio(null)}
+            portfolio={editingPortfolio}
+            onSave={handleSave}
+          />
+        )}
+      </Container>
+    </AppLayout>
   );
 }

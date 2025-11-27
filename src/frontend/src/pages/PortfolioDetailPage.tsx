@@ -40,8 +40,9 @@ import type { AssetShort } from '../types/assetTypes';
 import { getAssetTypeName, getAssetTypeColor } from '../utils/assetTypeUtils';
 import { getTransactionColor, getTransactionLabel } from '../utils/transactionUtils';
 import { toTransactionTypeValue } from '../utils/transactionUtils';
+import AppLayout from '../components/AppLayout';
 
-// 🔹 Компонент операций актива
+// Компонент операций актива
 function AssetTransactions({
   transactions,
   onTransactionDelete,
@@ -245,7 +246,7 @@ export default function PortfolioDetailPage() {
         purchasePricePerUnit: Number(purchasePrice.toFixed(8)),
       });
       openSnackbar('Актив добавлен', 'success');
-      loadPortfolio();
+      await loadPortfolio();
     } catch (err: any) {
       openSnackbar('Ошибка: ' + (err.message || 'ошибка'), 'error');
       throw err;
@@ -303,7 +304,6 @@ export default function PortfolioDetailPage() {
     }
   };
 
-
   const handleAddTransaction = async (data: {
     transactionType: 'Buy' | 'Sell';
     quantity: number;
@@ -313,7 +313,11 @@ export default function PortfolioDetailPage() {
     if (!selectedAssetForTransaction) return;
 
     try {
-      const transactionTypeValue = toTransactionTypeValue(data.transactionType); // "Buy" → 1
+      const transactionTypeValue = toTransactionTypeValue(data.transactionType);
+      const isSell = data.transactionType === 'Sell';
+
+      // Проверим, станет ли количество 0 после продажи
+      const willBeZero = isSell && selectedAssetForTransaction.totalQuantity <= data.quantity;
 
       await portfolioAssetApi.addTransaction(selectedAssetForTransaction.id, {
         ...data,
@@ -322,183 +326,198 @@ export default function PortfolioDetailPage() {
 
       openSnackbar('Операция добавлена', 'success');
 
-     //Обновляем актив, так как средняя цена покупки должна быть пересчитана с сервера
-     const updatedAsset = await portfolioAssetApi.getById(selectedAssetForTransaction.id);
+      if (willBeZero) {
+        // Актив будет удалён с бэка
+        setAssets((prev) => prev.filter((a) => a.id !== selectedAssetForTransaction.id));
+        setAssetTransactions((prev) => {
+          const next = { ...prev };
+          delete next[selectedAssetForTransaction.id];
+          return next;
+        });
+        setOpenAssetId(null); // Закрываем, если он был открыт
+      } else {
+        // 🔁 Обычный случай: обновляем актив
+        const updatedAsset = await portfolioAssetApi.getById(selectedAssetForTransaction.id);
 
-      setAssets((prev) =>
-        prev.map((a) =>
-          a.id === updatedAsset.id
-            ? {
-                ...a,
-                totalQuantity: updatedAsset.totalQuantity,
-                averagePurchasePrice: updatedAsset.averagePurchasePrice,
-              }
-            : a
-        )
-      );
+        setAssets((prev) =>
+          prev.map((a) =>
+            a.id === updatedAsset.id
+              ? {
+                  ...a,
+                  totalQuantity: updatedAsset.totalQuantity,
+                  averagePurchasePrice: updatedAsset.averagePurchasePrice,
+                }
+              : a
+          )
+        );
 
-      // Обновляем транзакции
-      await loadAssetTransactions(selectedAssetForTransaction.id, true);
+        // Обновляем транзакции
+        await loadAssetTransactions(selectedAssetForTransaction.id, true);
+      }
 
       setIsTransactionModalOpen(false);
-    
-    } catch {
+
+    } catch (err) {
+      console.error('Ошибка при добавлении операции', err);
       openSnackbar('Ошибка при добавлении операции', 'error');
     }
   };
-
 
   if (loading) return <CircularProgress />;
   if (error) return <Alert severity="error">{error}</Alert>;
   if (!portfolio) return <Alert severity="info">Портфель не найден</Alert>;
 
   return (
-    <Container maxWidth="lg">
-      {/* Заголовок */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4">{portfolio.name}</Typography>
-      </Box>
+    <AppLayout>
+      <Container>
+        {/* Заголовок */}
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+          <Typography variant="h4">{portfolio.name}</Typography>
+        </Box>
 
-      {/* Кнопки действий */}
-      <Box display="flex" justifyContent="flex-end" gap={1} mb={2}>
-        <Button
-          variant="contained"
-          startIcon={<EditIcon />}
-          onClick={() => setIsEditModalOpen(true)}
-        >
-          Редактировать портфель
-        </Button>
-        <Button
-          variant="outlined"
-          startIcon={<AddIcon />}
-          onClick={() => setIsAddModalOpen(true)}
-        >
-          Добавить актив
-        </Button>
-      </Box>
+        {/* Кнопки действий */}
+        <Box display="flex" justifyContent="flex-end" gap={1} mb={2}>
+          <Button
+            variant="contained"
+            startIcon={<EditIcon />}
+            onClick={() => setIsEditModalOpen(true)}
+          >
+            Редактировать портфель
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<AddIcon />}
+            onClick={() => setIsAddModalOpen(true)}
+          >
+            Добавить актив
+          </Button>
+        </Box>
 
-      {/* Таблица активов */}
-      <Paper>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell />
-              <TableCell>Тикер</TableCell>
-              <TableCell>Название</TableCell>
-              <TableCell>Тип</TableCell>
-              <TableCell>Кол-во</TableCell>
-              <TableCell>Ср. цена</TableCell>
-              <TableCell align="right">Действия</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {assets.map((asset) => (
-              <React.Fragment key={asset.id}>
-                <TableRow>
-                  <TableCell>
-                    <IconButton
-                      size="small"
-                      onClick={() => {
-                        const isOpening = openAssetId !== asset.id;
-                        setOpenAssetId(isOpening ? asset.id : null);
-                        if (isOpening) {
-                          loadAssetTransactions(asset.id);
-                        }
-                      }}
-                    >
-                      {openAssetId === asset.id ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
-                    </IconButton>
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: 500 }}>{asset.ticker}</TableCell>
-                  <TableCell sx={{ color: 'text.secondary' }}>{asset.name}</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={getAssetTypeName(asset.assetType)}
-                      color={getAssetTypeColor(asset.assetType)}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>{asset.totalQuantity}</TableCell>
-                  <TableCell>{asset.averagePurchasePrice.toFixed(2)}</TableCell>
-                  <TableCell align="right">
-                    <Button
-                      size="small"
-                      color="error"
-                      onClick={() => handleDeleteAsset(asset.id)}
-                    >
-                      Удалить
-                    </Button>
-                  </TableCell>
-                </TableRow>
-
-                {/* Раскрытие операций */}
-                <TableRow>
-                  <TableCell colSpan={7} sx={{ py: 0 }}>
-                    <Collapse in={openAssetId === asset.id} timeout="auto">
-                      <AssetTransactions
-                        transactions={assetTransactions[asset.id] || []}
-                        loading={loadingTransactions === asset.id}
-                        onTransactionDelete={(transactionId) =>
-                          handleDeleteTransaction(asset.id, transactionId)
-                        }
-                        onAddTransaction={() => {
-                          setSelectedAssetForTransaction(asset);
-                          setIsTransactionModalOpen(true);
+        {/* Таблица активов */}
+        <Paper>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell />
+                <TableCell>Тикер</TableCell>
+                <TableCell>Название</TableCell>
+                <TableCell>Тип</TableCell>
+                <TableCell>Кол-во</TableCell>
+                <TableCell>Ср. цена</TableCell>
+                <TableCell align="right">Действия</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {assets.map((asset) => (
+                <React.Fragment key={asset.id}>
+                  <TableRow>
+                    <TableCell>
+                      <IconButton
+                        size="small"
+                        onClick={() => {
+                          const isOpening = openAssetId !== asset.id;
+                          setOpenAssetId(isOpening ? asset.id : null);
+                          if (isOpening) {
+                            loadAssetTransactions(asset.id);
+                          }
                         }}
+                      >
+                        {openAssetId === asset.id ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+                      </IconButton>
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 500 }}>{asset.ticker}</TableCell>
+                    <TableCell sx={{ color: 'text.secondary' }}>{asset.name}</TableCell>
+                    <TableCell>
+                      <Chip
+                        label={getAssetTypeName(asset.assetType)}
+                        color={getAssetTypeColor(asset.assetType)}
+                        size="small"
                       />
-                    </Collapse>
-                  </TableCell>
-                </TableRow>
-              </React.Fragment>
-            ))}
-          </TableBody>
-        </Table>
-      </Paper>
+                    </TableCell>
+                    <TableCell>{asset.totalQuantity}</TableCell>
+                    <TableCell>{asset.averagePurchasePrice.toFixed(2)}</TableCell>
+                    <TableCell align="right">
+                      <Button
+                        size="small"
+                        color="error"
+                        onClick={() => handleDeleteAsset(asset.id)}
+                      >
+                        Удалить
+                      </Button>
+                    </TableCell>
+                  </TableRow>
 
-      {/* Кнопка "Назад" */}
-      <Box mt={3}>
-        <Button
-          startIcon={<ArrowBackIcon />}
-          component={Link}
-          to="/portfolios"
-          variant="outlined"
-        >
-          Назад к списку
-        </Button>
-      </Box>
+                  {/* Раскрытие операций */}
+                  <TableRow>
+                    <TableCell colSpan={7} sx={{ py: 0 }}>
+                      <Collapse in={openAssetId === asset.id} timeout="auto">
+                        <AssetTransactions
+                          transactions={assetTransactions[asset.id] || []}
+                          loading={loadingTransactions === asset.id}
+                          onTransactionDelete={(transactionId) =>
+                            handleDeleteTransaction(asset.id, transactionId)
+                          }
+                          onAddTransaction={() => {
+                            setSelectedAssetForTransaction(asset);
+                            setIsTransactionModalOpen(true);
+                          }}
+                        />
+                      </Collapse>
+                    </TableCell>
+                  </TableRow>
+                </React.Fragment>
+              ))}
+            </TableBody>
+          </Table>
+        </Paper>
 
-      {/* Модальные окна */}
-      {isEditModalOpen && portfolio && (
-        <EditPortfolioModal
-          open={true}
-          onClose={() => setIsEditModalOpen(false)}
-          portfolio={portfolio}
-          onSave={handleSave}
-        />
-      )}
+        {/* Кнопка "Назад" */}
+        <Box mt={3}>
+          <Button
+            startIcon={<ArrowBackIcon />}
+            component={Link}
+            to="/portfolios"
+            variant="outlined"
+          >
+            Назад к списку
+          </Button>
+        </Box>
 
-      {isAddModalOpen && (
-        <AddToPortfolioModal
-          open={isAddModalOpen}
-          onClose={() => setIsAddModalOpen(false)}
-          portfolios={portfolios}
-          onAdd={handleAddAsset}
-          loadingPortfolios={loadingPortfolios}
-          fixedPortfolioId={portfolio.id}
-        />
-      )}
+        {/* Модальные окна */}
+        {isEditModalOpen && portfolio && (
+          <EditPortfolioModal
+            open={true}
+            onClose={() => setIsEditModalOpen(false)}
+            portfolio={portfolio}
+            onSave={handleSave}
+          />
+        )}
 
-      {selectedAssetForTransaction && (
-        <TransactionModal
-          open={isTransactionModalOpen}
-          onClose={() => setIsTransactionModalOpen(false)}
-          onSubmit={handleAddTransaction}
-          assetName={selectedAssetForTransaction.name}
-          initialType="Buy"
-          isLoading={false}
-        />
-      )}
+        {isAddModalOpen && (
+          <AddToPortfolioModal
+            key={portfolio?.id + '-add-modal'}
+            open={isAddModalOpen}
+            onClose={() => setIsAddModalOpen(false)}
+            portfolios={portfolios}
+            onAdd={handleAddAsset}
+            loadingPortfolios={loadingPortfolios}
+            fixedPortfolioId={portfolio.id}
+          />
+        )}
 
-    </Container>
+        {selectedAssetForTransaction && (
+          <TransactionModal
+            open={isTransactionModalOpen}
+            onClose={() => setIsTransactionModalOpen(false)}
+            onSubmit={handleAddTransaction}
+            assetName={selectedAssetForTransaction.name}
+            initialType="Buy"
+            isLoading={false}
+            asset={selectedAssetForTransaction} // Передаём актив
+          />
+        )}
+
+      </Container>
+    </AppLayout>
   );
 }

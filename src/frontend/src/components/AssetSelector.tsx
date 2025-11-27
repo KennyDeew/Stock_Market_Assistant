@@ -1,114 +1,143 @@
-import {
-  Autocomplete,
-  TextField,
-  CircularProgress,
-  Box,
-  Typography,
-  Chip,
-} from '@mui/material';
-import { useState, useEffect } from 'react';
-import { useDebounce } from '../hooks/useDebounce';
-import { assetApi } from '../services/assetApi';
+import { Autocomplete, TextField, CircularProgress, Typography, Box, Chip } from '@mui/material';
 import type { AssetShort } from '../types/assetTypes';
+import { useAssetSearch } from '../hooks/useAssetSearch';
 import { getAssetTypeName, getAssetTypeColor } from '../utils/assetTypeUtils';
+import { useState } from 'react';
 
 interface AssetSelectorProps {
+  selectedAsset: AssetShort | null;
   onSelect: (asset: AssetShort | null) => void;
-  selectedAsset?: AssetShort | null;
   disabled?: boolean;
   label?: string;
 }
 
 export default function AssetSelector({
-  onSelect,
   selectedAsset,
-  disabled,
-  label = 'Выберите актив',
+  onSelect,
+  disabled = false,
+  label = 'Поиск актива',
 }: AssetSelectorProps) {
-  const [search, setSearch] = useState('');
-  const [options, setOptions] = useState<AssetShort[]>([]);
-  const [loading, setLoading] = useState(false);
+  const { assets, loading: isLoadingFromSearch, searchAssets, error } = useAssetSearch();
+  const [inputValue, setInputValue] = useState('');
+  const [open, setOpen] = useState(false);
 
-  const debouncedSearch = useDebounce(setSearch, 500);
+  // Не показываем спиннер, если поле пустое
+  const shouldShowLoading = inputValue.trim() !== '' && isLoadingFromSearch;
 
-  useEffect(() => {
-    const loadAssets = async () => {
-      if (!search.trim()) {
-        setOptions([]);
-        return;
-      }
+  // Упростить обработку ввода
+  const handleInputChange = (value: string) => {
+    setInputValue(value);
 
-      setLoading(true);
-      try {
-        const response = await assetApi.getAll({ search, page: 0, pageSize: 10 });
-        setOptions(response.data);
-      } catch (err) {
-        setOptions([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadAssets();
-  }, [search]);
+    // Не выполняем поиск, если компонент disabled
+    if (!disabled && value.trim()) {
+      searchAssets(value, '');
+      setOpen(true);
+    } else {
+      setOpen(false);
+    }
+  };
 
   return (
     <Autocomplete
+      open={open}
+      onOpen={() => {
+        if (!disabled) {
+          setOpen(true);
+        }
+      }}
+      onClose={() => {
+        setOpen(false);
+      }}
+      openOnFocus={true}
+      autoHighlight
+      autoSelect={false}
       value={selectedAsset}
-      onChange={(_, value) => onSelect(value)}
-      options={options}
-      getOptionLabel={(option) => `${option.ticker} — ${option.shortName}`}
+      onChange={(_, value) => {
+        onSelect(value);
+        if (value) {
+          setInputValue(`${value.ticker} — ${value.shortName}`);
+        }
+        setOpen(false);
+      }}
+      inputValue={inputValue}
+      onInputChange={(_, newInputValue) => {
+        handleInputChange(newInputValue);
+      }}
+      options={assets}
+      getOptionLabel={(option) => {
+        const label = `${option.ticker} — ${option.shortName || 'Без названия'}`;
+        return label;
+      }}
       isOptionEqualToValue={(option, value) => option.ticker === value.ticker}
-      loading={loading}
+      loading={shouldShowLoading}
       disabled={disabled}
-      noOptionsText="Начните вводить для поиска..."
+      noOptionsText={inputValue ? 'Нет совпадений' : 'Начните вводить для поиска...'}
+      filterOptions={(x) => {
+        return x;
+      }}
+      clearOnBlur={false}
       renderInput={(params) => (
         <TextField
           {...params}
           label={label}
-          variant="outlined"
-          onChange={(e) => debouncedSearch(e.target.value)}
-          InputProps={{
-            ...params.InputProps,
-            readOnly: disabled,
-            endAdornment: (
-              <>
-                {loading ? <CircularProgress color="inherit" size={20} /> : null}
-                {params.InputProps.endAdornment}
-              </>
-            ),
+          disabled={disabled}
+          sx={{ zIndex: 1 }}
+          error={!!error}
+          helperText={error || undefined}
+          slotProps={{
+            input: {
+              ...params.InputProps,
+              endAdornment: (
+                <>
+                  {shouldShowLoading ? <CircularProgress color="inherit" size={20} /> : null}
+                  {params.InputProps.endAdornment}
+                </>
+              ),
+            },
           }}
+          autoFocus
         />
       )}
       renderOption={(props, option) => (
-        <li {...props} key={option.ticker}>
-          <Box sx={{ flexGrow: 1 }}>
-            <Typography variant="subtitle2" fontWeight={500}>{option.ticker}</Typography>
-            <Typography variant="body2" color="text.secondary">{option.shortName}</Typography>
+        <Box component="li" {...props} key={option.ticker}>
+          <Box>
+            <Typography variant="subtitle2" fontWeight={500}>
+              {option.ticker} — {option.shortName}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {typeof option.currentPrice === 'number' ? option.currentPrice.toFixed(2) : '—'} {option.currency}
+            </Typography>
             <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
               <Chip
                 size="small"
                 label={getAssetTypeName(option.type)}
                 sx={{
                   fontSize: '0.75rem',
-                  '&.MuiChip-root': {
-                    bgcolor: (theme) => {
-                      const color = getAssetTypeColor(option.type);
-                      return theme.palette[color].main;
-                    },
-                    color: 'white',
+                  '& .MuiChip-label': { fontSize: '0.75rem', fontWeight: 500 },
+                  bgcolor: (theme) => {
+                    const color = getAssetTypeColor(option.type);
+                    return theme.palette[color].main;
                   },
+                  color: 'white',
                 }}
               />
               <Typography variant="caption" color="text.secondary">
-                {typeof option.currentPrice === 'number'
-                  ? `${option.currentPrice.toFixed(2)} ${option.currency}`
+                {option.changePercent != null
+                  ? (option.changePercent >= 0 ? '+' : '') + option.changePercent.toFixed(2) + '%'
                   : '—'}
               </Typography>
             </Box>
           </Box>
-        </li>
+        </Box>
       )}
+      clearOnEscape
+      disablePortal={false}
+      sx={{ 
+        zIndex: 1300,
+        '& .MuiAutocomplete-popper': {
+          zIndex: 1400
+        }
+      }}
     />
   );
 }

@@ -14,6 +14,8 @@ import {
 } from '@mui/material';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 
+import type { PortfolioAssetShort } from '../types/portfolioAssetTypes';
+
 type TransactionType = 'Buy' | 'Sell';
 
 interface TransactionModalProps {
@@ -28,6 +30,7 @@ interface TransactionModalProps {
   assetName: string;
   initialType?: TransactionType;
   isLoading?: boolean;
+  asset?: PortfolioAssetShort;
 }
 
 const style = {
@@ -49,23 +52,23 @@ export default function TransactionModal({
   assetName,
   initialType = 'Buy',
   isLoading = false,
+  asset, // 🔥 Получаем актив
 }: TransactionModalProps) {
   const [type, setType] = useState<TransactionType>(initialType);
   const [quantity, setQuantity] = useState('');
   const [price, setPrice] = useState('');
   const getDefaultDateTimeLocal = (): string => {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  const hours = String(now.getHours()).padStart(2, '0');
-  const minutes = String(now.getMinutes()).padStart(2, '0');
-  return `${year}-${month}-${day}T${hours}:${minutes}`;
-};
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
 
-const [executedAt, setExecutedAt] = useState(getDefaultDateTimeLocal());
-
-const [error, setError] = useState('');
+  const [executedAt, setExecutedAt] = useState(getDefaultDateTimeLocal());
+  const [error, setError] = useState('');
 
   const handleSubmit = () => {
     const q = parseFloat(quantity);
@@ -87,6 +90,9 @@ const [error, setError] = useState('');
       transactionDate: new Date(executedAt).toISOString(),
     });
   };
+
+  // Проверка: будет ли актив удалён после продажи?
+  const willBeZero = asset && type === 'Sell' && asset.totalQuantity <= parseFloat(quantity || '0');
 
   return (
     <Modal open={open} onClose={onClose}>
@@ -156,10 +162,17 @@ const [error, setError] = useState('');
             slotProps={{
               inputLabel: { shrink: true },
               input: {
-                inputProps: { step: 60 } // можно указать шаг (например, 60 секунд)
+                inputProps: { step: 60 }
               }
             }}
           />
+
+          {/* Предупреждение: актив будет удалён */}
+          {willBeZero && (
+            <Alert severity="warning" sx={{ mt: 2 }}>
+              После этой продажи актив будет полностью удалён из портфеля.
+            </Alert>
+          )}
 
           <Box mt={2} display="flex" gap={2}>
             <Button

@@ -88,6 +88,21 @@ export default function AddToPortfolioModal({
     }
   }, [initialAsset, price, initialPurchasePrice]);
 
+  // 🔥 Сброс формы только при полном закрытии модалки
+  useEffect(() => {
+    if (!open) {
+      // Даем время анимации закрытия
+      const timer = setTimeout(() => {
+        setSelectedAsset(null);
+        setPortfolioId('');
+        setQuantity('');
+        setPrice('');
+        setError('');
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [open]);
+
   const handleSubmit = async () => {
     if (!selectedAsset) return setError('Выберите актив');
     if (!portfolioId) return setError('Выберите портфель');
@@ -101,7 +116,6 @@ export default function AddToPortfolioModal({
       await onAdd(selectedAsset, portfolioId, q, p);
       openSnackbar('Актив успешно добавлен в портфель', 'success');
       onClose();
-      resetForm();
     } catch (err: any) {
       openSnackbar('Ошибка: ' + (err.message || 'не удалось добавить актив'), 'error');
     } finally {
@@ -109,19 +123,20 @@ export default function AddToPortfolioModal({
     }
   };
 
-  const resetForm = () => {
-    setSelectedAsset(null);
-    setPortfolioId('');
-    setQuantity('');
-    setPrice('');
-    setError('');
-  };
-
   // Находим текущий портфель для отображения
   const currentPortfolio = portfolios.find(p => p.id === portfolioId);
+  const isCrypto = selectedAsset?.type === 'crypto';
 
   return (
-    <Modal open={open} onClose={onClose} disableRestoreFocus>
+    <Modal 
+      open={open} 
+      onClose={onClose} 
+      // 🔥 ИСПРАВЛЕННЫЕ ПРОПСЫ:
+      disableRestoreFocus={false} // Разрешить восстановление фокуса
+      disableEscapeKeyDown={false} // Разрешить ESC
+      keepMounted={false} // Не держать в DOM когда закрыто
+      closeAfterTransition // Плавное закрытие
+    >
       <Box sx={modalStyle}>
         <Typography variant="h6" component="h2" gutterBottom fontWeight="bold">
           Добавить актив в портфель
@@ -209,7 +224,10 @@ export default function AddToPortfolioModal({
             variant="outlined"
             slotProps={{
               input: {
-                inputProps: { min: 0.001, step: 0.001 },
+                inputProps: {
+                  min: isCrypto ? 0.001 : 1,
+                  step: isCrypto ? 0.001 : 1
+                },
               },
             }}
           />

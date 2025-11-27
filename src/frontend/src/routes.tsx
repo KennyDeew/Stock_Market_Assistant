@@ -6,6 +6,7 @@ import PortfolioListPage from './pages/PortfolioListPage.tsx';
 import PortfolioCreatePage from './pages/PortfolioCreatePage.tsx';
 import PortfolioDetailPage from './pages/PortfolioDetailPage.tsx';
 import AssetCatalogPage from './pages/AssetCatalogPage.tsx';
+import AssetDetailPage from './pages/AssetDetailPage.tsx';
 import ProfilePage from './pages/ProfilePage.tsx';
 import AlertsListPage from './pages/AlertsListPage.tsx';
 import { ProtectedRoute } from './components/ProtectedRoute.tsx';
@@ -35,6 +36,9 @@ const Routes = () => (
     {/* Главная — без лэйаута, лэйаут решается внутри */}
     <Route path="/" element={<DashboardPage />} />
 
+    {/* Детальная страница актива */}
+    <Route path="/asset/:ticker" element={<AssetDetailPage />} />
+    
     {/* Редирект */}
     <Route path="*" element={<Navigate to="/" />} />
   </RouterRoutes>

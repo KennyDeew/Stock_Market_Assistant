@@ -1,5 +1,5 @@
-import axios, { type AxiosInstance } from 'axios';
-import { handleApiError } from './errorHandler';
+import { createPrivateApiClient } from './apiClient'; // Приватный клиент
+
 import type {
   PortfolioShort,
   CreatePortfolioRequest,
@@ -18,52 +18,11 @@ import type {
   UpdateTransactionRequest,
 } from '../types/portfolioAssetTypes';
 
-// 🔹 Axios инстанс для /portfolios
-const portfolioApiInstance = axios.create({
-  baseURL: import.meta.env.VITE_PORTFOLIO_API_URL + '/api/v1/portfolios',
-});
+// 🔹 Инстанс для /portfolios
+const portfolioApiInstance = createPrivateApiClient(import.meta.env.VITE_PORTFOLIO_API_URL + '/api/v1/portfolios');
 
-// 🔹 Отдельный инстанс для /portfolio-assets
-const portfolioAssetsApi = axios.create({
-  baseURL: import.meta.env.VITE_PORTFOLIO_API_URL + '/api/v1/portfolio-assets',
-});
-
-// 🔹 Общая функция для настройки интерсепторов
-const setupInterceptors = (instance: AxiosInstance) => {
-  // Добавляем Authorization
-  instance.interceptors.request.use(
-    (config) => {
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
-        try {
-          const { accessToken } = JSON.parse(storedUser);
-          if (accessToken) {
-            config.headers.Authorization = `Bearer ${accessToken}`;
-          }
-        } catch (e) {
-          console.error('Failed to parse stored user');
-        }
-      }
-      return config;
-    },
-    (error) => {
-      return Promise.reject(error);
-    }
-  );
-
-  // Обработка ошибок
-  instance.interceptors.response.use(
-    (response) => response,
-    (error) => {
-      handleApiError(error);
-      return Promise.reject(error);
-    }
-  );
-};
-
-// Настраиваем оба инстанса
-setupInterceptors(portfolioApiInstance);
-setupInterceptors(portfolioAssetsApi);
+// 🔹 Инстанс для /portfolio-assets
+const portfolioAssetsApi = createPrivateApiClient(import.meta.env.VITE_PORTFOLIO_API_URL + '/api/v1/portfolio-assets');
 
 // 🔹 Основные методы портфеля
 export const portfolioApi = {
