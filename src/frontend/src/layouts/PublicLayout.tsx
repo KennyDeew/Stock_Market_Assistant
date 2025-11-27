@@ -3,7 +3,6 @@ import { useAuth } from '../hooks/useAuth';
 import { Outlet, useNavigate } from 'react-router-dom';
 import React from 'react';
 
-// ✅ Добавлен интерфейс для пропсов с children
 interface PublicLayoutProps {
   children?: React.ReactNode;
 }

@@ -16,7 +16,11 @@ import {
 interface AlertModalProps {
   open: boolean;
   onClose: () => void;
-  asset: { ticker: string; shortName: string; currency: string };
+  asset: { 
+    ticker: string; 
+    shortName: string; 
+    currency: string;
+  };
   onSubmit: (data: { targetPrice: number; condition: 'above' | 'below' }) => Promise<void>;
 }
 
@@ -30,7 +34,7 @@ export default function AlertModal({ open, onClose, asset, onSubmit }: AlertModa
 
     setLoading(true);
     try {
-      await onSubmit({ targetPrice, condition }); // ✅ Передаём правильно
+      await onSubmit({ targetPrice, condition });
     } finally {
       setLoading(false);
     }
@@ -51,7 +55,12 @@ export default function AlertModal({ open, onClose, asset, onSubmit }: AlertModa
           margin="normal"
           value={targetPrice}
           onChange={(e) => setTargetPrice(e.target.value === '' ? '' : Number(e.target.value))}
-          InputProps={{ endAdornment: <span>{asset.currency}</span> }}
+          slotProps={{
+            input: {
+              endAdornment: <span>{asset.currency}</span>,
+            },
+          }}
+          autoFocus
         />
 
         <FormControl fullWidth margin="normal">

@@ -1,27 +1,33 @@
-import axios from 'axios';
+import { createPrivateApiClient } from './apiClient';
 import type { CreateAlertRequest, AlertResponse } from '../types/alertTypes';
 
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL + '/api/v1/alerts',
-});
+// Создаём приватный API-клиент
+const api = createPrivateApiClient(import.meta.env.VITE_PORTFOLIO_API_URL + '/api/v1/alerts');
 
-api.interceptors.request.use((config) => {
-  const storedUser = localStorage.getItem('user');
-  if (storedUser) {
-    try {
-      const { accessToken } = JSON.parse(storedUser);
-      if (accessToken) {
-        config.headers.Authorization = `Bearer ${accessToken}`;
-      }
-    } catch (e) {
-      console.error('Failed to parse stored user');
-    }
-  }
-  return config;
-});
-
+/**
+ * API для работы с уведомлениями
+ */
 export const alertsApi = {
-  getAll: (): Promise<{ data: AlertResponse[] }> => api.get(''),
-  create: (data: CreateAlertRequest) => api.post<AlertResponse>('', data),
-  delete: (id: string) => api.delete(`/${id}`),
+  /**
+   * Получить все уведомления
+   */
+  getAll: async (): Promise<AlertResponse[]> => {
+    const response = await api.get<AlertResponse[]>('');
+    return response.data;
+  },
+
+  /**
+   * Создать новое уведомление
+   */
+  create: async (data: CreateAlertRequest): Promise<AlertResponse> => {
+    const response = await api.post<AlertResponse>('', data);
+    return response.data;
+  },
+
+  /**
+   * Удалить уведомление
+   */
+  delete: async (id: string): Promise<void> => {
+    await api.delete(`/${id}`); // DELETE ничего не возвращает
+  },
 };

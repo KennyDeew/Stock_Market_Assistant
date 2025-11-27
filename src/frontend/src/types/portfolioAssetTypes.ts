@@ -22,8 +22,8 @@ export const PortfolioAssetTransactionTypeValue = {
 export type PortfolioAssetTransactionTypeValue =
   (typeof PortfolioAssetTransactionTypeValue)[keyof typeof PortfolioAssetTransactionTypeValue];
 
- /**
- * Выходные значения (от сервера)
+/**
+ * Выходные значения (от сервера) — строки из enum
  */
 export const PortfolioAssetTypeLabel = {
   Share: 'Share',
@@ -41,6 +41,15 @@ export const PortfolioAssetTransactionTypeLabel = {
 export type PortfolioAssetTransactionTypeLabel =
   (typeof PortfolioAssetTransactionTypeLabel)[keyof typeof PortfolioAssetTransactionTypeLabel];
 
+/**
+ * Тип актива, принимаемый API (как строка из enum PortfolioAssetType)
+ * Используется в alertApi, portfolioApi и других
+ */
+export type ApiAssetType = PortfolioAssetTypeLabel;
+
+/**
+ * Краткая информация об активе в портфеле
+ */
 export type PortfolioAssetShort = {
   id: string;
   portfolioId: string;
@@ -54,14 +63,18 @@ export type PortfolioAssetShort = {
   transactions?: PortfolioAssetTransaction[];
 };
 
+/**
+ * Полная информация об активе в портфеле
+ */
 export type PortfolioAsset = PortfolioAssetShort & {
-  stockCardId: string;
-  name: string;
   description: string;
   lastUpdated: string;
   transactions: PortfolioAssetTransaction[];
 };
 
+/**
+ * Транзакция по активу
+ */
 export type PortfolioAssetTransaction = {
   id: string;
   portfolioAssetId: string;
@@ -72,6 +85,9 @@ export type PortfolioAssetTransaction = {
   transactionType: PortfolioAssetTransactionTypeLabel;
 };
 
+/**
+ * Запрос на создание актива в портфеле
+ */
 export type CreatePortfolioAssetRequest = {
   portfolioId: string;
   stockCardId: string;
@@ -80,6 +96,9 @@ export type CreatePortfolioAssetRequest = {
   quantity: number;
 };
 
+/**
+ * Сводка по доходности портфеля
+ */
 export type PortfolioProfitLoss = {
   portfolioId: string;
   portfolioName: string;
@@ -105,6 +124,9 @@ export type PortfolioProfitLoss = {
   }>;
 };
 
+/**
+ * Запрос на создание транзакции
+ */
 export interface CreateTransactionRequest {
   transactionType: PortfolioAssetTransactionTypeValue;
   quantity: number;
@@ -112,6 +134,9 @@ export interface CreateTransactionRequest {
   transactionDate: string;
 }
 
+/**
+ * Запрос на обновление транзакции
+ */
 export type UpdateTransactionRequest = {
   transactionType: PortfolioAssetTransactionTypeValue;
   quantity: number;
@@ -120,6 +145,9 @@ export type UpdateTransactionRequest = {
   currency: string;
 };
 
+/**
+ * Доходность одного актива
+ */
 export type PortfolioAssetProfitLoss = {
   assetId: string;
   portfolioId: string;

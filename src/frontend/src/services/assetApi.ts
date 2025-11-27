@@ -1,39 +1,11 @@
-import axios from 'axios';
+import { createPublicApiClient } from './apiClient'; // Публичный клиент
 import { handleApiError } from './errorHandler';
 import type { ShareCard, BondCard, CryptoCard, AssetShort } from '../types/assetTypes';
 
 // Создаём инстансы с полными URL через переменные окружения
-const stockApi = axios.create({
-  baseURL: import.meta.env.VITE_STOCKCARD_API_URL + '/api/v1/ShareCard',
-});
-
-const bondApi = axios.create({
-  baseURL: import.meta.env.VITE_STOCKCARD_API_URL + '/api/v1/BondCard',
-});
-
-const cryptoApi = axios.create({
-  baseURL: import.meta.env.VITE_STOCKCARD_API_URL + '/api/v1/CryptoCard',
-});
-
-// Добавляем Authorization-заголовок, если есть токен
-const addAuthInterceptor = (instance: any) => {
-  instance.interceptors.request.use((config: any) => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        const { accessToken } = JSON.parse(storedUser);
-        if (accessToken) {
-          config.headers.Authorization = `Bearer ${accessToken}`;
-        }
-      } catch (e) {
-        console.warn('Failed to read access token');
-      }
-    }
-    return config;
-  });
-};
-
-[stockApi, bondApi, cryptoApi].forEach(addAuthInterceptor);
+const stockApi = createPublicApiClient(import.meta.env.VITE_STOCKCARD_API_URL + '/api/v1/ShareCard');
+const bondApi = createPublicApiClient(import.meta.env.VITE_STOCKCARD_API_URL + '/api/v1/BondCard');
+const cryptoApi = createPublicApiClient(import.meta.env.VITE_STOCKCARD_API_URL + '/api/v1/CryptoCard');
 
 export const assetApi = {
   /**
@@ -121,7 +93,7 @@ export const assetApi = {
   /**
    * Универсальный метод: поиск и фильтрация активов
    */
-   getAll: async ({
+  getAll: async ({
     search = '',
     type = '',
     page = 0,
@@ -200,7 +172,7 @@ export const assetApi = {
 
       const start = page * pageSize;
       const data = filtered.slice(start, start + pageSize);
-
+      console.log('📊 Полученные данные:', { search, type, stocks: stocks.length, bonds: bonds.length, crypto: crypto.length });
       return { data, total: filtered.length };
     } catch (error) {
       console.error('Критическая ошибка в getAll:', error);

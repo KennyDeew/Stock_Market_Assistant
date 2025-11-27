@@ -13,6 +13,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import type { RegisterFormValues } from '../types/authTypes';
+import AppLayout from '../components/AppLayout';
 
 export default function RegisterPage() {
   const { register, checkEmail } = useAuth();
@@ -107,112 +108,116 @@ export default function RegisterPage() {
   };
 
   return (
-    <Container maxWidth="sm" sx={{ py: 4 }}>
-      <Paper sx={{ p: 4, borderRadius: 2, boxShadow: 2 }}>
-        <Typography variant="h4" component="h1" gutterBottom align="center" fontWeight={600}>
-          Регистрация
-        </Typography>
+    <AppLayout maxWidth={"sm"}>
+      <Container>
+        <Paper sx={{ p: 4, borderRadius: 2, boxShadow: 2 }}>
+          <Typography variant="h4" component="h1" gutterBottom align="center" fontWeight={600}>
+            Регистрация
+          </Typography>
 
-        {errors.general && <Alert severity="error" sx={{ mb: 2 }}>{errors.general}</Alert>}
+          {errors.general && <Alert severity="error" sx={{ mb: 2 }}>{errors.general}</Alert>}
 
-        <form onSubmit={handleSubmit}>
-          <TextField
-            label="ФИО"
-            type="text"
-            fullWidth
-            margin="normal"
-            name="fullName"
-            value={formData.fullName}
-            onChange={handleChange}
-            required
-            error={!!errors.fullName}
-            helperText={errors.fullName}
-            sx={{ borderRadius: 1 }}
-          />
+          <form onSubmit={handleSubmit}>
+            <TextField
+              label="Имя"
+              type="text"
+              fullWidth
+              margin="normal"
+              name="fullName"
+              value={formData.fullName}
+              onChange={handleChange}
+              required
+              error={!!errors.fullName}
+              helperText={errors.fullName}
+              sx={{ borderRadius: 1 }}
+            />
 
-          <TextField
-            label="Email"
-            type="email"
-            fullWidth
-            margin="normal"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            required
-            error={!!errors.email}
-            helperText={errors.email}
-            InputProps={{
-              endAdornment: (
-                <Button
-                  size="small"
-                  onClick={handleCheckEmail}
-                  disabled={checkingEmail || !formData.email}
-                  sx={{ minWidth: 'auto', px: 1 }}
-                >
-                  {checkingEmail ? 'Проверка...' : 'Проверить'}
-                </Button>
-              ),
-            }}
-          />
+            <TextField
+              label="Email"
+              type="email"
+              fullWidth
+              margin="normal"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              error={!!errors.email}
+              helperText={errors.email}
+              slotProps={{
+                input: {
+                  endAdornment: (
+                    <Button
+                      size="small"
+                      onClick={handleCheckEmail}
+                      disabled={checkingEmail || !formData.email}
+                      sx={{ minWidth: 'auto', px: 1 }}
+                    >
+                      {checkingEmail ? 'Проверка...' : 'Проверить'}
+                    </Button>
+                  ),
+                },
+              }}
+            />
 
-          <TextField
-            label="Пароль"
-            type="password"
-            fullWidth
-            margin="normal"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            required
-            error={!!errors.password}
-            helperText={errors.password}
-            sx={{ borderRadius: 1 }}
-          />
+            <TextField
+              label="Пароль"
+              type="password"
+              fullWidth
+              margin="normal"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+              error={!!errors.password}
+              helperText={errors.password}
+              sx={{ borderRadius: 1 }}
+            />
 
-          <TextField
-            label="Подтвердите пароль"
-            type="password"
-            fullWidth
-            margin="normal"
-            name="confirmPassword"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            required
-            error={!!errors.confirmPassword}
-            helperText={errors.confirmPassword}
-            sx={{ borderRadius: 1 }}
-          />
+            <TextField
+              label="Подтвердите пароль"
+              type="password"
+              fullWidth
+              margin="normal"
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              required
+              error={!!errors.confirmPassword}
+              helperText={errors.confirmPassword}
+              sx={{ borderRadius: 1 }}
+            />
 
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            fullWidth
-            size="large"
-            sx={{ mt: 3, py: 1.5 }}
-            disabled={loading}
-          >
-            {loading ? <CircularProgress size={24} /> : 'Зарегистрироваться'}
-          </Button>
-        </form>
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              fullWidth
+              size="large"
+              sx={{ mt: 3, py: 1.5 }}
+              disabled={loading}
+            >
+              {loading ? <CircularProgress size={24} /> : 'Зарегистрироваться'}
+            </Button>
+          </form>
 
-        <Box mt={2} textAlign="center">
-          <Link href="/login" variant="body2">
-            Уже есть аккаунт? Войти
-          </Link>
-        </Box>
+          <Box mt={2} textAlign="center">
+            <Link href="/login" variant="body2">
+              Уже есть аккаунт? Войти
+            </Link>
+          </Box>
 
-        <Box sx={{ mt: 3, textAlign: 'center' }}>
-          <Link
-            component="button"
-            variant="body2"
-            onClick={() => navigate('/')}
-            sx={{ textDecoration: 'none', color: 'primary.main', fontWeight: 500 }}
-          >
-            ← Вернуться на главную
-          </Link>
-        </Box>
-      </Paper>
-    </Container>
+          <Box sx={{ mt: 3, textAlign: 'center' }}>
+            <Link
+              component="button"
+              variant="body2"
+              onClick={() => navigate('/')}
+              sx={{ textDecoration: 'none', color: 'primary.main', fontWeight: 500 }}
+            >
+              ← Вернуться на главную
+            </Link>
+          </Box>
+        </Paper>
+      </Container>
+    </AppLayout>
   );
 }

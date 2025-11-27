@@ -3,8 +3,9 @@ import type { ApiError } from '../types/errorTypes';
 
 /**
  * Централизованная обработка ошибок API
+ * Возвращает rejected Promise
  */
-export const handleApiError = (error: unknown) => {
+export const handleApiError = (error: unknown): Promise<never> => {
   // Проверяем, является ли ошибка Axios-ошибкой
   if (error instanceof AxiosError) {
     const axiosError = error as AxiosError<{ message?: string } | ApiError | undefined>;
@@ -41,4 +42,7 @@ export const handleApiError = (error: unknown) => {
   } else {
     console.error('Неизвестная ошибка:', error);
   }
+
+  // Проброс ошибки дальше
+  return Promise.reject(error);
 };

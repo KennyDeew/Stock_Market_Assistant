@@ -16,7 +16,8 @@ import {
   MenuItem,
 } from '@mui/material';
 import { Link } from 'react-router-dom';
-import type { SelectChangeEvent } from '@mui/material/Select'; // ✅ Правильный тип
+import type { SelectChangeEvent } from '@mui/material/Select';
+import AppLayout from '../components/AppLayout';
 
 export default function PortfolioCreatePage() {
   const navigate = useNavigate();
@@ -59,7 +60,6 @@ export default function PortfolioCreatePage() {
     }));
   };
 
-  // ✅ Используем SelectChangeEvent — правильный тип от MUI
   const handleCurrencyChange = (e: SelectChangeEvent<string>) => {
     setFormData((prev) => ({
       ...prev,
@@ -102,67 +102,69 @@ export default function PortfolioCreatePage() {
   };
 
   return (
-    <Container maxWidth="sm">
-      <Paper sx={{ p: 4, mt: 4 }}>
-        <Typography variant="h5" component="h1" gutterBottom>
-          Создание портфеля
-        </Typography>
+    <AppLayout>
+      <Container>
+        <Paper sx={{ p: 4, mt: 4 }}>
+          <Typography variant="h5" component="h1" gutterBottom>
+            Создание портфеля
+          </Typography>
 
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-        <form onSubmit={handleSubmit}>
-          {/* Название */}
-          <TextField
-            label="Название"
-            name="name"
-            value={formData.name}
-            onChange={handleNameChange}
-            onBlur={handleBlur('name')}
-            fullWidth
-            margin="normal"
-            required
-            autoFocus
-            error={touched.name && !!errors.name}
-            helperText={touched.name && errors.name}
-            placeholder="Например: Основной"
-          />
-
-          {/* Валюта */}
-          <FormControl fullWidth margin="normal" required>
-            <InputLabel>Валюта</InputLabel>
-            <Select
-              name="currency"
-              value={formData.currency}
-              onChange={handleCurrencyChange} // ✅ Теперь совместимо
-              label="Валюта"
-            >
-              <MenuItem value="RUB">RUB ₽</MenuItem>
-              <MenuItem value="USD">USD $</MenuItem>
-              <MenuItem value="EUR">EUR €</MenuItem>
-            </Select>
-          </FormControl>
-
-          <Box mt={3} display="flex" gap={2}>
-            <Button
-              type="submit"
-              variant="contained"
-              color="primary"
-              disabled={loading || !isFormValid}
+          <form onSubmit={handleSubmit}>
+            {/* Название */}
+            <TextField
+              label="Название"
+              name="name"
+              value={formData.name}
+              onChange={handleNameChange}
+              onBlur={handleBlur('name')}
               fullWidth
-            >
-              {loading ? 'Создание...' : 'Создать'}
-            </Button>
-            <Button
-              component={Link}
-              to="/portfolios"
-              variant="outlined"
-              fullWidth
-            >
-              Отмена
-            </Button>
-          </Box>
-        </form>
-      </Paper>
-    </Container>
+              margin="normal"
+              required
+              autoFocus
+              error={touched.name && !!errors.name}
+              helperText={touched.name && errors.name}
+              placeholder="Например: Основной"
+            />
+
+            {/* Валюта */}
+            <FormControl fullWidth margin="normal" required>
+              <InputLabel>Валюта</InputLabel>
+              <Select
+                name="currency"
+                value={formData.currency}
+                onChange={handleCurrencyChange} // ✅ Теперь совместимо
+                label="Валюта"
+              >
+                <MenuItem value="RUB">RUB ₽</MenuItem>
+                <MenuItem value="USD">USD $</MenuItem>
+                <MenuItem value="EUR">EUR €</MenuItem>
+              </Select>
+            </FormControl>
+
+            <Box mt={3} display="flex" gap={2}>
+              <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                disabled={loading || !isFormValid}
+                fullWidth
+              >
+                {loading ? 'Создание...' : 'Создать'}
+              </Button>
+              <Button
+                component={Link}
+                to="/portfolios"
+                variant="outlined"
+                fullWidth
+              >
+                Отмена
+              </Button>
+            </Box>
+          </form>
+        </Paper>
+      </Container>
+    </AppLayout>
   );
 }

@@ -12,6 +12,7 @@ import {
   Alert,
   CircularProgress,
 } from '@mui/material';
+import AppLayout from '../components/AppLayout';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -42,67 +43,69 @@ export default function LoginPage() {
   };
 
   return (
-    <Container maxWidth="sm" sx={{ py: 4 }}>
-      <Paper sx={{ p: 4, borderRadius: 2, boxShadow: 2 }}>
-        <Typography variant="h4" component="h1" gutterBottom align="center" fontWeight={600}>
-          Вход
-        </Typography>
+    <AppLayout maxWidth={"sm"}>
+      <Container>
+        <Paper sx={{ p: 4, borderRadius: 2, boxShadow: 2 }}>
+          <Typography variant="h4" component="h1" gutterBottom align="center" fontWeight={600}>
+            Вход
+          </Typography>
 
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-        <form onSubmit={handleSubmit}>
-          <TextField
-            label="Email"
-            type="email"
-            fullWidth
-            margin="normal"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            autoFocus
-            sx={{ borderRadius: 1 }}
-          />
-          <TextField
-            label="Пароль"
-            type="password"
-            fullWidth
-            margin="normal"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            sx={{ borderRadius: 1 }}
-          />
+          <form onSubmit={handleSubmit}>
+            <TextField
+              label="Email"
+              type="email"
+              fullWidth
+              margin="normal"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoFocus
+              sx={{ borderRadius: 1 }}
+            />
+            <TextField
+              label="Пароль"
+              type="password"
+              fullWidth
+              margin="normal"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              sx={{ borderRadius: 1 }}
+            />
 
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            fullWidth
-            size="large"
-            sx={{ mt: 3, py: 1.5 }}
-            disabled={loading}
-          >
-            {loading ? <CircularProgress size={24} /> : 'Войти'}
-          </Button>
-        </form>
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              fullWidth
+              size="large"
+              sx={{ mt: 3, py: 1.5 }}
+              disabled={loading}
+            >
+              {loading ? <CircularProgress size={24} /> : 'Войти'}
+            </Button>
+          </form>
 
-        <Box mt={2} textAlign="center">
-          <Link href="/register" variant="body2">
-            Нет аккаунта? Зарегистрироваться
-          </Link>
-        </Box>
+          <Box mt={2} textAlign="center">
+            <Link href="/register" variant="body2">
+              Нет аккаунта? Зарегистрироваться
+            </Link>
+          </Box>
 
-        <Box sx={{ mt: 3, textAlign: 'center' }}>
-          <Link
-            component="button"
-            variant="body2"
-            onClick={() => navigate('/')}
-            sx={{ textDecoration: 'none', color: 'primary.main', fontWeight: 500 }}
-          >
-            ← Вернуться на главную
-          </Link>
-        </Box>
-      </Paper>
-    </Container>
+          <Box sx={{ mt: 3, textAlign: 'center' }}>
+            <Link
+              component="button"
+              variant="body2"
+              onClick={() => navigate('/')}
+              sx={{ textDecoration: 'none', color: 'primary.main', fontWeight: 500 }}
+            >
+              ← Вернуться на главную
+            </Link>
+          </Box>
+        </Paper>
+      </Container>
+    </AppLayout>
   );
 }
