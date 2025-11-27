@@ -50,35 +50,30 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
         /// </summary>
         /// <param name="assetType">Тип финансового актива</param>
         /// <param name="stockCardId">Идентификатор ценной бумаги</param>
-        /// <param name="toRetrieveCurrentPrice">Требуется ли считывать текущую цену по ценной бумаге</param>
         /// <returns></returns>
-        public async Task<StockCardInfoDto> GetStockCardInfoAsync(PortfolioAssetType assetType, Guid stockCardId, bool toRetrieveCurrentPrice)
+        public async Task<StockCardInfoDto> GetStockCardInfoAsync(PortfolioAssetType assetType, Guid stockCardId)
         {
             return assetType switch
             {
-                PortfolioAssetType.Share => await GetShareCardInfoAsync(stockCardId, toRetrieveCurrentPrice),
-                PortfolioAssetType.Bond => await GetBondCardInfoAsync(stockCardId, toRetrieveCurrentPrice),
+                PortfolioAssetType.Share => await GetShareCardInfoAsync(stockCardId),
+                PortfolioAssetType.Bond => await GetBondCardInfoAsync(stockCardId),
                 _ => new StockCardInfoDto(string.Empty, string.Empty, string.Empty)
             };
         }
 
-        private async Task<StockCardInfoDto> GetShareCardInfoAsync(Guid stockCardId, bool toRetrieveCurrentPrice)
+        private async Task<StockCardInfoDto> GetShareCardInfoAsync(Guid stockCardId)
         {
-            if (toRetrieveCurrentPrice)
-                await _stockCardServiceGateway.UpdateAllPricesForShareCardsAsync();
             var shareCard = await _stockCardServiceGateway.GetShortShareCardModelByIdAsync(stockCardId);
             if (shareCard is null)
             {
                 _logger.LogWarning("Акция с ID {StockCardId} не найдена в сервисе карточек активов", stockCardId);
                 return new StockCardInfoDto(string.Empty, string.Empty, string.Empty);
             }
-            return new StockCardInfoDto(shareCard.Ticker, shareCard.Name, shareCard.Description ?? string.Empty, toRetrieveCurrentPrice ? shareCard.CurrentPrice : null, shareCard.Currency);
+            return new StockCardInfoDto(shareCard.Ticker, shareCard.Name, shareCard.Description ?? string.Empty, shareCard.CurrentPrice, shareCard.Currency);
         }
 
-        private async Task<StockCardInfoDto> GetBondCardInfoAsync(Guid stockCardId, bool toRetrieveCurrentPrice)
+        private async Task<StockCardInfoDto> GetBondCardInfoAsync(Guid stockCardId)
         {
-            if (toRetrieveCurrentPrice)
-                await _stockCardServiceGateway.UpdateAllPricesForBondCardsAsync();
             var bondCard = await _stockCardServiceGateway.GetShortBondCardModelByIdAsync(stockCardId);
             if (bondCard is null)
             {
@@ -127,7 +122,7 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                 }
 
                 PortfolioAsset asset = new(Guid.NewGuid(), dto.PortfolioId, dto.StockCardId, dto.AssetType);
-                var cardInfo = await GetStockCardInfoAsync(asset.AssetType, asset.StockCardId, false);
+                var cardInfo = await GetStockCardInfoAsync(asset.AssetType, asset.StockCardId);
 
                 var initialTransaction = new PortfolioAssetTransaction(
                     Guid.NewGuid(),
@@ -316,7 +311,7 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                     return null;
                 }
 
-                var cardInfo = await GetStockCardInfoAsync(asset.AssetType, asset.StockCardId, false);
+                var cardInfo = await GetStockCardInfoAsync(asset.AssetType, asset.StockCardId);
                 var assetDto = new PortfolioAssetDto(
                     asset.Id,
                     asset.PortfolioId,
@@ -521,7 +516,7 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                 if (dto.TransactionType == PortfolioAssetTransactionType.Sell && dto.Quantity > asset.TotalQuantity)
                     throw new InvalidOperationException("Недостаточно активов для продажи");
 
-                var cardInfo = await GetStockCardInfoAsync(asset.AssetType, asset.StockCardId, false);
+                var cardInfo = await GetStockCardInfoAsync(asset.AssetType, asset.StockCardId);
 
                 PortfolioAssetTransaction transaction = new(
                     Guid.NewGuid(),
@@ -653,7 +648,7 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                     return null;
                 }
 
-                var cardInfo = await GetStockCardInfoAsync(asset.AssetType, asset.StockCardId, true);
+                var cardInfo = await GetStockCardInfoAsync(asset.AssetType, asset.StockCardId);
 
                 return calculationType switch
                 {

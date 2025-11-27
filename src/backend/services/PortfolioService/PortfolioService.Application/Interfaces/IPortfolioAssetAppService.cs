@@ -84,8 +84,7 @@ namespace StockMarketAssistant.PortfolioService.Application.Interfaces
         /// </summary>
         /// <param name="assetType">Тип финансового актива</param>
         /// <param name="stockCardId">Идентификатор ценной бумаги</param>
-        /// <param name="toRetrieveCurrentPrice">Требуется ли считывать текущую цену по ценной бумаге</param>
         /// <returns></returns>
-        Task<StockCardInfoDto> GetStockCardInfoAsync(PortfolioAssetType assetType, Guid stockCardId, bool toRetrieveCurrentPrice);
+        Task<StockCardInfoDto> GetStockCardInfoAsync(PortfolioAssetType assetType, Guid stockCardId);
     }
 }

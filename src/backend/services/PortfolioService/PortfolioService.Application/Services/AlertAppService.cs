@@ -146,7 +146,7 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                 decimal? currentPrice = null;
                 try
                 {
-                    var cardInfo = await portfolioAssetAppService.GetStockCardInfoAsync(alert.AssetType, alert.StockCardId, true);
+                    var cardInfo = await portfolioAssetAppService.GetStockCardInfoAsync(alert.AssetType, alert.StockCardId);
                     if (cardInfo.CurrentPrice.HasValue)
                         currentPrice = cardInfo.CurrentPrice.Value;
                     else

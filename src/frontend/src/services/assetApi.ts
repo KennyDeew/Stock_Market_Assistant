@@ -13,8 +13,6 @@ export const assetApi = {
    */
   getAllStocks: async (): Promise<ShareCard[]> => {
     try {
-      // Обновляем цены перед загрузкой
-      await stockApi.put('/UpdateAllPrices');      
       const response = await stockApi.get<ShareCard[]>('');
       return response.data;
     } catch (error) {
@@ -41,8 +39,6 @@ export const assetApi = {
    */
   getAllBonds: async (): Promise<BondCard[]> => {
     try {
-      // Обновляем цены перед загрузкой
-      await bondApi.put('/UpdateAllPrices');      
       const response = await bondApi.get<BondCard[]>('');
       return response.data;
     } catch (error) {
