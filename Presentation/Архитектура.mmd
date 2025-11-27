@@ -1,0 +1,364 @@
+# Stock Market Assistant - Архитектура системы
+
+## 1. Общая архитектура (Component Diagram)
+
+```mermaid
+graph TB
+    subgraph "Client Layer"
+        User[Пользователь]
+        Frontend[Frontend<br/>React + TypeScript]
+    end
+
+    subgraph "API Gateway Layer"
+        Nginx[Nginx<br/>Load Balancer]
+        Gateway[API Gateway<br/>ASP.NET Core]
+    end
+
+    subgraph "Microservices"
+        AuthService[AuthService<br/>Аутентификация и авторизация]
+        PortfolioService[PortfolioService<br/>Управление портфелями]
+        StockCardService[StockCardService<br/>Карточки активов]
+        NotificationService[NotificationService<br/>Уведомления]
+        AnalyticsService[AnalyticsService<br/>Аналитика]
+    end
+
+    subgraph "Message Queue"
+        Kafka[Apache Kafka<br/>Event Bus]
+    end
+
+    subgraph "Databases"
+        UserDb[(UserDb<br/>PostgreSQL)]
+        PortfolioDb[(PortfolioDb<br/>PostgreSQL)]
+        StockCardDb[(StockCardDb<br/>PostgreSQL)]
+        ReportDb[(ReportDb<br/>MongoDB)]
+        NotificationDb[(NotificationDb<br/>PostgreSQL)]
+        AnalyticsDb[(analytics-db<br/>PostgreSQL)]
+    end
+
+    subgraph "Cache & Storage"
+        Redis[(Redis<br/>Cache)]
+        OpenSearch[(OpenSearch<br/>Monitoring & Logging)]
+    end
+
+    User --> Frontend
+    Frontend -->|REST API| Nginx
+    Nginx --> Gateway
+    Gateway -->|REST API| AuthService
+    Gateway -->|REST API| PortfolioService
+    Gateway -->|REST API| StockCardService
+    Gateway -->|REST API| NotificationService
+    Gateway -->|REST API| AnalyticsService
+
+    AuthService -->|SQL| UserDb
+    PortfolioService -->|SQL| PortfolioDb
+    PortfolioService -->|Events| Kafka
+    StockCardService -->|SQL| StockCardDb
+    StockCardService -->|NoSQL| ReportDb
+    StockCardService -->|Cache| Redis
+    NotificationService -->|SQL| NotificationDb
+    NotificationService -->|Events| Kafka
+    AnalyticsService -->|SQL| AnalyticsDb
+    AnalyticsService -->|Events| Kafka
+
+    Kafka -->|Consume| NotificationService
+    Kafka -->|Consume| AnalyticsService
+
+    NotificationService -->|Logs| OpenSearch
+    AnalyticsService -->|Logs| OpenSearch
+```
+
+## 2. Event-Driven Architecture (Kafka Flow)
+
+```mermaid
+sequenceDiagram
+    participant PS as PortfolioService
+    participant K as Kafka
+    participant AS as AnalyticsService
+    participant NS as NotificationService
+
+    PS->>PS: Создание транзакции
+    PS->>PS: Сохранение в БД
+    PS->>K: Публикация события<br/>portfolio.transactions
+    K->>AS: Потребление события
+    K->>NS: Потребление события
+    AS->>AS: Обновление рейтингов
+    NS->>NS: Проверка триггеров
+    NS->>NS: Отправка Email/SMS
+```
+
+## 3. Детальная архитектура сервисов
+
+```mermaid
+graph LR
+    subgraph "Frontend"
+        FE[React SPA]
+    end
+
+    subgraph "API Gateway"
+        AG[Gateway Service]
+    end
+
+    subgraph "AuthService"
+        AS[AuthService]
+        ASDB[(UserDb)]
+        AS --> ASDB
+    end
+
+    subgraph "PortfolioService"
+        PS[PortfolioService]
+        PDB[(PortfolioDb)]
+        PS --> PDB
+        PS -->|Publish| K[Kafka]
+    end
+
+    subgraph "StockCardService"
+        SCS[StockCardService]
+        SCDB[(StockCardDb)]
+        RDB[(ReportDb)]
+        REDIS[(Redis)]
+        SCS --> SCDB
+        SCS --> RDB
+        SCS --> REDIS
+    end
+
+    subgraph "NotificationService"
+        NS[NotificationService]
+        NDB[(NotificationDb)]
+        NS --> NDB
+        K -->|Consume| NS
+    end
+
+    subgraph "AnalyticsService"
+        ANS[AnalyticsService]
+        ADB[(analytics-db)]
+        ANS --> ADB
+        K -->|Consume| ANS
+    end
+
+    FE -->|HTTP| AG
+    AG -->|HTTP| AS
+    AG -->|HTTP| PS
+    AG -->|HTTP| SCS
+    AG -->|HTTP| NS
+    AG -->|HTTP| ANS
+```
+
+## 4. Data Flow Diagram
+
+```mermaid
+flowchart TD
+    Start[Пользователь создает транзакцию] --> Frontend[Frontend]
+    Frontend --> Gateway[API Gateway]
+    Gateway --> PortfolioService[PortfolioService]
+    PortfolioService --> PortfolioDB[(PortfolioDb)]
+    PortfolioService --> Kafka[Kafka Topic:<br/>portfolio.transactions]
+
+    Kafka --> AnalyticsService[AnalyticsService]
+    Kafka --> NotificationService[NotificationService]
+
+    AnalyticsService --> AnalyticsDB[(analytics-db)]
+    NotificationService --> NotificationDB[(NotificationDb)]
+    NotificationService --> Email[Email/SMS]
+
+    PortfolioService --> StockCardService[StockCardService<br/>HTTP Request]
+    StockCardService --> StockCardDB[(StockCardDb)]
+    StockCardService --> Redis[(Redis Cache)]
+    StockCardService --> ReportDB[(ReportDb MongoDB)]
+```
+
+## 5. Database Schema Overview
+
+```mermaid
+erDiagram
+    USER ||--o{ PORTFOLIO : has
+    PORTFOLIO ||--o{ PORTFOLIO_ASSET : contains
+    PORTFOLIO_ASSET ||--o{ TRANSACTION : has
+    PORTFOLIO_ASSET }o--|| STOCK_CARD : references
+
+    USER {
+        uuid id PK
+        string email
+        string password_hash
+    }
+
+    PORTFOLIO {
+        uuid id PK
+        uuid user_id FK
+        string name
+        string currency
+    }
+
+    PORTFOLIO_ASSET {
+        uuid id PK
+        uuid portfolio_id FK
+        uuid stock_card_id FK
+        int asset_type
+    }
+
+    TRANSACTION {
+        uuid id PK
+        uuid portfolio_asset_id FK
+        int transaction_type
+        int quantity
+        decimal price_per_unit
+        datetime transaction_date
+    }
+
+    STOCK_CARD {
+        uuid id PK
+        string ticker
+        string name
+        string currency
+        decimal current_price
+    }
+
+    ASSET_RATING {
+        uuid id PK
+        uuid stock_card_id FK
+        datetime period_start
+        datetime period_end
+        int buy_count
+        int sell_count
+        decimal buy_amount
+        decimal sell_amount
+        int rank
+    }
+```
+
+## 6. Deployment Architecture
+
+```mermaid
+graph TB
+    subgraph "Kubernetes Cluster"
+        subgraph "Frontend Pod"
+            FE[Frontend Container]
+        end
+
+        subgraph "Gateway Pod"
+            GW[Gateway Container]
+        end
+
+        subgraph "Services Pods"
+            AS[AuthService]
+            PS[PortfolioService]
+            SCS[StockCardService]
+            NS[NotificationService]
+            ANS[AnalyticsService]
+        end
+    end
+
+    subgraph "Database Layer"
+        PG1[(PostgreSQL<br/>UserDb)]
+        PG2[(PostgreSQL<br/>PortfolioDb)]
+        PG3[(PostgreSQL<br/>StockCardDb)]
+        PG4[(PostgreSQL<br/>NotificationDb)]
+        PG5[(PostgreSQL<br/>analytics-db)]
+        MONGO[(MongoDB<br/>ReportDb)]
+    end
+
+    subgraph "Infrastructure"
+        KAFKA[Kafka Cluster]
+        REDIS[Redis Cluster]
+        OPENSEARCH[OpenSearch Cluster]
+    end
+
+    FE --> GW
+    GW --> AS
+    GW --> PS
+    GW --> SCS
+    GW --> NS
+    GW --> ANS
+
+    AS --> PG1
+    PS --> PG2
+    SCS --> PG3
+    SCS --> MONGO
+    NS --> PG4
+    ANS --> PG5
+
+    PS --> KAFKA
+    KAFKA --> NS
+    KAFKA --> ANS
+
+    SCS --> REDIS
+    NS --> OPENSEARCH
+    ANS --> OPENSEARCH
+```
+
+## 7. Security Architecture
+
+```mermaid
+graph TB
+    User[Пользователь] --> Frontend[Frontend]
+    Frontend -->|HTTPS/TLS 1.3| Gateway[API Gateway]
+
+    Gateway -->|JWT Token| AuthService[AuthService]
+    AuthService -->|Validate| UserDb[(UserDb)]
+
+    Gateway -->|JWT Token<br/>RBAC Check| Services[Микросервисы]
+
+    Services -->|Encrypted| Databases[(Databases)]
+    Services -->|TLS| Kafka[Kafka]
+
+    subgraph "Security Features"
+        JWT[JWT Tokens<br/>1 hour expiration]
+        RBAC[RBAC<br/>investor, analyst, admin]
+        RLS[Row-Level Security]
+        RATE[Rate Limiting<br/>100 req/min]
+    end
+
+    AuthService -.-> JWT
+    AuthService -.-> RBAC
+    Services -.-> RLS
+    Gateway -.-> RATE
+```
+
+## 8. Monitoring & Observability
+
+```mermaid
+graph TB
+    subgraph "Services"
+        S1[AuthService]
+        S2[PortfolioService]
+        S3[StockCardService]
+        S4[NotificationService]
+        S5[AnalyticsService]
+    end
+
+    subgraph "Metrics Collection"
+        PROM[Prometheus<br/>Metrics Scraper]
+    end
+
+    subgraph "Logging"
+        OPENSEARCH[OpenSearch<br/>Centralized Logging]
+    end
+
+    subgraph "Dashboards"
+        DASH[OpenSearch Dashboards<br/>Visualization]
+    end
+
+    S1 -->|Metrics| PROM
+    S2 -->|Metrics| PROM
+    S3 -->|Metrics| PROM
+    S4 -->|Metrics| PROM
+    S5 -->|Metrics| PROM
+
+    S1 -->|Structured Logs| OPENSEARCH
+    S2 -->|Structured Logs| OPENSEARCH
+    S3 -->|Structured Logs| OPENSEARCH
+    S4 -->|Structured Logs| OPENSEARCH
+    S5 -->|Structured Logs| OPENSEARCH
+
+    PROM --> DASH
+    OPENSEARCH --> DASH
+```
+
+## Примечания
+
+- Все сервисы используют Clean Architecture (Domain, Application, Infrastructure, Presentation)
+- Коммуникация между сервисами: REST API (синхронная) и Kafka (асинхронная)
+- Каждый сервис имеет свою базу данных (Database per Service pattern)
+- Redis используется для кэширования данных StockCardService
+- OpenSearch используется для централизованного логирования и мониторинга
+- Kafka обеспечивает event-driven коммуникацию между PortfolioService, AnalyticsService и NotificationService
+
