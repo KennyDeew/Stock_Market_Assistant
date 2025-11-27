@@ -19,6 +19,15 @@ namespace StockMarketAssistant.PortfolioService.Infrastructure.Security
             }
         }
 
+        public string Email
+        {
+            get
+            {
+                var email = _httpContextAccessor.HttpContext?.User.FindFirst("Email")?.Value;
+                return email ?? string.Empty;
+            }
+        }
+
         public string Role
         {
             get

@@ -533,7 +533,6 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                     dto.Currency ?? cardInfo.Currency);
 
                 PortfolioAssetTransaction createdTransaction = await _portfolioAssetRepository.AddAssetTransactionAsync(transaction);
-                asset.Transactions.Add(transaction);
 
                 if (asset.TotalQuantity == 0)
                 {
