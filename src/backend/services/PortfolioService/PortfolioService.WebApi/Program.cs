@@ -1,24 +1,15 @@
-using Confluent.Kafka;
-using FluentValidation;
+using Autofac;
+using Autofac.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using StockMarketAssistant.PortfolioService.Application.Interfaces;
-using StockMarketAssistant.PortfolioService.Application.Interfaces.Caching;
 using StockMarketAssistant.PortfolioService.Application.Interfaces.Gateways;
-using StockMarketAssistant.PortfolioService.Application.Interfaces.Repositories;
-using StockMarketAssistant.PortfolioService.Application.Interfaces.Security;
-using StockMarketAssistant.PortfolioService.Application.Services;
+using StockMarketAssistant.PortfolioService.Infrastructure.Autofac;
 using StockMarketAssistant.PortfolioService.Infrastructure.BackgroundServices;
-using StockMarketAssistant.PortfolioService.Infrastructure.Caching;
-using StockMarketAssistant.PortfolioService.Infrastructure.EntityFramework;
 using StockMarketAssistant.PortfolioService.Infrastructure.EntityFramework.Context;
 using StockMarketAssistant.PortfolioService.Infrastructure.Gateways;
-using StockMarketAssistant.PortfolioService.Infrastructure.Repositories;
-using StockMarketAssistant.PortfolioService.Infrastructure.Security;
 using StockMarketAssistant.PortfolioService.WebApi.Infrastructure.Swagger;
 using StockMarketAssistant.PortfolioService.WebApi.Middleware;
-using StockMarketAssistant.PortfolioService.WebApi.Options;
 using System.Text;
 
 namespace StockMarketAssistant.PortfolioService.WebApi
@@ -33,15 +24,20 @@ namespace StockMarketAssistant.PortfolioService.WebApi
         public static void Main(string[] args)
 #pragma warning restore CS1591
         {
-
             var builder = WebApplication.CreateBuilder(args);
+
+            // Настройка Autofac
+            builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
+            builder.Host.ConfigureContainer<ContainerBuilder>(containerBuilder =>
+            {
+                containerBuilder.RegisterModule(new AutofacModule(builder.Configuration));
+            });
 
             // Определяем, запущено ли приложение в тестовом контексте
             bool isRunningIntegrationTests = Environment.GetEnvironmentVariable("INTEGRATION_TESTS") == "1";
 
             if (!isRunningIntegrationTests)
             {
-                // Добавляем Aspire-специфичные сервисы ТОЛЬКО если НЕ в тестах
                 builder.AddServiceDefaults();
             }
 
@@ -56,8 +52,8 @@ namespace StockMarketAssistant.PortfolioService.WebApi
             // Add services to the container.
             var jwtSettings = builder.Configuration.GetSection("Jwt");
 
-            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme) // указание схемы аутентификации по умолчанию, именно по ней и будет происходить аутентификация
-                .AddJwtBearer(options => // регистрация Jwt-схемы аутентификации
+            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
                 {
                     options.TokenValidationParameters = new TokenValidationParameters()
                     {
@@ -71,80 +67,15 @@ namespace StockMarketAssistant.PortfolioService.WebApi
                         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"]!))
                     };
                 });
+
             builder.Services.AddHttpContextAccessor();
-            builder.Services.AddScoped<IUserContext, UserContext>();
             builder.Services.AddAuthorization();
-
-            // Регистрируем DbContext (EF Core) — только в production
-            if (!isRunningIntegrationTests)
-            {
-                // Получаем строку подключения из Aspire
-                var connectionString = builder.Configuration.GetConnectionString("portfolio-db");
-
-                // Регистрируем NpgsqlDataSource (для низкоуровневых запросов)
-                if (connectionString is not null)
-                {
-                    // Регистрируем DbContext (EF Core)
-                    builder.Services.ConfigureContext(connectionString);
-                }
-            }
-
-            // Регистрация сервисов в DI
-
-            if (!isRunningIntegrationTests)
-            {
-                // Регистрация распределённого кэша Redis  — только в production
-                builder.Services.AddStackExchangeRedisCache(options =>
-                {
-                    options.Configuration = builder.Configuration.GetConnectionString("cache");
-                });
-                builder.Services.AddScoped<ICacheService, RedisCacheService>();
-            }
-            else
-            {
-                // Tests: In-Memory кэш
-                builder.Services.AddScoped<ICacheService, InMemoryCacheService>();
-            }
-
-            builder.Services.AddScoped<IPortfolioRepository, PortfolioRepository>();
-            builder.Services.AddScoped<IPortfolioAssetRepository, PortfolioAssetRepository>();
-            builder.Services.AddScoped<IAlertRepository, AlertRepository>();
-            builder.Services.AddScoped<IOutboxRepository, OutboxRepository>();
-
-            builder.Services.AddScoped<IPortfolioAppService, PortfolioAppService>();
-            builder.Services.AddScoped<IPortfolioAssetAppService, PortfolioAssetAppService>();
-            builder.Services.AddScoped<IAlertAppService, AlertAppService>();
-
-            // Настройка Kafka Producer
-
-            var kafkaConnectionString = builder.Configuration.GetConnectionString("kafka");
-            if (string.IsNullOrEmpty(kafkaConnectionString))
-            {
-                var options = builder.Configuration.Get<ApplicationOptions>();
-                // Fallback к appsettings.json
-                kafkaConnectionString = options?.KafkaOptions?.BootstrapServers
-                    ?? "kafka:9092";
-            }
-
-            builder.Services.AddSingleton(provider =>
-            {
-                var config = new ProducerConfig
-                {
-                    BootstrapServers = kafkaConnectionString,
-                    Acks = Acks.All,
-                    MessageSendMaxRetries = 3,
-                    RetryBackoffMs = 1000,
-                    LingerMs = 5,
-                    BatchSize = 16384,
-                    EnableIdempotence = true
-                };
-                return new ProducerBuilder<Null, string>(config).Build();
-            });
 
             // Background Services
             builder.Services.AddHostedService<AlertProcessingService>();
             builder.Services.AddHostedService<KafkaOutboxProcessor>();
 
+            // Регистрация HttpClient и gateway для взаимодействия с сервисом карточек ценных бумаг
             var httpClientBuilder = builder.Services.AddHttpClient<IStockCardServiceGateway, StockCardServiceGateway>(httpClient =>
             {
                 httpClient.BaseAddress = new Uri("http://stockcardservice-api");
@@ -155,23 +86,23 @@ namespace StockMarketAssistant.PortfolioService.WebApi
                 httpClientBuilder.AddServiceDiscovery();
             }
 
-            // Читаем origin из переменной окружения
+            // CORS
             var frontendOrigin = builder.Configuration["FRONTEND_ORIGIN"] ?? "http://localhost:5173";
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowFrontendApp", policy =>
                 {
                     policy
-                        .WithOrigins(frontendOrigin) // Разрешить источник фронтенда
-                        .AllowAnyHeader()            // Любой заголовок
-                        .AllowAnyMethod();           // GET, POST, PUT, DELETE
+                        .WithOrigins(frontendOrigin)
+                        .AllowAnyHeader()
+                        .AllowAnyMethod();
                 });
             });
 
-            // Добавляем поддержку FluentValidation
-            builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+            // Controllers
             builder.Services.AddControllers();
 
+            // OpenAPI
             builder.Services.AddOpenApiDocument(config =>
             {
                 config.SchemaSettings.SchemaProcessors.Add(new EnumDescriptionSchemaProcessor());
@@ -191,11 +122,9 @@ namespace StockMarketAssistant.PortfolioService.WebApi
 
             var app = builder.Build();
 
-            // Получаем сервис для отслеживания жизненного цикла
+            // Lifecycle events
             var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
             var logger = app.Services.GetRequiredService<ILogger<Program>>();
-
-            // Регистрация обработчиков событий
 
             lifetime.ApplicationStarted.Register(() =>
             {
@@ -215,24 +144,19 @@ namespace StockMarketAssistant.PortfolioService.WebApi
                 logger.LogInformation("Время остановки: {ShutdownTime}", DateTime.UtcNow);
             });
 
-            // Автоматическое применение миграций — только в production
+            // Migrations
             if (!isRunningIntegrationTests)
             {
                 using var scope = app.Services.CreateScope();
                 var dbContext = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
-                dbContext.Database.Migrate(); // Применяет все pending миграции
+                dbContext.Database.Migrate();
             }
 
-            // Configure the HTTP request pipeline.
+            // Pipeline
             if (app.Environment.IsDevelopment())
             {
-
                 app.UseOpenApi();
-                app.UseSwaggerUi(x =>
-                {
-                    x.DocExpansion = "list";
-                });
-
+                app.UseSwaggerUi(x => x.DocExpansion = "list");
             }
 
             app.UseRouting();
@@ -244,12 +168,8 @@ namespace StockMarketAssistant.PortfolioService.WebApi
             }
 
             app.UseMiddleware<SecurityExceptionMiddleware>();
-            //app.UseHttpsRedirection();
-
-            // Аутентификация и авторизация
             app.UseAuthentication();
             app.UseAuthorization();
-
             app.MapControllers();
 
             app.Run();
