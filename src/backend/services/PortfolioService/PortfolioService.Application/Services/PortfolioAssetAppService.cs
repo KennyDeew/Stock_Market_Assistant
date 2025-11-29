@@ -104,6 +104,9 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                     throw new KeyNotFoundException($"Портфель с ID {dto.PortfolioId} не найден");
                 }
 
+                if (_userContext.UserId == Guid.Empty)
+                    throw new SecurityException("Пользователь не аутентифицирован");
+
                 // Проверка прав доступа: USER может создавать активы только в своих портфелях
                 if (!_userContext.IsAdmin && portfolio.UserId != _userContext.UserId)
                 {
@@ -209,6 +212,9 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                     throw new KeyNotFoundException("Портфель не найден");
                 }
 
+                if (_userContext.UserId == Guid.Empty)
+                    throw new SecurityException("Пользователь не аутентифицирован");
+
                 // Проверка прав доступа
                 if (!_userContext.IsAdmin && portfolio.UserId != _userContext.UserId)
                 {
@@ -265,6 +271,9 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                     _logger.LogWarning("Портфель {PortfolioId} для актива {AssetId} не найден", asset.PortfolioId, asset.Id);
                     throw new KeyNotFoundException("Портфель не найден");
                 }
+
+                if (_userContext.UserId == Guid.Empty)
+                    throw new SecurityException("Пользователь не аутентифицирован");
 
                 // Проверка прав доступа
                 if (!_userContext.IsAdmin && portfolio.UserId != _userContext.UserId)
@@ -350,6 +359,9 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                     _logger.LogWarning("Портфель {PortfolioId} для актива {AssetId} не найден", asset.PortfolioId, id);
                     return null;
                 }
+                
+                if (_userContext.UserId == Guid.Empty)
+                    throw new SecurityException("Пользователь не аутентифицирован");
 
                 // Проверка прав доступа
                 if (!_userContext.IsAdmin && portfolio.UserId != _userContext.UserId)
@@ -404,6 +416,9 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                 Portfolio? portfolio = await _portfolioRepository.GetByIdAsync(asset.PortfolioId);
                 if (portfolio == null) return false;
 
+                if (_userContext.UserId == Guid.Empty)
+                    throw new SecurityException("Пользователь не аутентифицирован");
+
                 if (!_userContext.IsAdmin && portfolio.UserId != _userContext.UserId)
                 {
                     _logger.LogWarning(
@@ -445,6 +460,9 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                 if (portfolio == null)
                     return null;
 
+                if (_userContext.UserId == Guid.Empty)
+                    throw new SecurityException("Пользователь не аутентифицирован");
+
                 if (!_userContext.IsAdmin && portfolio.UserId != _userContext.UserId)
                 {
                     _logger.LogWarning(
@@ -483,6 +501,9 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                 Portfolio? portfolio = await _portfolioRepository.GetByIdAsync(asset.PortfolioId);
                 if (portfolio == null) return [];
 
+                if (_userContext.UserId == Guid.Empty)
+                    throw new SecurityException("Пользователь не аутентифицирован");
+
                 if (!_userContext.IsAdmin && portfolio.UserId != _userContext.UserId)
                 {
                     _logger.LogWarning(
@@ -520,6 +541,9 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                 Portfolio? portfolio = await _portfolioRepository.GetByIdAsync(asset.PortfolioId);
                 if (portfolio == null) return [];
 
+                if (_userContext.UserId == Guid.Empty)
+                    throw new SecurityException("Пользователь не аутентифицирован");
+
                 if (!_userContext.IsAdmin && portfolio.UserId != _userContext.UserId)
                 {
                     _logger.LogWarning(
@@ -551,6 +575,9 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
             {
                 PortfolioAsset? asset = await _portfolioAssetRepository.GetByIdAsync(assetId, a => a.Transactions) ?? throw new KeyNotFoundException($"Актив с ID {assetId} не найден");
                 Portfolio? portfolio = await _portfolioRepository.GetByIdAsync(asset.PortfolioId) ?? throw new KeyNotFoundException($"Портфель с ID {asset.PortfolioId} не найден");
+                
+                if (_userContext.UserId == Guid.Empty)
+                    throw new SecurityException("Пользователь не аутентифицирован");
 
                 // Проверка прав доступа
                 if (!_userContext.IsAdmin && portfolio.UserId != _userContext.UserId)
@@ -662,6 +689,9 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                     throw new KeyNotFoundException("Портфель не найден");
                 }
 
+                if (_userContext.UserId == Guid.Empty)
+                    throw new SecurityException("Пользователь не аутентифицирован");
+
                 // Проверка прав доступа
                 if (!_userContext.IsAdmin && portfolio.UserId != _userContext.UserId)
                 {
@@ -714,6 +744,10 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                 Portfolio? portfolio = await _portfolioRepository.GetByIdAsync(asset.PortfolioId);
                 if (portfolio == null) return null;
 
+                if (_userContext.UserId == Guid.Empty)
+                    throw new SecurityException("Пользователь не аутентифицирован");
+
+                // Проверка прав доступа
                 if (!_userContext.IsAdmin && portfolio.UserId != _userContext.UserId)
                 {
                     _logger.LogWarning(

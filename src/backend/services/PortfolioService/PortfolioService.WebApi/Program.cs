@@ -36,8 +36,14 @@ namespace StockMarketAssistant.PortfolioService.WebApi
 
             var builder = WebApplication.CreateBuilder(args);
 
-            // Добавляем сервисы Aspire
-            builder.AddServiceDefaults();
+            // Определяем, запущено ли приложение в тестовом контексте
+            bool isRunningIntegrationTests = Environment.GetEnvironmentVariable("INTEGRATION_TESTS") == "1";
+
+            if (!isRunningIntegrationTests)
+            {
+                // Добавляем Aspire-специфичные сервисы ТОЛЬКО если НЕ в тестах
+                builder.AddServiceDefaults();
+            }
 
             // Установка кодировки консоли
             Console.OutputEncoding = Encoding.UTF8;
@@ -69,24 +75,36 @@ namespace StockMarketAssistant.PortfolioService.WebApi
             builder.Services.AddScoped<IUserContext, UserContext>();
             builder.Services.AddAuthorization();
 
-            // Получаем строку подключения из Aspire
-            var connectionString = builder.Configuration.GetConnectionString("portfolio-db");
-            
-            // Регистрируем NpgsqlDataSource (для низкоуровневых запросов)
-            if (connectionString is not null)
+            // Регистрируем DbContext (EF Core) — только в production
+            if (!isRunningIntegrationTests)
             {
-                // Регистрируем DbContext (EF Core)
-                builder.Services.ConfigureContext(connectionString);
+                // Получаем строку подключения из Aspire
+                var connectionString = builder.Configuration.GetConnectionString("portfolio-db");
+
+                // Регистрируем NpgsqlDataSource (для низкоуровневых запросов)
+                if (connectionString is not null)
+                {
+                    // Регистрируем DbContext (EF Core)
+                    builder.Services.ConfigureContext(connectionString);
+                }
             }
 
             // Регистрация сервисов в DI
-            // Регистрация распределённого кэша Redis
-            builder.Services.AddStackExchangeRedisCache(options =>
-            {
-                options.Configuration = builder.Configuration.GetConnectionString("cache");
-            });
 
-            builder.Services.AddScoped<ICacheService, RedisCacheService>();
+            if (!isRunningIntegrationTests)
+            {
+                // Регистрация распределённого кэша Redis  — только в production
+                builder.Services.AddStackExchangeRedisCache(options =>
+                {
+                    options.Configuration = builder.Configuration.GetConnectionString("cache");
+                });
+                builder.Services.AddScoped<ICacheService, RedisCacheService>();
+            }
+            else
+            {
+                // Tests: In-Memory кэш
+                builder.Services.AddScoped<ICacheService, InMemoryCacheService>();
+            }
 
             builder.Services.AddScoped<IPortfolioRepository, PortfolioRepository>();
             builder.Services.AddScoped<IPortfolioAssetRepository, PortfolioAssetRepository>();
@@ -127,11 +145,15 @@ namespace StockMarketAssistant.PortfolioService.WebApi
             builder.Services.AddHostedService<AlertProcessingService>();
             builder.Services.AddHostedService<KafkaOutboxProcessor>();
 
-            builder.Services.AddHttpClient<IStockCardServiceGateway, StockCardServiceGateway>(httpClient =>
+            var httpClientBuilder = builder.Services.AddHttpClient<IStockCardServiceGateway, StockCardServiceGateway>(httpClient =>
             {
                 httpClient.BaseAddress = new Uri("http://stockcardservice-api");
-            })
-            .AddServiceDiscovery();
+            });
+
+            if (!isRunningIntegrationTests)
+            {
+                httpClientBuilder.AddServiceDiscovery();
+            }
 
             // Читаем origin из переменной окружения
             var frontendOrigin = builder.Configuration["FRONTEND_ORIGIN"] ?? "http://localhost:5173";
@@ -192,9 +214,10 @@ namespace StockMarketAssistant.PortfolioService.WebApi
                 logger.LogInformation("Время остановки: {ShutdownTime}", DateTime.UtcNow);
             });
 
-            // Автоматическое применение миграций
-            using (var scope = app.Services.CreateScope())
+            // Автоматическое применение миграций — только в production
+            if (!isRunningIntegrationTests)
             {
+                using var scope = app.Services.CreateScope();
                 var dbContext = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
                 dbContext.Database.Migrate(); // Применяет все pending миграции
             }
@@ -213,7 +236,11 @@ namespace StockMarketAssistant.PortfolioService.WebApi
 
             app.UseRouting();
             app.UseCors("AllowFrontendApp");
-            app.MapDefaultEndpoints();
+
+            if (!isRunningIntegrationTests)
+            {
+                app.MapDefaultEndpoints();
+            }
 
             app.UseMiddleware<SecurityExceptionMiddleware>();
             //app.UseHttpsRedirection();

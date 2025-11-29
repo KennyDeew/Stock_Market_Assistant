@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
 using StockMarketAssistant.PortfolioService.Application.Interfaces.Security;
-using StockMarketAssistant.PortfolioService.Domain.Exceptions;
 
 namespace StockMarketAssistant.PortfolioService.Infrastructure.Security
 {
@@ -12,29 +11,17 @@ namespace StockMarketAssistant.PortfolioService.Infrastructure.Security
         {
             get
             {
-                var userIdClaim = _httpContextAccessor.HttpContext?.User.FindFirst("Id")?.Value;
-                if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-                    throw new SecurityException("Требуется авторизация");
-                return userId;
+                var userIdClaim = _httpContextAccessor.HttpContext?
+                    .User.FindFirst("Id")?.Value;
+                return Guid.TryParse(userIdClaim, out var id) ? id : Guid.Empty;
             }
         }
 
-        public string Email
-        {
-            get
-            {
-                var email = _httpContextAccessor.HttpContext?.User.FindFirst("Email")?.Value;
-                return email ?? string.Empty;
-            }
-        }
+        public string Email => _httpContextAccessor.HttpContext?
+            .User.FindFirst("Email")?.Value ?? string.Empty;
 
-        public string Role
-        {
-            get
-            {
-                var roleClaim = _httpContextAccessor.HttpContext?.User.FindFirst("Role")?.Value;
-                return roleClaim ?? "UNKNOWN";
-            }
-        }
+
+        public string Role => _httpContextAccessor.HttpContext?
+            .User.FindFirst("Role")?.Value ?? "UNKNOWN";
     }
 }

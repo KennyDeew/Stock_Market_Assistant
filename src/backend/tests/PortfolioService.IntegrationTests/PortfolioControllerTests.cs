@@ -1,10 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using StockMarketAssistant.PortfolioService.Application.DTOs;
-using StockMarketAssistant.PortfolioService.Application.Interfaces;
 using StockMarketAssistant.PortfolioService.Infrastructure.EntityFramework.Context;
 using StockMarketAssistant.PortfolioService.IntegrationTests.Helpers;
 using StockMarketAssistant.PortfolioService.WebApi;
+using StockMarketAssistant.PortfolioService.WebApi.Models;
 using System.Net;
 using System.Net.Http.Json;
 using Xunit;
@@ -20,9 +20,16 @@ namespace StockMarketAssistant.PortfolioService.IntegrationTests
             using var scope = _factory.Services.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
 
+            var userId = Guid.NewGuid();
+
+            // Обновляем токен
+            _client.DefaultRequestHeaders.Remove("Authorization");
+            _client.DefaultRequestHeaders.Add("Authorization",
+                "Bearer " + JwtHelper.GenerateTestToken(userId.ToString(), "USER"));
+
             var createRequest = new
             {
-                UserId = Guid.NewGuid(),
+                UserId = userId,
                 Name = "Test Portfolio",
                 Currency = "RUB"
             };
@@ -30,9 +37,18 @@ namespace StockMarketAssistant.PortfolioService.IntegrationTests
             // Act
             var response = await _client.PostAsJsonAsync("/api/v1/portfolios", createRequest);
 
+            // Debug: вывести тело ответа при ошибке
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Response status: {response.StatusCode}");
+                Console.WriteLine($"Response body: {errorContent}");
+            }
+
             // Assert
             Assert.Equal(HttpStatusCode.Created, response.StatusCode);
             var result = await response.Content.ReadFromJsonAsync<PortfolioDto>();
+
             Assert.NotNull(result);
             Assert.Equal("Test Portfolio", result.Name);
         }
@@ -42,22 +58,38 @@ namespace StockMarketAssistant.PortfolioService.IntegrationTests
         {
             // Arrange
             var userId = Guid.NewGuid();
-            var scope = _factory.Services.CreateScope();
-            var portfolioAppService = scope.ServiceProvider.GetRequiredService<IPortfolioAppService>();
 
-            var dto = new CreatingPortfolioDto(userId, "Test", "RUB");
-            var createdId = await portfolioAppService.CreateAsync(dto);
+            // Устанавливаем авторизацию для владельца портфеля
+            _client.DefaultRequestHeaders.Remove("Authorization");
+            _client.DefaultRequestHeaders.Add("Authorization",
+                "Bearer " + JwtHelper.GenerateTestToken(userId.ToString(), "USER"));
 
-            // Установить токен владельца
-            _client.DefaultRequestHeaders.Authorization = null;
-            _client.DefaultRequestHeaders.Add("Authorization", "Bearer " + JwtHelper.GenerateTestToken(userId.ToString(), "USER"));
+            // Создаём портфель через API (а не напрямую через сервис)
+            var createRequest = new
+            {
+                UserId = userId,
+                Name = "My Portfolio",
+                Currency = "RUB"
+            };
+
+            var createResponse = await _client.PostAsJsonAsync("/api/v1/portfolios", createRequest);
+            Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
+
+            var createdPortfolio = await createResponse.Content.ReadFromJsonAsync<PortfolioShortResponse>();
+            Assert.NotNull(createdPortfolio);
+            var portfolioId = createdPortfolio.Id;
 
             // Act
-            var response = await _client.GetAsync($"/api/v1/portfolios/{createdId}");
+            var getResponse = await _client.GetAsync($"/api/v1/portfolios/{portfolioId}");
 
             // Assert
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        }
+            Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
 
+            var result = await getResponse.Content.ReadFromJsonAsync<PortfolioResponse>();
+            Assert.NotNull(result);
+            Assert.Equal(portfolioId, result.Id);
+            Assert.Equal(userId, result.UserId);
+            Assert.Equal("My Portfolio", result.Name);
+        }
     }
 }
