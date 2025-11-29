@@ -29,6 +29,7 @@ using Serilog.Events;
 using Serilog.Sinks.OpenSearch;
 using AutoRegisterTemplateVersion = Serilog.Sinks.OpenSearch.AutoRegisterTemplateVersion;
 using CertificateValidations = OpenSearch.Net.CertificateValidations;
+using AnalyticsService.TestDataGenerator.Services;
 
 namespace StockMarketAssistant.AnalyticsService.WebApi
 {
@@ -46,20 +47,6 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
 
             // Добавляем сервисы Aspire
             builder.AddServiceDefaults();
-
-            // Читаем origin из переменной окружения
-            var frontendOrigin = builder.Configuration["FRONTEND_ORIGIN"] ?? "http://localhost:5173";
-            builder.Services.AddCors(options =>
-            {
-                options.AddPolicy("AllowFrontendApp", policy =>
-                {
-                    policy
-                        .WithOrigins(frontendOrigin) // Разрешить источник фронтенда
-                        .AllowAnyHeader()            // Любой заголовок
-                        .AllowAnyMethod();           // GET, POST, PUT, DELETE
-                });
-            });
-
 
             // Настройка Serilog с OpenSearch
             var openSearchUrl = builder.Configuration.GetSection("OpenSearchConfig:Url").Value
@@ -108,21 +95,40 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
 
             // Настройка JWT Bearer Authentication
             var jwtSettings = builder.Configuration.GetSection("Jwt");
-            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                .AddJwtBearer(options =>
-                {
-                    options.TokenValidationParameters = new TokenValidationParameters()
+            var jwtKey = jwtSettings["Key"];
+
+            // Если ключ не указан, используем дефолтный ключ для разработки (только для Development)
+            if (string.IsNullOrEmpty(jwtKey) && builder.Environment.IsDevelopment())
+            {
+                jwtKey = "DevelopmentKey-AtLeast32CharactersLongForHS256Algorithm";
+            }
+
+            // Регистрируем JWT только если ключ указан
+            if (!string.IsNullOrEmpty(jwtKey))
+            {
+                builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                    .AddJwtBearer(options =>
                     {
-                        ValidateIssuer = true,
-                        ValidateAudience = true,
-                        ValidateLifetime = true,
-                        ValidateIssuerSigningKey = true,
-                        ValidIssuer = jwtSettings["Issuer"],
-                        ValidAudience = jwtSettings["Audience"],
-                        RoleClaimType = "Role",
-                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"] ?? string.Empty))
-                    };
-                });
+                        options.TokenValidationParameters = new TokenValidationParameters()
+                        {
+                            ValidateIssuer = !string.IsNullOrEmpty(jwtSettings["Issuer"]),
+                            ValidateAudience = !string.IsNullOrEmpty(jwtSettings["Audience"]),
+                            ValidateLifetime = true,
+                            ValidateIssuerSigningKey = true,
+                            ValidIssuer = jwtSettings["Issuer"] ?? "AuthService",
+                            ValidAudience = jwtSettings["Audience"] ?? "AuthServiceClients",
+                            RoleClaimType = "Role",
+                            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+                        };
+                    });
+            }
+            else
+            {
+                // Если ключ не указан и не Development режим, логируем предупреждение
+                var logger = LoggerFactory.Create(b => b.AddConsole()).CreateLogger<Program>();
+                logger.LogWarning("JWT ключ не указан. JWT авторизация отключена.");
+            }
+
             builder.Services.AddAuthorization();
 
             // Регистрация контроллеров
@@ -190,6 +196,10 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
 
             // Регистрация Application Services
             builder.Services.AddScoped<AssetRatingAggregationService>();
+
+            // Регистрация Test Data Services
+            builder.Services.AddScoped<TestDataGenerator>();
+            builder.Services.AddScoped<Services.TestDataService>();
 
             // Регистрация Use Cases
             builder.Services.AddScoped<GetTopBoughtAssetsUseCase>();
