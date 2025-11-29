@@ -36,10 +36,6 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(string))]
         public async Task<ActionResult<PortfolioAssetShortResponse>> CreatePortfolioAsset([FromBody]CreatePortfolioAssetRequest request)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
             try
             {
                 if (!await _portfolioAppService.ExistsAsync(request.PortfolioId))
@@ -246,10 +242,6 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
             Guid assetId,
             [FromBody] CreatePortfolioAssetTransactionRequest request)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
             try
             {
                 if (!await _portfolioAssetAppService.ExistsAsync(assetId))
@@ -299,10 +291,6 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
             Guid transactionId,
             [FromBody] UpdatePortfolioAssetTransactionRequest request)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
             try
             {
                 var transaction = await _portfolioAssetAppService.GetAssetTransactionByIdAsync(transactionId);

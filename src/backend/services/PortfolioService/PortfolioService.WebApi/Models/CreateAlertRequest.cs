@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.SignalR;
-using StockMarketAssistant.PortfolioService.Domain.Enums;
-using System.ComponentModel.DataAnnotations;
+﻿using StockMarketAssistant.PortfolioService.Domain.Enums;
 using System.Text.Json.Serialization;
 
 namespace StockMarketAssistant.PortfolioService.WebApi.Models
@@ -19,7 +17,6 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Models
         /// Тип актива
         /// </summary>
         [JsonConverter(typeof(JsonStringEnumConverter))]
-        [EnumDataType(typeof(PortfolioAssetType))]
         public PortfolioAssetType AssetType { get; init; }
 
         /// <summary>

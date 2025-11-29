@@ -165,13 +165,6 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
         {
             try
             {
-                // Проверяем валидность модели
-                if (!ModelState.IsValid)
-                {
-                    _logger.LogWarning("Некорректные данные при создании портфеля для пользователя {UserId}", request.UserId);
-                    return BadRequest(ModelState);
-                }
-
                 CreatingPortfolioDto createDto = new(request.UserId, request.Name, request.Currency);
                 var createdPortfolioId = await _portfolioAppService.CreateAsync(createDto);
 
@@ -271,13 +264,6 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
         {
             try
             {
-                // Проверяем валидность модели
-                if (!ModelState.IsValid)
-                {
-                    _logger.LogWarning("Некорректные данные при обновлении портфеля {PortfolioId}", id);
-                    return BadRequest(ModelState);
-                }
-
                 // Проверяем существование портфеля
                 var exists = await _portfolioAppService.ExistsAsync(id);
                 if (!exists)

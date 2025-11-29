@@ -1,5 +1,4 @@
 ﻿using StockMarketAssistant.PortfolioService.Domain.Enums;
-using System.ComponentModel.DataAnnotations;
 
 namespace StockMarketAssistant.PortfolioService.WebApi.Models
 {
@@ -15,11 +14,8 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Models
     /// <param name="PricePerUnit">Цена за единицу актива</param>
     /// <param name="TransactionDate">Дата операции с активом</param>
     public record CreatePortfolioAssetTransactionRequest(
-        [EnumDataType(typeof(PortfolioAssetTransactionType))]
         PortfolioAssetTransactionType TransactionType,
-        [Range(1, int.MaxValue, ErrorMessage = "Количество должно быть больше нуля")]
         int Quantity,
-        [Range(0.01, double.MaxValue, ErrorMessage = "Цена должна быть больше нуля")]
         decimal PricePerUnit,
         DateTime TransactionDate);
 }

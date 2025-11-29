@@ -1,5 +1,4 @@
 ﻿using StockMarketAssistant.SharedLibrary.Enums;
-using System.ComponentModel.DataAnnotations;
 
 namespace StockMarketAssistant.PortfolioService.WebApi.Models
 {
@@ -14,7 +13,6 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Models
         /// - Current: Текущая доходность (значение: 1)
         /// - Realized: Реализованная доходность (значение: 2)
         /// </summary>
-        [EnumDataType(typeof(CalculationType))]
         public CalculationType CalculationType { get; init; } = CalculationType.Current;
     }
 }

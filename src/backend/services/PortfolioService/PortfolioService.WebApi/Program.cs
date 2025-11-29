@@ -1,7 +1,7 @@
 using Confluent.Kafka;
+using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using StockMarketAssistant.PortfolioService.Application.Interfaces;
 using StockMarketAssistant.PortfolioService.Application.Interfaces.Caching;
@@ -168,7 +168,8 @@ namespace StockMarketAssistant.PortfolioService.WebApi
                 });
             });
 
-
+            // Добавляем поддержку FluentValidation
+            builder.Services.AddValidatorsFromAssemblyContaining<Program>();
             builder.Services.AddControllers();
 
             builder.Services.AddOpenApiDocument(config =>
