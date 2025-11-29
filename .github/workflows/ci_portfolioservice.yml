@@ -1,0 +1,65 @@
+name: CI_PortfolioService
+
+# Запуск по push, pull_request И вручную через UI
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:  # ← позволяет запускать вручную через GitHub UI
+    inputs:
+      target-branch:
+        description: "Branch to test (for manual run)"
+        required: false
+        default: "develop"
+        type: string
+      skip-integration-tests:
+        description: "Skip integration tests (e.g. for quick feedback)"
+        required: false
+        default: "false"
+        type: boolean
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Для pull_request из форка — нужен ref, чтобы получить правильный код
+          ref: ${{ github.event.inputs.target-branch || github.ref_name }}
+
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore dependencies
+        # Восстанавливаем оба тестовых проекта — они потянут за собой PortfolioService.WebApi и все зависимости
+        run: |
+          dotnet restore src/backend/tests/PortfolioService.UnitTests/PortfolioService.UnitTests.csproj
+          dotnet restore src/backend/tests/PortfolioService.IntegrationTests/PortfolioService.IntegrationTests.csproj
+
+      - name: Build solution components
+        run: |
+          dotnet build src/backend/tests/PortfolioService.UnitTests/PortfolioService.UnitTests.csproj --no-restore -c Release
+          dotnet build src/backend/tests/PortfolioService.IntegrationTests/PortfolioService.IntegrationTests.csproj --no-restore -c Release
+
+      - name: Run Unit Tests
+        run: dotnet test src/backend/tests/PortfolioService.UnitTests/PortfolioService.UnitTests.csproj --no-build -c Release --logger "trx;LogFileName=unit-tests.trx"
+
+      - name: Run Integration Tests
+        # Условный запуск: пропустить, если задан флаг
+        if: ${{ github.event.inputs.skip-integration-tests != 'true' }}
+        run: dotnet test src/backend/tests/PortfolioService.IntegrationTests/PortfolioService.IntegrationTests.csproj --no-build -c Release --logger "trx;LogFileName=integration-tests.trx"
+
+      # Опционально: артефакты с отчётами тестов (можно скачать после завершения)
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()  # ← сохранять даже при падении тестов
+        with:
+          name: test-results
+          path: |
+            **/TestResults/*.trx
+            **/*.trx
