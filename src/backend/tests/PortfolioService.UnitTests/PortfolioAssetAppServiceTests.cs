@@ -16,6 +16,7 @@ namespace StockMarketAssistant.PortfolioService.UnitTests
     {
         private readonly Mock<IPortfolioAssetRepository> _assetRepoMock = new();
         private readonly Mock<IPortfolioRepository> _portfolioRepoMock = new();
+        private readonly Mock<IOutboxRepository> _outboxRepoMock = new();
         private readonly Mock<IUserContext> _userContextMock = new();
         private readonly Mock<IStockCardServiceGateway> _gatewayMock = new();
         private readonly Mock<ICacheService> _cacheMock = new();
@@ -27,6 +28,7 @@ namespace StockMarketAssistant.PortfolioService.UnitTests
                 _assetRepoMock.Object,
                 _userContextMock.Object,
                 _portfolioRepoMock.Object,
+                _outboxRepoMock.Object,
                 _gatewayMock.Object,
                 _cacheMock.Object,
                 null!

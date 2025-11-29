@@ -27,6 +27,7 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
         private readonly ICacheService _cache = cache;
         private readonly ILogger<PortfolioAssetAppService> _logger = logger;
         private readonly TimeSpan _cacheExpiration = TimeSpan.FromMinutes(30);
+        private const string _topicName = "portfolio.transactions"; // наименование Kafka-топика, в который публикуются сообщения
 
         /// <summary>
         /// Инвалидация записи кэша для финансового актива
@@ -156,7 +157,7 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
 
                 var outboxMessage = new OutboxMessage(
                     Guid.NewGuid(),
-                    "portfolio.transactions",
+                    _topicName,
                     JsonSerializer.Serialize(initialTransactionMessage));
 
                 await _outboxRepository.AddAsync(outboxMessage);
@@ -293,7 +294,7 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
 
                 var outboxMessage = new OutboxMessage(
                     Guid.NewGuid(),
-                    "portfolio.transactions",
+                    _topicName,
                     JsonSerializer.Serialize(createdTransactionMessage));
 
                 await _outboxRepository.AddAsync(outboxMessage);
@@ -437,10 +438,12 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                 }
 
                 PortfolioAsset? asset = await _portfolioAssetRepository.GetByIdAsync(transaction.PortfolioAssetId);
-                if (asset == null) return null;
+                if (asset == null)
+                    return null;
 
                 Portfolio? portfolio = await _portfolioRepository.GetByIdAsync(asset.PortfolioId);
-                if (portfolio == null) return null;
+                if (portfolio == null)
+                    return null;
 
                 if (!_userContext.IsAdmin && portfolio.UserId != _userContext.UserId)
                 {
@@ -594,7 +597,7 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
 
                 var outboxMessage = new OutboxMessage(
                     Guid.NewGuid(),
-                    "portfolio.transactions",
+                    _topicName,
                     JsonSerializer.Serialize(createdTransactionMessage));
 
                 await _outboxRepository.AddAsync(outboxMessage);
@@ -733,8 +736,6 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                 throw;
             }
         }
-
-        // --- Приватные методы для расчёта доходности (без изменений) ---
 
         private PortfolioAssetProfitLossDto CalculateCurrentProfitLoss(PortfolioAsset asset, StockCardInfoDto cardInfo)
         {
