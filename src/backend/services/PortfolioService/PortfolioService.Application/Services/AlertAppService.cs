@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using StockMarketAssistant.PortfolioService.Application.DTOs;
 using StockMarketAssistant.PortfolioService.Application.Interfaces;
+using StockMarketAssistant.PortfolioService.Application.Interfaces.Gateways;
 using StockMarketAssistant.PortfolioService.Application.Interfaces.Repositories;
 using StockMarketAssistant.PortfolioService.Application.Interfaces.Security;
 using StockMarketAssistant.PortfolioService.Domain.Entities;
@@ -18,9 +19,11 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
         IAlertRepository alertRepository,
         IOutboxRepository outboxRepository,
         IPortfolioAssetAppService portfolioAssetAppService,
+        IStockCardServiceGateway stockCardServiceGateway,
         IUserContext userContext,
         ILogger<AlertAppService> logger) : IAlertAppService
     {
+        private const string _topicName = "notifications_send"; // наименование Kafka-топика, в который публикуются сообщения
         /// <inheritdoc/>
         public async Task<Guid> CreateAsync(CreatingAlertDto dto)
         {
@@ -117,14 +120,23 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                 logger.LogInformation("Начало обработки ожидающих оповещений");
 
                 var pendingAlerts = await alertRepository.GetPendingAlertsAsync();
+                int pendingAlertsCount = pendingAlerts.Count();
 
-                logger.LogInformation("Найдено {Count} активных оповещений для обработки", pendingAlerts.Count());
+                logger.LogInformation("Найдено {Count} активных оповещений для обработки", pendingAlertsCount);
 
-                foreach (var alert in pendingAlerts)
+                if (pendingAlertsCount > 0)
                 {
-                    await ProcessSingleAlertAsync(alert);
+                    // Принудительное обновление цен
+                    if (pendingAlerts.Any(a => a.AssetType == PortfolioAssetType.Share))
+                        await stockCardServiceGateway.UpdateAllPricesForShareCardsAsync();
+                    if (pendingAlerts.Any(a => a.AssetType == PortfolioAssetType.Bond))
+                        await stockCardServiceGateway.UpdateAllPricesForBondCardsAsync();
+                    foreach (var alert in pendingAlerts)
+                    {
+                        await ProcessSingleAlertAsync(alert);
+                    }
+                    logger.LogInformation("Завершена обработка ожидающих оповещений");
                 }
-                logger.LogInformation("Завершена обработка ожидающих оповещений");
             }
             catch (Exception ex)
             {
@@ -200,7 +212,7 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
 
                         var outboxMessage = new OutboxMessage(
                             Guid.NewGuid(),
-                            "notifications_send",
+                            _topicName,
                             JsonSerializer.Serialize(emailNotification));
 
                         await outboxRepository.AddAsync(outboxMessage);

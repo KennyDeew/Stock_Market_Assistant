@@ -9,21 +9,25 @@ using StockMarketAssistant.PortfolioService.Domain.Entities;
 using StockMarketAssistant.PortfolioService.Domain.Enums;
 using StockMarketAssistant.PortfolioService.Domain.Exceptions;
 using StockMarketAssistant.SharedLibrary.Enums;
+using StockMarketAssistant.SharedLibrary.Models;
+using System.Text.Json;
 
 namespace StockMarketAssistant.PortfolioService.Application.Services
 {
     /// <summary>
     /// Сервис работы с финансовыми активами в портфеле
     /// </summary>
-    public class PortfolioAssetAppService(IPortfolioAssetRepository portfolioAssetRepository, IUserContext userContext, IPortfolioRepository portfolioRepository, IStockCardServiceGateway stockCardServiceGateway, ICacheService cache, ILogger<PortfolioAssetAppService> logger) : IPortfolioAssetAppService
+    public class PortfolioAssetAppService(IPortfolioAssetRepository portfolioAssetRepository, IUserContext userContext, IPortfolioRepository portfolioRepository, IOutboxRepository outboxRepository, IStockCardServiceGateway stockCardServiceGateway, ICacheService cache, ILogger<PortfolioAssetAppService> logger) : IPortfolioAssetAppService
     {
         private readonly IUserContext _userContext = userContext;
         private readonly IPortfolioAssetRepository _portfolioAssetRepository = portfolioAssetRepository;
         private readonly IPortfolioRepository _portfolioRepository = portfolioRepository;
+        private readonly IOutboxRepository _outboxRepository = outboxRepository;
         private readonly IStockCardServiceGateway _stockCardServiceGateway = stockCardServiceGateway;
         private readonly ICacheService _cache = cache;
         private readonly ILogger<PortfolioAssetAppService> _logger = logger;
         private readonly TimeSpan _cacheExpiration = TimeSpan.FromMinutes(30);
+        private const string _topicName = "portfolio.transactions"; // наименование Kafka-топика, в который публикуются сообщения
 
         /// <summary>
         /// Инвалидация записи кэша для финансового актива
@@ -135,6 +139,29 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                 asset.Transactions.Add(initialTransaction);
 
                 PortfolioAsset createdAsset = await _portfolioAssetRepository.AddAsync(asset);
+
+                // Создаём сообщение для Outbox
+                var initialTransactionMessage = new TransactionMessage
+                {
+                    Id = initialTransaction.Id,
+                    PortfolioId = createdAsset.PortfolioId,
+                    StockCardId = createdAsset.StockCardId,
+                    AssetType = (int)createdAsset.AssetType,
+                    TransactionType = (int)initialTransaction.TransactionType,
+                    Quantity = initialTransaction.Quantity,
+                    PricePerUnit = initialTransaction.PricePerUnit,
+                    TotalAmount = initialTransaction.Quantity * initialTransaction.PricePerUnit,
+                    TransactionTime = initialTransaction.TransactionDate,
+                    Currency = initialTransaction.Currency
+                };
+
+                var outboxMessage = new OutboxMessage(
+                    Guid.NewGuid(),
+                    _topicName,
+                    JsonSerializer.Serialize(initialTransactionMessage));
+
+                await _outboxRepository.AddAsync(outboxMessage);
+
                 await InvalidatePortfolioCacheAsync(dto.PortfolioId);
 
                 return new PortfolioAssetDto(
@@ -249,6 +276,28 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                 }
 
                 await _portfolioAssetRepository.DeleteAssetTransactionAsync(transactionId);
+
+                // Создаём сообщение для Outbox
+                var createdTransactionMessage = new TransactionMessage
+                {
+                    Id = transactionId,
+                    PortfolioId = asset.PortfolioId,
+                    StockCardId = asset.StockCardId,
+                    AssetType = (int)asset.AssetType,
+                    TransactionType = (int)(transaction.TransactionType == PortfolioAssetTransactionType.Buy ? PortfolioAssetTransactionType.Sell : PortfolioAssetTransactionType.Buy),
+                    Quantity = transaction.Quantity,
+                    PricePerUnit = transaction.PricePerUnit,
+                    TotalAmount = transaction.Quantity * transaction.PricePerUnit,
+                    TransactionTime = transaction.TransactionDate,
+                    Currency = transaction.Currency
+                };
+
+                var outboxMessage = new OutboxMessage(
+                    Guid.NewGuid(),
+                    _topicName,
+                    JsonSerializer.Serialize(createdTransactionMessage));
+
+                await _outboxRepository.AddAsync(outboxMessage);
 
                 // Удаление актива, если транзакций не осталось
                 var remainingTransactions = await _portfolioAssetRepository.GetAssetTransactionsCountAsync(asset.Id);
@@ -389,10 +438,12 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                 }
 
                 PortfolioAsset? asset = await _portfolioAssetRepository.GetByIdAsync(transaction.PortfolioAssetId);
-                if (asset == null) return null;
+                if (asset == null)
+                    return null;
 
                 Portfolio? portfolio = await _portfolioRepository.GetByIdAsync(asset.PortfolioId);
-                if (portfolio == null) return null;
+                if (portfolio == null)
+                    return null;
 
                 if (!_userContext.IsAdmin && portfolio.UserId != _userContext.UserId)
                 {
@@ -529,6 +580,29 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
 
                 PortfolioAssetTransaction createdTransaction = await _portfolioAssetRepository.AddAssetTransactionAsync(transaction);
 
+                // Создаём сообщение для Outbox
+                var createdTransactionMessage = new TransactionMessage
+                {
+                    Id = createdTransaction.Id,
+                    PortfolioId = asset.PortfolioId,
+                    StockCardId = asset.StockCardId,
+                    AssetType = (int)asset.AssetType,
+                    TransactionType = (int)createdTransaction.TransactionType,
+                    Quantity = createdTransaction.Quantity,
+                    PricePerUnit = createdTransaction.PricePerUnit,
+                    TotalAmount = createdTransaction.Quantity * createdTransaction.PricePerUnit,
+                    TransactionTime = createdTransaction.TransactionDate,
+                    Currency = createdTransaction.Currency
+                };
+
+                var outboxMessage = new OutboxMessage(
+                    Guid.NewGuid(),
+                    _topicName,
+                    JsonSerializer.Serialize(createdTransactionMessage));
+
+                await _outboxRepository.AddAsync(outboxMessage);
+
+                // Удаление актива, если транзакций не осталось
                 if (asset.TotalQuantity == 0)
                 {
                     await _portfolioAssetRepository.DeleteAsync(asset);
@@ -662,8 +736,6 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                 throw;
             }
         }
-
-        // --- Приватные методы для расчёта доходности (без изменений) ---
 
         private PortfolioAssetProfitLossDto CalculateCurrentProfitLoss(PortfolioAsset asset, StockCardInfoDto cardInfo)
         {

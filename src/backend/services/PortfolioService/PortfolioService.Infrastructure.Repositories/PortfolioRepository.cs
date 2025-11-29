@@ -11,6 +11,7 @@ namespace StockMarketAssistant.PortfolioService.Infrastructure.Repositories
     /// <param name="dataContext"></param>
     public class PortfolioRepository(DatabaseContext dataContext) : EfRepository<Portfolio, Guid>(dataContext), IPortfolioRepository
     {
+        /// <inheritdoc/>
         public async Task<IEnumerable<Portfolio>> GetByUserIdAsync(Guid userId)
         {
             var portfolios = await Data

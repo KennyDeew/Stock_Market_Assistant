@@ -1,4 +1,5 @@
-﻿using Moq;
+﻿using Microsoft.Extensions.Logging;
+using Moq;
 using StockMarketAssistant.PortfolioService.Application.DTOs;
 using StockMarketAssistant.PortfolioService.Application.Interfaces;
 using StockMarketAssistant.PortfolioService.Application.Interfaces.Caching;
@@ -16,6 +17,7 @@ namespace StockMarketAssistant.PortfolioService.UnitTests
         private readonly Mock<IPortfolioRepository> _portfolioRepoMock = new();
         private readonly Mock<IUserContext> _userContextMock = new();
         private readonly Mock<IPortfolioAssetAppService> _assetAppServiceMock = new();
+        private readonly Mock<ILogger<PortfolioAppService>> _loggerMock = new();
         private readonly Mock<ICacheService> _cacheMock = new();
         private readonly PortfolioAppService _service;
 
@@ -26,7 +28,7 @@ namespace StockMarketAssistant.PortfolioService.UnitTests
                 _userContextMock.Object,
                 _assetAppServiceMock.Object,
                 _cacheMock.Object,
-                null! // ILogger можно игнорировать в юнит-тестах
+                _loggerMock.Object
             );
         }
 

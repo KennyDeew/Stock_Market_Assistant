@@ -45,7 +45,7 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
             {
                 _logger.LogWarning(
                     "Пользователь {CurrentUserId} (роль: {Role}) пытается создать портфель от имени {TargetUserId}",
-                    _userContext.UserId, _userContext.Role, creatingPortfolioDto.UserId);
+                    _userContext.UserId, _userContext.Role ?? "не задана", creatingPortfolioDto.UserId);
 
                 throw new SecurityException("Недопустимая операция: нельзя создавать портфели от имени других пользователей");
             }
@@ -170,7 +170,7 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                 {
                     _logger.LogWarning(
                         "Пользователь {CurrentUserId} (роль: {Role}) пытается получить доступ к портфелю {PortfolioId}, принадлежащему {OwnerId}",
-                        _userContext.UserId, _userContext.Role, id, portfolio.UserId);
+                        _userContext.UserId, _userContext.Role ?? "не задана", id, portfolio.UserId);
 
                     // Не возвращаем 403 — чтобы не раскрывать существование портфеля
                     // Возвращаем 404 — "не найден"
@@ -264,7 +264,7 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                 {
                     _logger.LogWarning(
                         "Пользователь {CurrentUserId} (роль: {Role}) пытается изменить портфель {PortfolioId}, принадлежащий {OwnerId}",
-                        _userContext.UserId, _userContext.Role, id, portfolio.UserId);
+                        _userContext.UserId, _userContext.Role ?? "не задана", id, portfolio.UserId);
 
                     // Не раскрываем существование портфеля — выбрасываем KeyNotFoundException
                     throw new KeyNotFoundException($"Портфель с ID {id} не найден");
