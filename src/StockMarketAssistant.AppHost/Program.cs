@@ -54,9 +54,9 @@
             .WithDataVolume("stock-card-mongo-data")
             .WithMongoExpress(me => me.WithHostPort(5005)) // веб-интерфейс
             .AddDatabase("finantial-report-db");
-
-        var notificationPostgres = builder.AddPostgres("notification-db")
+        var pgNotificationDb = builder.AddPostgres("notification-db")
             .WithImage("postgres:17.5")
+            .WithDataVolume("notification-pg-data")
             .WithHostPort(14054)
             .WithPgWeb(n => n.WithHostPort(5000))
             .AddDatabase("notificationDb");
@@ -87,13 +87,15 @@
             .WithReference(redis)
             .WithReference(pgPortfolioDb)
             .WithReference(apiStockCardService)
-            .WaitFor(pgPortfolioDb);
+            .WithReference(kafka)
+            .WaitFor(pgPortfolioDb)
+            .WaitFor(kafka);
 
         apiNotificationService
-            .WithReference(notificationPostgres)
+            .WithReference(pgNotificationDb)
             .WithReference(kafka)
             .WithEnvironment("OpenSearchConfig__Url", openSearch.GetEndpoint("http"))
-            .WaitFor(notificationPostgres)
+            .WaitFor(pgNotificationDb)
             .WaitFor(kafka)
             .WaitFor(openSearch);
 
@@ -106,18 +108,19 @@
 
         var webui = builder.AddNpmApp("webui", "../frontend", scriptName: "dev")
         .WithHttpEndpoint(
-            port: 5173,           // порт, который будет открыт
-            targetPort: 5173,     // порт, на котором слушает Vite
+            port: 5273,           // порт, который будет открыт
+            targetPort: 5273,     // порт, на котором слушает Vite
             name: "http",
             env: "PORT",
             isProxied: false
         )
         .WithEnvironment("VITE_AUTH_API_URL", apiAuthService.GetEndpoint("http"))
-        .WithEnvironment("VITE_PORTFOLIO_API_URL", apiPortfolioService.GetEndpoint("http"))
         .WithEnvironment("VITE_STOCKCARD_API_URL", apiStockCardService.GetEndpoint("http"))
-        .WithEnvironment("VITE_NOTIFICATION_API_URL", apiNotificationService.GetEndpoint("http"))
+        .WithEnvironment("VITE_PORTFOLIO_API_URL", apiPortfolioService.GetEndpoint("http"))
+        .WithEnvironment("VITE_ANALYTICS_API_URL", apiAnalyticsService.GetEndpoint("http"))
         .WaitFor(apiAuthService)
-        .WaitFor(apiStockCardService);
+        .WaitFor(apiStockCardService)
+        .WaitFor(apiPortfolioService);
         // Используем явную строку подключения с паролем "xxx"
         // WithEnvironment после WithReference перезапишет ConnectionStringExpression от Aspire
         apiAnalyticsService
@@ -138,6 +141,7 @@
         apiStockCardService.WithEnvironment("FRONTEND_ORIGIN", webuiUrl);
         apiAuthService.WithEnvironment("FRONTEND_ORIGIN", webuiUrl);
         apiPortfolioService.WithEnvironment("FRONTEND_ORIGIN", webuiUrl);
+        apiAnalyticsService.WithEnvironment("FRONTEND_ORIGIN", webuiUrl);
 
         var app = builder.Build();
 

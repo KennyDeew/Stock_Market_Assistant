@@ -4,8 +4,14 @@ using StockMarketAssistant.PortfolioService.Domain.Entities;
 
 namespace StockMarketAssistant.PortfolioService.Infrastructure.EntityFramework.Context.Configurations
 {
+    /// <summary>
+    /// Конфигурация Entity Framework для сущности Portfolio
+    /// </summary>    
     public class PortfolioConfiguration : IEntityTypeConfiguration<Portfolio>
     {
+        /// <summary>
+        /// Настройка сущности Portfolio в базе данных
+        /// </summary>
         public void Configure(EntityTypeBuilder<Portfolio> builder)
         {
             builder.HasMany(p => p.Assets)

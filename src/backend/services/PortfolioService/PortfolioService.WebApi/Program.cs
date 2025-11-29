@@ -1,5 +1,7 @@
+using Confluent.Kafka;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using StockMarketAssistant.PortfolioService.Application.Interfaces;
 using StockMarketAssistant.PortfolioService.Application.Interfaces.Caching;
@@ -7,6 +9,7 @@ using StockMarketAssistant.PortfolioService.Application.Interfaces.Gateways;
 using StockMarketAssistant.PortfolioService.Application.Interfaces.Repositories;
 using StockMarketAssistant.PortfolioService.Application.Interfaces.Security;
 using StockMarketAssistant.PortfolioService.Application.Services;
+using StockMarketAssistant.PortfolioService.Infrastructure.BackgroundServices;
 using StockMarketAssistant.PortfolioService.Infrastructure.Caching;
 using StockMarketAssistant.PortfolioService.Infrastructure.EntityFramework;
 using StockMarketAssistant.PortfolioService.Infrastructure.EntityFramework.Context;
@@ -15,6 +18,7 @@ using StockMarketAssistant.PortfolioService.Infrastructure.Repositories;
 using StockMarketAssistant.PortfolioService.Infrastructure.Security;
 using StockMarketAssistant.PortfolioService.WebApi.Infrastructure.Swagger;
 using StockMarketAssistant.PortfolioService.WebApi.Middleware;
+using StockMarketAssistant.PortfolioService.WebApi.Options;
 using System.Text;
 
 namespace StockMarketAssistant.PortfolioService.WebApi
@@ -86,9 +90,42 @@ namespace StockMarketAssistant.PortfolioService.WebApi
 
             builder.Services.AddScoped<IPortfolioRepository, PortfolioRepository>();
             builder.Services.AddScoped<IPortfolioAssetRepository, PortfolioAssetRepository>();
+            builder.Services.AddScoped<IAlertRepository, AlertRepository>();
+            builder.Services.AddScoped<IOutboxRepository, OutboxRepository>();
 
             builder.Services.AddScoped<IPortfolioAppService, PortfolioAppService>();
             builder.Services.AddScoped<IPortfolioAssetAppService, PortfolioAssetAppService>();
+            builder.Services.AddScoped<IAlertAppService, AlertAppService>();
+
+            // Настройка Kafka Producer
+
+            var kafkaConnectionString = builder.Configuration.GetConnectionString("kafka");
+            if (string.IsNullOrEmpty(kafkaConnectionString))
+            {
+                var options = builder.Configuration.Get<ApplicationOptions>();
+                // Fallback к appsettings.json
+                kafkaConnectionString = options?.KafkaOptions?.BootstrapServers
+                    ?? "kafka:9092";
+            }
+
+            builder.Services.AddSingleton(provider =>
+            {
+                var config = new ProducerConfig
+                {
+                    BootstrapServers = kafkaConnectionString,
+                    Acks = Acks.All,
+                    MessageSendMaxRetries = 3,
+                    RetryBackoffMs = 1000,
+                    LingerMs = 5,
+                    BatchSize = 16384,
+                    EnableIdempotence = true
+                };
+                return new ProducerBuilder<Null, string>(config).Build();
+            });
+
+            // Background Services
+            builder.Services.AddHostedService<AlertProcessingService>();
+            builder.Services.AddHostedService<KafkaOutboxProcessor>();
 
             builder.Services.AddHttpClient<IStockCardServiceGateway, StockCardServiceGateway>(httpClient =>
             {

@@ -47,6 +47,20 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
             // Добавляем сервисы Aspire
             builder.AddServiceDefaults();
 
+            // Читаем origin из переменной окружения
+            var frontendOrigin = builder.Configuration["FRONTEND_ORIGIN"] ?? "http://localhost:5173";
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowFrontendApp", policy =>
+                {
+                    policy
+                        .WithOrigins(frontendOrigin) // Разрешить источник фронтенда
+                        .AllowAnyHeader()            // Любой заголовок
+                        .AllowAnyMethod();           // GET, POST, PUT, DELETE
+                });
+            });
+
+
             // Настройка Serilog с OpenSearch
             var openSearchUrl = builder.Configuration.GetSection("OpenSearchConfig:Url").Value
                 ?? builder.Configuration["Services:opensearch"]

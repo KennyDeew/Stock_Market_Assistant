@@ -408,7 +408,7 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                 {
                     try
                     {
-                        var cardInfo = await _portfolioAssetAppService.GetStockCardInfoAsync(asset.AssetType, asset.StockCardId, true);
+                        var cardInfo = await _portfolioAssetAppService.GetStockCardInfoAsync(asset.AssetType, asset.StockCardId);
                         if (cardInfo.CurrentPrice.HasValue)
                             portfolioTotalValue += asset.TotalQuantity * cardInfo.CurrentPrice.Value;
                         else
@@ -456,7 +456,7 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
         {
             try
             {
-                StockCardInfoDto cardInfo = await _portfolioAssetAppService.GetStockCardInfoAsync(asset.AssetType, asset.StockCardId, true);
+                StockCardInfoDto cardInfo = await _portfolioAssetAppService.GetStockCardInfoAsync(asset.AssetType, asset.StockCardId);
                 int totalQuantity = asset.TotalQuantity;
                 decimal averagePurchasePrice = asset.AveragePurchasePrice;
                 decimal? currentValue = cardInfo.CurrentPrice.HasValue ? totalQuantity * cardInfo.CurrentPrice.Value : null;
