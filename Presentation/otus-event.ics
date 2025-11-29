@@ -1,0 +1,21 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Мероприятие OTUS Calendar//otus.ru//
+LAST-MODIFIED:20251129T052825Z
+NAME:Мероприятие OTUS
+RRULE:FREQ=HOURLY
+TIMEZONE-ID:Russian Standard Time
+TZID:Russian Standard Time
+X-WR-CALNAME:Мероприятие OTUS
+X-WR-PUBLISHED-TTL:PT1H
+X-WR-TIMEZONE:Russian Standard Time
+BEGIN:VEVENT
+SUMMARY:Открытый вебинар: Объектная модель 
+ без боли: как превратить хаос требований
+  в стройную архитектуру
+DTSTART:20251211T170000Z
+DTEND:20251211T190000Z
+DTSTAMP:PT2H
+UID:DodEventItem-6590@otus.ru
+END:VEVENT
+END:VCALENDAR

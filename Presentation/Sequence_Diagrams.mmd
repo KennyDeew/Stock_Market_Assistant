@@ -1,0 +1,554 @@
+# Stock Market Assistant - Sequence Diagrams
+
+## 1. Аутентификация пользователя (Login)
+
+```mermaid
+sequenceDiagram
+    actor User as Пользователь
+    participant Frontend as Frontend<br/>(React)
+    participant Gateway as API Gateway
+    participant AuthService as AuthService
+    participant UserDb as UserDb<br/>(PostgreSQL)
+    participant JWT as JWT Provider
+
+    User->>Frontend: Ввод email и password
+    Frontend->>Gateway: POST /api/auth/login<br/>{email, password}
+    Gateway->>AuthService: POST /auth/login<br/>{email, password}
+
+    AuthService->>UserDb: FindByEmailAsync(email)
+    UserDb-->>AuthService: User entity
+
+    alt Пользователь не найден
+        AuthService-->>Gateway: 401 Unauthorized<br/>{error: "Invalid credentials"}
+        Gateway-->>Frontend: 401 Unauthorized
+        Frontend-->>User: Ошибка авторизации
+    else Пользователь найден
+        AuthService->>UserDb: CheckPasswordAsync(user, password)
+        UserDb-->>AuthService: true/false
+
+        alt Неверный пароль
+            AuthService-->>Gateway: 401 Unauthorized<br/>{error: "Invalid credentials"}
+            Gateway-->>Frontend: 401 Unauthorized
+            Frontend-->>User: Ошибка авторизации
+        else Пароль верный
+            AuthService->>JWT: GenerateAccessToken(user)
+            JWT-->>AuthService: AccessToken (JWT)
+
+            AuthService->>JWT: GenerateRefreshToken(user, jti)
+            JWT-->>AuthService: RefreshToken
+
+            AuthService->>UserDb: Сохранение RefreshSession
+            UserDb-->>AuthService: OK
+
+            AuthService-->>Gateway: 200 OK<br/>{accessToken, refreshToken}
+            Gateway-->>Frontend: 200 OK<br/>{accessToken, refreshToken}
+            Frontend->>Frontend: Сохранение токенов<br/>в localStorage
+            Frontend-->>User: Успешный вход
+        end
+    end
+```
+
+## 2. Создание транзакции в портфеле (с публикацией в Kafka)
+
+```mermaid
+sequenceDiagram
+    actor User as Пользователь
+    participant Frontend as Frontend
+    participant Gateway as API Gateway
+    participant PortfolioService as PortfolioService
+    participant PortfolioDb as PortfolioDb<br/>(PostgreSQL)
+    participant StockCardService as StockCardService
+    participant Redis as Redis Cache
+    participant Kafka as Kafka<br/>(portfolio.transactions)
+    participant AnalyticsService as AnalyticsService
+    participant NotificationService as NotificationService
+
+    User->>Frontend: Создание транзакции<br/>(покупка/продажа)
+    Frontend->>Gateway: POST /api/portfolio/transactions<br/>Authorization: Bearer {token}<br/>{portfolioId, assetId, type, quantity, price}
+
+    Gateway->>Gateway: Валидация JWT токена
+    Gateway->>PortfolioService: POST /portfolio/transactions<br/>Authorization: Bearer {token}<br/>{portfolioId, assetId, type, quantity, price}
+
+    PortfolioService->>PortfolioService: Извлечение UserId из JWT
+    PortfolioService->>PortfolioDb: Получение Portfolio<br/>WHERE id = portfolioId<br/>AND userId = userId
+    PortfolioDb-->>PortfolioService: Portfolio entity
+
+    alt Портфель не найден или не принадлежит пользователю
+        PortfolioService-->>Gateway: 404 Not Found
+        Gateway-->>Frontend: 404 Not Found
+        Frontend-->>User: Ошибка: Портфель не найден
+    else Портфель найден
+        PortfolioService->>PortfolioDb: Получение PortfolioAsset<br/>WHERE id = assetId
+        PortfolioDb-->>PortfolioService: PortfolioAsset entity
+
+        PortfolioService->>StockCardService: HTTP GET /stockcard/{stockCardId}
+        StockCardService->>Redis: Проверка кэша
+
+        alt Данные в кэше
+            Redis-->>StockCardService: StockCard data
+        else Данных нет в кэше
+            StockCardService->>StockCardService: Получение из БД
+            StockCardService->>Redis: Сохранение в кэш
+            StockCardService-->>PortfolioService: StockCard data
+        end
+
+        PortfolioService->>PortfolioService: Валидация транзакции<br/>(проверка баланса для продажи)
+
+        PortfolioService->>PortfolioDb: Создание PortfolioAssetTransaction<br/>INSERT INTO portfolio_asset_transaction
+        PortfolioDb-->>PortfolioService: Transaction entity
+
+        PortfolioService->>PortfolioDb: Обновление PortfolioAsset<br/>(TotalQuantity, AveragePurchasePrice)
+        PortfolioDb-->>PortfolioService: OK
+
+        PortfolioService->>PortfolioDb: COMMIT транзакции
+
+        PortfolioService->>Kafka: Публикация события<br/>Topic: portfolio.transactions<br/>{transactionId, portfolioId, stockCardId,<br/>assetType, transactionType, quantity,<br/>pricePerUnit, totalAmount, transactionTime}
+
+        PortfolioService-->>Gateway: 201 Created<br/>{transactionId, ...}
+        Gateway-->>Frontend: 201 Created
+        Frontend-->>User: Транзакция создана успешно
+
+        Note over Kafka: Асинхронная обработка
+
+        Kafka->>AnalyticsService: Потребление события
+        AnalyticsService->>AnalyticsService: Сохранение AssetTransaction
+        AnalyticsService->>AnalyticsService: Обновление рейтингов
+
+        Kafka->>NotificationService: Потребление события
+        NotificationService->>NotificationService: Проверка триггеров оповещений
+        alt Триггер сработал
+            NotificationService->>NotificationService: Отправка Email/SMS
+        end
+    end
+```
+
+## 3. Получение котировок акций в реальном времени
+
+```mermaid
+sequenceDiagram
+    actor User as Пользователь
+    participant Frontend as Frontend<br/>(React)
+    participant SignalR as SignalR Hub<br/>(WebSocket)
+    participant StockCardService as StockCardService
+    participant Redis as Redis Cache
+    participant StockCardDb as StockCardDb<br/>(PostgreSQL)
+    participant MOEX as MOEX API<br/>(External)
+
+    User->>Frontend: Открытие страницы котировок
+    Frontend->>SignalR: WebSocket подключение<br/>Connect()
+    SignalR-->>Frontend: Connection established
+
+    Frontend->>SignalR: SubscribeToQuotes(ticker)
+    SignalR->>StockCardService: Запрос текущей цены<br/>GET /stockcard/{ticker}
+
+    StockCardService->>Redis: Проверка кэша<br/>GET stockcard:{ticker}
+
+    alt Данные в кэше (TTL > 0)
+        Redis-->>StockCardService: StockCard data
+        StockCardService-->>SignalR: Текущая цена
+        SignalR-->>Frontend: WebSocket: QuoteUpdate<br/>{ticker, price, timestamp}
+        Frontend-->>User: Отображение цены
+    else Данных нет в кэше или TTL истек
+        StockCardService->>StockCardDb: SELECT * FROM ShareCards<br/>WHERE ticker = {ticker}
+        StockCardDb-->>StockCardService: ShareCard entity
+
+        alt Данные устарели (> 1 минуты)
+            StockCardService->>MOEX: HTTP GET /iss/securities/{ticker}/candles
+            MOEX-->>StockCardService: Latest price data
+            StockCardService->>StockCardDb: UPDATE ShareCards<br/>SET current_price = {price}
+            StockCardService->>Redis: SET stockcard:{ticker}<br/>EXPIRE 60
+        end
+
+        StockCardService-->>SignalR: Текущая цена
+        SignalR-->>Frontend: WebSocket: QuoteUpdate<br/>{ticker, price, timestamp}
+        Frontend-->>User: Отображение цены
+    end
+
+    loop Каждые 1 секунду
+        StockCardService->>MOEX: Получение обновлений
+        MOEX-->>StockCardService: Price updates
+        StockCardService->>StockCardDb: Обновление цен
+        StockCardService->>Redis: Обновление кэша
+        StockCardService->>SignalR: Broadcast: QuoteUpdate<br/>{ticker, newPrice}
+        SignalR-->>Frontend: WebSocket: QuoteUpdate
+        Frontend-->>User: Обновление цены в UI
+    end
+```
+
+## 4. Система оповещений (Alert Trigger)
+
+```mermaid
+sequenceDiagram
+    actor User as Пользователь
+    participant Frontend as Frontend
+    participant Gateway as API Gateway
+    participant NotificationService as NotificationService
+    participant NotificationDb as NotificationDb<br/>(PostgreSQL)
+    participant Kafka as Kafka<br/>(portfolio.transactions)
+    participant StockCardService as StockCardService
+    participant EmailService as Email Service<br/>(SendGrid)
+    participant SMSService as SMS Service<br/>(Twilio)
+    participant OpenSearch as OpenSearch
+
+    User->>Frontend: Создание оповещения<br/>{stockCardId, targetPrice, type}
+    Frontend->>Gateway: POST /api/notifications/alerts<br/>Authorization: Bearer {token}
+    Gateway->>NotificationService: POST /notifications/alerts<br/>{stockCardId, targetPrice, type}
+
+    NotificationService->>NotificationDb: Сохранение Alert<br/>INSERT INTO alerts
+    NotificationDb-->>NotificationService: Alert entity
+    NotificationService-->>Gateway: 201 Created
+    Gateway-->>Frontend: 201 Created
+    Frontend-->>User: Оповещение создано
+
+    Note over Kafka,NotificationService: Асинхронная обработка событий
+
+    Kafka->>NotificationService: Потребление события<br/>portfolio.transactions<br/>{stockCardId, pricePerUnit, ...}
+
+    NotificationService->>NotificationDb: Получение активных оповещений<br/>SELECT * FROM alerts<br/>WHERE stockCardId = {stockCardId}<br/>AND enabled = true
+
+    alt Оповещения найдены
+        loop Для каждого оповещения
+            NotificationService->>NotificationService: Проверка условия<br/>(price >= targetPrice для Buy<br/>price <= targetPrice для Sell)
+
+            alt Условие выполнено
+                NotificationService->>NotificationDb: Получение пользователя<br/>SELECT userId FROM alerts
+                NotificationDb-->>NotificationService: User data
+
+                NotificationService->>StockCardService: HTTP GET /stockcard/{stockCardId}
+                StockCardService-->>NotificationService: StockCard data
+
+                NotificationService->>NotificationService: Формирование сообщения<br/>{ticker, currentPrice, targetPrice}
+
+                par Отправка Email
+                    NotificationService->>EmailService: SendEmail<br/>{to, subject, body}
+                    EmailService-->>NotificationService: Email sent
+                and Отправка SMS (если настроено)
+                    NotificationService->>SMSService: SendSMS<br/>{to, message}
+                    SMSService-->>NotificationService: SMS sent
+                end
+
+                NotificationService->>NotificationDb: Обновление статуса<br/>UPDATE alerts<br/>SET triggered = true,<br/>triggeredAt = NOW()
+
+                NotificationService->>OpenSearch: Логирование события<br/>POST /logs<br/>{level: "INFO", message: "Alert triggered", ...}
+            end
+        end
+    end
+```
+
+## 5. Аналитика: Расчет рейтингов активов
+
+```mermaid
+sequenceDiagram
+    participant Kafka as Kafka<br/>(portfolio.transactions)
+    participant AnalyticsService as AnalyticsService
+    participant AnalyticsDb as AnalyticsDb<br/>(PostgreSQL)
+    participant EventBus as Event Bus<br/>(In-Memory)
+    participant RatingService as RatingCalculationService
+    participant Frontend as Frontend
+    participant Gateway as API Gateway
+
+    Note over Kafka,AnalyticsService: Потребление событий транзакций
+
+    Kafka->>AnalyticsService: Потребление события<br/>{transactionId, portfolioId, stockCardId,<br/>assetType, transactionType, quantity,<br/>pricePerUnit, totalAmount, transactionTime}
+
+    AnalyticsService->>AnalyticsDb: Сохранение AssetTransaction<br/>INSERT INTO asset_transactions
+    AnalyticsDb-->>AnalyticsService: Transaction saved
+
+    AnalyticsService->>EventBus: PublishAsync(TransactionReceivedEvent)
+    EventBus->>AnalyticsService: TransactionReceivedEventHandler
+
+    AnalyticsService->>AnalyticsDb: Получение транзакций за период<br/>SELECT * FROM asset_transactions<br/>WHERE stockCardId = {stockCardId}<br/>AND transactionTime >= {periodStart}<br/>AND transactionTime <= {periodEnd}
+    AnalyticsDb-->>AnalyticsService: List<AssetTransaction>
+
+    AnalyticsService->>RatingService: CreateRating(transactions, period, context)
+    RatingService->>RatingService: Группировка по stockCardId
+    RatingService->>RatingService: Расчет метрик:<br/>- buyCount, sellCount<br/>- buyAmount, sellAmount
+    RatingService-->>AnalyticsService: AssetRating entity
+
+    AnalyticsService->>AnalyticsDb: Сохранение/обновление AssetRating<br/>INSERT INTO asset_ratings<br/>ON CONFLICT UPDATE
+    AnalyticsDb-->>AnalyticsService: Rating saved
+
+    Note over AnalyticsService: Периодический пересчет рангов (каждые 15 минут)
+
+    AnalyticsService->>AnalyticsDb: Получение всех рейтингов<br/>SELECT * FROM asset_ratings<br/>WHERE period_start = {periodStart}<br/>AND context = {context}
+    AnalyticsDb-->>AnalyticsService: List<AssetRating>
+
+    AnalyticsService->>RatingService: AssignRanks(ratings)
+    RatingService->>RatingService: Сортировка по buyAmount DESC
+    RatingService->>RatingService: Назначение рангов (1, 2, 3, ...)
+    RatingService-->>AnalyticsService: List<AssetRating> with ranks
+
+    AnalyticsService->>AnalyticsDb: Обновление рангов<br/>UPDATE asset_ratings<br/>SET rank = {rank}<br/>WHERE id = {id}
+    AnalyticsDb-->>AnalyticsService: Ranks updated
+
+    Note over Frontend,Gateway: Запрос рейтингов через API
+
+    Frontend->>Gateway: GET /api/analytics/top-bought<br/>?period=week&top=10
+    Gateway->>AnalyticsService: GET /analytics/top-bought<br/>?period=week&top=10
+
+    AnalyticsService->>AnalyticsDb: SELECT * FROM asset_ratings<br/>WHERE context = 'Global'<br/>AND period_start >= {weekStart}<br/>ORDER BY buy_amount DESC<br/>LIMIT 10
+    AnalyticsDb-->>AnalyticsService: List<AssetRating>
+
+    AnalyticsService-->>Gateway: 200 OK<br/>[{stockCardId, buyCount, buyAmount, rank}, ...]
+    Gateway-->>Frontend: 200 OK
+    Frontend-->>Frontend: Отображение топ активов
+```
+
+## 6. Создание портфеля
+
+```mermaid
+sequenceDiagram
+    actor User as Пользователь
+    participant Frontend as Frontend
+    participant Gateway as API Gateway
+    participant PortfolioService as PortfolioService
+    participant PortfolioDb as PortfolioDb<br/>(PostgreSQL)
+    participant Redis as Redis Cache
+
+    User->>Frontend: Создание нового портфеля<br/>{name, currency}
+    Frontend->>Gateway: POST /api/portfolio<br/>Authorization: Bearer {token}<br/>{name, currency}
+
+    Gateway->>Gateway: Валидация JWT токена
+    Gateway->>PortfolioService: POST /portfolio<br/>Authorization: Bearer {token}<br/>{name, currency}
+
+    PortfolioService->>PortfolioService: Извлечение UserId из JWT
+    PortfolioService->>PortfolioService: Валидация входных данных<br/>(FluentValidation)
+
+    alt Валидация не прошла
+        PortfolioService-->>Gateway: 400 Bad Request<br/>{errors: [...]}
+        Gateway-->>Frontend: 400 Bad Request
+        Frontend-->>User: Ошибка валидации
+    else Валидация прошла
+        PortfolioService->>PortfolioDb: Создание Portfolio<br/>INSERT INTO portfolio<br/>(id, user_id, name, currency)<br/>VALUES (NEWID(), {userId}, {name}, {currency})
+        PortfolioDb-->>PortfolioService: Portfolio entity
+
+        PortfolioService->>Redis: Инвалидация кэша<br/>DEL user:{userId}:portfolios
+
+        PortfolioService-->>Gateway: 201 Created<br/>{id, userId, name, currency, createdAt}
+        Gateway-->>Frontend: 201 Created
+        Frontend->>Frontend: Обновление списка портфелей
+        Frontend-->>User: Портфель создан успешно
+    end
+```
+
+## 7. Получение списка портфелей с кэшированием
+
+```mermaid
+sequenceDiagram
+    actor User as Пользователь
+    participant Frontend as Frontend
+    participant Gateway as API Gateway
+    participant PortfolioService as PortfolioService
+    participant Redis as Redis Cache
+    participant PortfolioDb as PortfolioDb<br/>(PostgreSQL)
+
+    User->>Frontend: Загрузка страницы портфелей
+    Frontend->>Gateway: GET /api/portfolio<br/>Authorization: Bearer {token}
+
+    Gateway->>Gateway: Валидация JWT токена
+    Gateway->>PortfolioService: GET /portfolio<br/>Authorization: Bearer {token}
+
+    PortfolioService->>PortfolioService: Извлечение UserId из JWT
+    PortfolioService->>Redis: GET user:{userId}:portfolios
+
+    alt Данные в кэше
+        Redis-->>PortfolioService: List<Portfolio> (JSON)
+        PortfolioService->>PortfolioService: Десериализация из JSON
+        PortfolioService-->>Gateway: 200 OK<br/>List<Portfolio>
+        Gateway-->>Frontend: 200 OK
+        Frontend-->>User: Отображение портфелей
+    else Данных нет в кэше
+        PortfolioService->>PortfolioDb: SELECT * FROM portfolio<br/>WHERE user_id = {userId}<br/>ORDER BY created_at DESC
+        PortfolioDb-->>PortfolioService: List<Portfolio>
+
+        PortfolioService->>PortfolioService: Загрузка активов для каждого портфеля<br/>SELECT * FROM portfolio_asset<br/>WHERE portfolio_id IN (...)
+        PortfolioDb-->>PortfolioService: List<PortfolioAsset>
+
+        PortfolioService->>PortfolioService: Расчет TotalPrice для каждого портфеля
+
+        PortfolioService->>Redis: SET user:{userId}:portfolios<br/>EXPIRE 300<br/>(TTL 5 минут)
+
+        PortfolioService-->>Gateway: 200 OK<br/>List<Portfolio>
+        Gateway-->>Frontend: 200 OK
+        Frontend-->>User: Отображение портфелей
+    end
+```
+
+## 8. Получение аналитики портфеля
+
+```mermaid
+sequenceDiagram
+    actor User as Пользователь
+    participant Frontend as Frontend
+    participant Gateway as API Gateway
+    participant AnalyticsService as AnalyticsService
+    participant AnalyticsDb as AnalyticsDb<br/>(PostgreSQL)
+    participant PortfolioService as PortfolioService
+    participant PortfolioDb as PortfolioDb<br/>(PostgreSQL)
+
+    User->>Frontend: Запрос аналитики портфеля<br/>{portfolioId, startDate, endDate}
+    Frontend->>Gateway: GET /api/analytics/portfolio/{portfolioId}<br/>?startDate=...&endDate=...<br/>Authorization: Bearer {token}
+
+    Gateway->>Gateway: Валидация JWT токена
+    Gateway->>AnalyticsService: GET /analytics/portfolio/{portfolioId}<br/>?startDate=...&endDate=...
+
+    AnalyticsService->>AnalyticsService: Валидация параметров<br/>(startDate < endDate)
+
+    alt Валидация не прошла
+        AnalyticsService-->>Gateway: 400 Bad Request
+        Gateway-->>Frontend: 400 Bad Request
+        Frontend-->>User: Ошибка валидации
+    else Валидация прошла
+        AnalyticsService->>PortfolioService: HTTP GET /portfolio/{portfolioId}<br/>Authorization: Bearer {token}
+        PortfolioService->>PortfolioDb: SELECT * FROM portfolio<br/>WHERE id = {portfolioId}
+        PortfolioDb-->>PortfolioService: Portfolio entity
+        PortfolioService-->>AnalyticsService: Portfolio data
+
+        AnalyticsService->>AnalyticsDb: SELECT * FROM asset_transactions<br/>WHERE portfolio_id = {portfolioId}<br/>AND transaction_time >= {startDate}<br/>AND transaction_time <= {endDate}
+        AnalyticsDb-->>AnalyticsService: List<AssetTransaction>
+
+        AnalyticsService->>AnalyticsDb: SELECT * FROM asset_ratings<br/>WHERE portfolio_id = {portfolioId}<br/>AND period_start >= {startDate}<br/>AND period_end <= {endDate}
+        AnalyticsDb-->>AnalyticsService: List<AssetRating>
+
+        AnalyticsService->>AnalyticsService: Агрегация данных:<br/>- Общая стоимость транзакций<br/>- Топ активов по объему<br/>- PnL (прибыль/убыток)<br/>- График изменений
+
+        AnalyticsService-->>Gateway: 200 OK<br/>{totalValue, totalPnL, topAssets,<br/>chartData, statistics}
+        Gateway-->>Frontend: 200 OK
+        Frontend->>Frontend: Визуализация аналитики<br/>(графики, таблицы)
+        Frontend-->>User: Отображение аналитики
+    end
+```
+
+## 9. Обновление токена доступа (Refresh Token)
+
+```mermaid
+sequenceDiagram
+    actor User as Пользователь
+    participant Frontend as Frontend
+    participant Gateway as API Gateway
+    participant AuthService as AuthService
+    participant UserDb as UserDb<br/>(PostgreSQL)
+    participant JWT as JWT Provider
+
+    Note over User,Frontend: Access Token истек (через 1 час)
+
+    Frontend->>Frontend: Обнаружение истечения токена<br/>(401 Unauthorized)
+    Frontend->>Gateway: POST /api/auth/refresh<br/>{refreshToken}
+
+    Gateway->>AuthService: POST /auth/refresh<br/>{refreshToken}
+
+    AuthService->>AuthService: Валидация refreshToken<br/>(JWT validation)
+
+    alt RefreshToken невалиден
+        AuthService-->>Gateway: 401 Unauthorized
+        Gateway-->>Frontend: 401 Unauthorized
+        Frontend->>Frontend: Перенаправление на страницу входа
+        Frontend-->>User: Требуется повторный вход
+    else RefreshToken валиден
+        AuthService->>UserDb: SELECT * FROM refresh_sessions<br/>WHERE token = {refreshToken}<br/>AND expires_at > NOW()
+        UserDb-->>AuthService: RefreshSession entity
+
+        alt Сессия не найдена или истекла
+            AuthService-->>Gateway: 401 Unauthorized
+            Gateway-->>Frontend: 401 Unauthorized
+            Frontend-->>User: Требуется повторный вход
+        else Сессия найдена
+            AuthService->>UserDb: SELECT * FROM users<br/>WHERE id = {userId}
+            UserDb-->>AuthService: User entity
+
+            AuthService->>JWT: GenerateAccessToken(user)
+            JWT-->>AuthService: New AccessToken
+
+            AuthService->>JWT: GenerateRefreshToken(user, newJti)
+            JWT-->>AuthService: New RefreshToken
+
+            AuthService->>UserDb: Удаление старой сессии<br/>DELETE FROM refresh_sessions<br/>WHERE token = {oldRefreshToken}
+
+            AuthService->>UserDb: Сохранение новой сессии<br/>INSERT INTO refresh_sessions<br/>(token, user_id, jti, expires_at)
+
+            AuthService-->>Gateway: 200 OK<br/>{accessToken, refreshToken}
+            Gateway-->>Frontend: 200 OK
+            Frontend->>Frontend: Обновление токенов<br/>в localStorage
+            Frontend-->>User: Токены обновлены<br/>(прозрачно для пользователя)
+        end
+    end
+```
+
+## 10. Получение карточки актива с кэшированием
+
+```mermaid
+sequenceDiagram
+    actor User as Пользователь
+    participant Frontend as Frontend
+    participant Gateway as API Gateway
+    participant StockCardService as StockCardService
+    participant Redis as Redis Cache
+    participant StockCardDb as StockCardDb<br/>(PostgreSQL)
+    participant ReportDb as ReportDb<br/>(MongoDB)
+    participant MOEX as MOEX API<br/>(External)
+
+    User->>Frontend: Просмотр карточки актива<br/>{ticker}
+    Frontend->>Gateway: GET /api/stockcard/{ticker}
+
+    Gateway->>StockCardService: GET /stockcard/{ticker}
+
+    StockCardService->>Redis: GET stockcard:{ticker}
+
+    alt Данные в кэше (TTL > 0)
+        Redis-->>StockCardService: ShareCard data (JSON)
+        StockCardService->>StockCardService: Десериализация
+        StockCardService-->>Gateway: 200 OK<br/>{id, ticker, name, currentPrice, ...}
+        Gateway-->>Frontend: 200 OK
+        Frontend-->>User: Отображение карточки
+    else Данных нет в кэше
+        StockCardService->>StockCardDb: SELECT * FROM ShareCards<br/>WHERE ticker = {ticker}
+        StockCardDb-->>StockCardService: ShareCard entity
+
+        alt Карточка не найдена
+            StockCardService->>MOEX: HTTP GET /iss/securities/{ticker}
+            MOEX-->>StockCardService: Security data
+
+            StockCardService->>StockCardDb: INSERT INTO ShareCards<br/>(id, ticker, name, current_price, ...)
+            StockCardDb-->>StockCardService: ShareCard entity
+        end
+
+        StockCardService->>ReportDb: Получение финансовых отчетов<br/>db.financialReports.find({ticker})
+        ReportDb-->>StockCardService: List<FinancialReport>
+
+        StockCardService->>StockCardService: Объединение данных:<br/>ShareCard + FinancialReports
+
+        StockCardService->>Redis: SET stockcard:{ticker}<br/>EXPIRE 300<br/>(TTL 5 минут)
+
+        StockCardService-->>Gateway: 200 OK<br/>{id, ticker, name, currentPrice,<br/>multipliers, dividends, reports, ...}
+        Gateway-->>Frontend: 200 OK
+        Frontend-->>User: Отображение карточки
+    end
+```
+
+## Примечания
+
+### Общие паттерны:
+
+1. **Аутентификация**: Все запросы (кроме login/register) требуют JWT токен в заголовке Authorization
+2. **Кэширование**: Redis используется для кэширования часто запрашиваемых данных (StockCard, Portfolio list)
+3. **Event-Driven**: Транзакции публикуются в Kafka для асинхронной обработки AnalyticsService и NotificationService
+4. **Database per Service**: Каждый сервис имеет свою базу данных
+5. **Валидация**: FluentValidation используется для валидации входных данных
+6. **Error Handling**: Централизованная обработка ошибок через middleware
+
+### Временные характеристики:
+
+- **API Response Time**: p95 < 200ms, p99 < 500ms
+- **WebSocket Latency**: < 100ms
+- **Database Query Time**: < 50ms (p95)
+- **Cache TTL**: 5 минут для портфелей, 1 минута для котировок
+- **Kafka Processing**: < 2 секунды для обработки события
+
+### Безопасность:
+
+- JWT токены с коротким временем жизни (1 час)
+- Refresh token rotation
+- Row-level security (фильтрация по userId)
+- Rate limiting (100 req/min на пользователя)
+
+
