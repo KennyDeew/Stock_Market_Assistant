@@ -1,4 +1,5 @@
-﻿using Moq;
+﻿using Microsoft.Extensions.Logging;
+using Moq;
 using StockMarketAssistant.PortfolioService.Application.DTOs;
 using StockMarketAssistant.PortfolioService.Application.Interfaces.Caching;
 using StockMarketAssistant.PortfolioService.Application.Interfaces.Gateways;
@@ -20,6 +21,7 @@ namespace StockMarketAssistant.PortfolioService.UnitTests
         private readonly Mock<IUserContext> _userContextMock = new();
         private readonly Mock<IStockCardServiceGateway> _gatewayMock = new();
         private readonly Mock<ICacheService> _cacheMock = new();
+        private readonly Mock<ILogger<PortfolioAssetAppService>> _loggerMock = new();
         private readonly PortfolioAssetAppService _service;
 
         public PortfolioAssetAppServiceTests()
@@ -31,7 +33,7 @@ namespace StockMarketAssistant.PortfolioService.UnitTests
                 _outboxRepoMock.Object,
                 _gatewayMock.Object,
                 _cacheMock.Object,
-                null!
+                _loggerMock.Object
             );
         }
 
