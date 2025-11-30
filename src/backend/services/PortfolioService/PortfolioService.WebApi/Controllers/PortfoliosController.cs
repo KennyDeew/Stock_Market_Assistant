@@ -155,7 +155,7 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
         /// Создать новый портфель
         /// </summary>
         /// <param name="request">Параметры создаваемого портфеля</param>
-        /// <returns></returns>
+        /// <returns>Созданный портфель с краткой информацией</returns>
         [Authorize(Roles = "USER")]
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(PortfolioShortResponse))]
@@ -203,7 +203,7 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
         /// Получить данные портфеля по Id
         /// </summary>
         /// <param name="id">Id портфеля</param>
-        /// <returns></returns>
+        /// <returns>Полная информация о портфеле</returns>
         [Authorize(Roles = "ADMIN,USER")]
         [HttpGet("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(PortfolioResponse))]
@@ -256,6 +256,7 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
         /// </summary>
         /// <param name="id">Id портфеля</param>
         /// <param name="request">Данные для редактирования портфеля</param>
+        /// <returns>Нет содержимого (204 No Content)</returns>
         [Authorize(Roles = "USER")]
         [HttpPut("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -292,7 +293,7 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
         /// Удалить портфель по Id
         /// </summary>
         /// <param name="id">Id портфеля</param>
-        /// <returns></returns>
+        /// <returns>Нет содержимого (204 No Content)</returns>
         [Authorize(Roles = "USER")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(string))]
