@@ -88,6 +88,7 @@
             .WithReference(pgPortfolioDb)
             .WithReference(apiStockCardService)
             .WithReference(kafka)
+            .WithEnvironment("OpenSearchConfig__Url", openSearch.GetEndpoint("http"))
             .WaitFor(pgPortfolioDb)
             .WaitFor(kafka);
 

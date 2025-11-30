@@ -26,7 +26,7 @@ namespace StockMarketAssistant.PortfolioService.WebApi
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Настройка Autofac
+            // Настройка Autofac (включая Serilog)
             builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
             builder.Host.ConfigureContainer<ContainerBuilder>(containerBuilder =>
             {
@@ -44,10 +44,6 @@ namespace StockMarketAssistant.PortfolioService.WebApi
             // Установка кодировки консоли
             Console.OutputEncoding = Encoding.UTF8;
             Console.InputEncoding = Encoding.UTF8;
-
-            // Настройка логгера
-            builder.Logging.AddConsole();
-            builder.Logging.SetMinimumLevel(LogLevel.Information);
 
             // Add services to the container.
             var jwtSettings = builder.Configuration.GetSection("Jwt");
@@ -122,7 +118,7 @@ namespace StockMarketAssistant.PortfolioService.WebApi
 
             var app = builder.Build();
 
-            // Lifecycle events
+            // Lifecycle events - используем Serilog из Autofac
             var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
             var logger = app.Services.GetRequiredService<ILogger<Program>>();
 
