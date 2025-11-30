@@ -37,8 +37,7 @@ export interface CheckEmailResponse {
 export interface UserType {
   id: string;
   email: string;
-  // Добавь, если бэкенд возвращает:
-  fullName?: string;
+  userName?: string;
   // role?: string;
 }
 
@@ -62,4 +61,5 @@ export interface AuthContextType {
   logout: () => void;
   register: (email: string, password: string, fullName: string) => Promise<void>;
   checkEmail: (email: string) => Promise<boolean>;
+  deleteAccount: () => Promise<void>;
 }
