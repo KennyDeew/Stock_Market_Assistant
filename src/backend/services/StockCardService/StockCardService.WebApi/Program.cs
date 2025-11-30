@@ -64,13 +64,12 @@ namespace StockMarketAssistant.StockCardService.WebApi
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy(name: StockCardServiceCORsName,
-                    corsBuilder =>
-                    {
-                        corsBuilder
-                            .AllowAnyOrigin()
-                            .AllowAnyHeader()
-                            .AllowAnyMethod();
-                    });
+                                  corsBuilder =>
+                                  {
+                                      corsBuilder.AllowAnyOrigin()
+                                       .WithHeaders(builder.Configuration.GetSection("CORS:Headers").Get<string[]>())
+                                       .WithMethods(builder.Configuration.GetSection("CORS:Methods").Get<string[]>());
+                                  });
             });
 
             // Настройка логирования
