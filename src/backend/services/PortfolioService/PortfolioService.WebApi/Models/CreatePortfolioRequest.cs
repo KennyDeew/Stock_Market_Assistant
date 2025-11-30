@@ -6,5 +6,6 @@
     /// <param name="UserId">Идентификатор пользователя-владельца портфеля</param>
     /// <param name="Name">Наименование портфеля</param>
     /// <param name="Currency">Валюта портфеля (RUB, USD и т.д.)</param>
-    public record CreatePortfolioRequest(Guid UserId, string Name, string Currency);
+    /// <param name="IsPrivate">Сделать приватным для публичной статистики</param>
+    public record CreatePortfolioRequest(Guid UserId, string Name, string Currency, bool IsPrivate = false);
 }

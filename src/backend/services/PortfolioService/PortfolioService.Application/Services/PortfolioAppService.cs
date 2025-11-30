@@ -53,7 +53,7 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                 throw new SecurityException("Недопустимая операция: нельзя создавать портфели от имени других пользователей");
             }
 
-            Portfolio portfolio = new(Guid.NewGuid(), creatingPortfolioDto.UserId, creatingPortfolioDto.Name, creatingPortfolioDto.Currency);
+            Portfolio portfolio = new(Guid.NewGuid(), creatingPortfolioDto.UserId, creatingPortfolioDto.Name, creatingPortfolioDto.Currency, creatingPortfolioDto.IsPrivate);
             try
             {
                 Portfolio createdPortfolio = await _portfolioRepository.AddAsync(portfolio);
@@ -288,6 +288,7 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                 // Обновляем данные
                 portfolio.Name = updatingPortfolioDto.Name;
                 portfolio.Currency = updatingPortfolioDto.Currency;
+                portfolio.IsPrivate = updatingPortfolioDto.IsPrivate;
 
                 // Сохраняем изменения
                 await _portfolioRepository.UpdateAsync(portfolio);

@@ -85,7 +85,7 @@ namespace StockMarketAssistant.PortfolioService.UnitTests
             // Arrange
             var portfolioId = Guid.NewGuid();
             var portfolio = new Portfolio(portfolioId, Guid.NewGuid(), "Test portfolio");
-            var updateDto = new UpdatingPortfolioDto("New", "USD");
+            var updateDto = new UpdatingPortfolioDto("New", "USD", false);
 
             _portfolioRepoMock.Setup(r => r.GetByIdAsync(portfolioId))
                 .ReturnsAsync(portfolio);

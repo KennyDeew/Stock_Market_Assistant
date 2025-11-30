@@ -143,27 +143,30 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
 
                 PortfolioAsset createdAsset = await _portfolioAssetRepository.AddAsync(asset);
 
-                // Создаём сообщение для Outbox
-                var initialTransactionMessage = new TransactionMessage
+                if (!portfolio.IsPrivate)
                 {
-                    Id = initialTransaction.Id,
-                    PortfolioId = createdAsset.PortfolioId,
-                    StockCardId = createdAsset.StockCardId,
-                    AssetType = (int)createdAsset.AssetType,
-                    TransactionType = (int)initialTransaction.TransactionType,
-                    Quantity = initialTransaction.Quantity,
-                    PricePerUnit = initialTransaction.PricePerUnit,
-                    TotalAmount = initialTransaction.Quantity * initialTransaction.PricePerUnit,
-                    TransactionTime = initialTransaction.TransactionDate,
-                    Currency = initialTransaction.Currency
-                };
+                    // Создаём сообщение для Outbox
+                    var initialTransactionMessage = new TransactionMessage
+                    {
+                        Id = initialTransaction.Id,
+                        PortfolioId = createdAsset.PortfolioId,
+                        StockCardId = createdAsset.StockCardId,
+                        AssetType = (int)createdAsset.AssetType,
+                        TransactionType = (int)initialTransaction.TransactionType,
+                        Quantity = initialTransaction.Quantity,
+                        PricePerUnit = initialTransaction.PricePerUnit,
+                        TotalAmount = initialTransaction.Quantity * initialTransaction.PricePerUnit,
+                        TransactionTime = initialTransaction.TransactionDate,
+                        Currency = initialTransaction.Currency
+                    };
 
-                var outboxMessage = new OutboxMessage(
-                    Guid.NewGuid(),
-                    _topicName,
-                    JsonSerializer.Serialize(initialTransactionMessage));
+                    var outboxMessage = new OutboxMessage(
+                        Guid.NewGuid(),
+                        _topicName,
+                        JsonSerializer.Serialize(initialTransactionMessage));
 
-                await _outboxRepository.AddAsync(outboxMessage);
+                    await _outboxRepository.AddAsync(outboxMessage);
+                }
 
                 await InvalidatePortfolioCacheAsync(dto.PortfolioId);
 
@@ -286,27 +289,30 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
 
                 await _portfolioAssetRepository.DeleteAssetTransactionAsync(transactionId);
 
-                // Создаём сообщение для Outbox
-                var createdTransactionMessage = new TransactionMessage
+                if (!portfolio.IsPrivate)
                 {
-                    Id = transactionId,
-                    PortfolioId = asset.PortfolioId,
-                    StockCardId = asset.StockCardId,
-                    AssetType = (int)asset.AssetType,
-                    TransactionType = (int)(transaction.TransactionType == PortfolioAssetTransactionType.Buy ? PortfolioAssetTransactionType.Sell : PortfolioAssetTransactionType.Buy),
-                    Quantity = transaction.Quantity,
-                    PricePerUnit = transaction.PricePerUnit,
-                    TotalAmount = transaction.Quantity * transaction.PricePerUnit,
-                    TransactionTime = transaction.TransactionDate,
-                    Currency = transaction.Currency
-                };
+                    // Создаём сообщение для Outbox
+                    var createdTransactionMessage = new TransactionMessage
+                    {
+                        Id = transactionId,
+                        PortfolioId = asset.PortfolioId,
+                        StockCardId = asset.StockCardId,
+                        AssetType = (int)asset.AssetType,
+                        TransactionType = (int)(transaction.TransactionType == PortfolioAssetTransactionType.Buy ? PortfolioAssetTransactionType.Sell : PortfolioAssetTransactionType.Buy),
+                        Quantity = transaction.Quantity,
+                        PricePerUnit = transaction.PricePerUnit,
+                        TotalAmount = transaction.Quantity * transaction.PricePerUnit,
+                        TransactionTime = transaction.TransactionDate,
+                        Currency = transaction.Currency
+                    };
 
-                var outboxMessage = new OutboxMessage(
-                    Guid.NewGuid(),
-                    _topicName,
-                    JsonSerializer.Serialize(createdTransactionMessage));
+                    var outboxMessage = new OutboxMessage(
+                        Guid.NewGuid(),
+                        _topicName,
+                        JsonSerializer.Serialize(createdTransactionMessage));
 
-                await _outboxRepository.AddAsync(outboxMessage);
+                    await _outboxRepository.AddAsync(outboxMessage);
+                }
 
                 // Удаление актива, если транзакций не осталось
                 var remainingTransactions = await _portfolioAssetRepository.GetAssetTransactionsCountAsync(asset.Id);
@@ -607,27 +613,30 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
 
                 PortfolioAssetTransaction createdTransaction = await _portfolioAssetRepository.AddAssetTransactionAsync(transaction);
 
-                // Создаём сообщение для Outbox
-                var createdTransactionMessage = new TransactionMessage
+                if (!portfolio.IsPrivate)
                 {
-                    Id = createdTransaction.Id,
-                    PortfolioId = asset.PortfolioId,
-                    StockCardId = asset.StockCardId,
-                    AssetType = (int)asset.AssetType,
-                    TransactionType = (int)createdTransaction.TransactionType,
-                    Quantity = createdTransaction.Quantity,
-                    PricePerUnit = createdTransaction.PricePerUnit,
-                    TotalAmount = createdTransaction.Quantity * createdTransaction.PricePerUnit,
-                    TransactionTime = createdTransaction.TransactionDate,
-                    Currency = createdTransaction.Currency
-                };
+                    // Создаём сообщение для Outbox
+                    var createdTransactionMessage = new TransactionMessage
+                    {
+                        Id = createdTransaction.Id,
+                        PortfolioId = asset.PortfolioId,
+                        StockCardId = asset.StockCardId,
+                        AssetType = (int)asset.AssetType,
+                        TransactionType = (int)createdTransaction.TransactionType,
+                        Quantity = createdTransaction.Quantity,
+                        PricePerUnit = createdTransaction.PricePerUnit,
+                        TotalAmount = createdTransaction.Quantity * createdTransaction.PricePerUnit,
+                        TransactionTime = createdTransaction.TransactionDate,
+                        Currency = createdTransaction.Currency
+                    };
 
-                var outboxMessage = new OutboxMessage(
-                    Guid.NewGuid(),
-                    _topicName,
-                    JsonSerializer.Serialize(createdTransactionMessage));
+                    var outboxMessage = new OutboxMessage(
+                        Guid.NewGuid(),
+                        _topicName,
+                        JsonSerializer.Serialize(createdTransactionMessage));
 
-                await _outboxRepository.AddAsync(outboxMessage);
+                    await _outboxRepository.AddAsync(outboxMessage);
+                }
 
                 // Удаление актива, если транзакций не осталось
                 if (asset.TotalQuantity == 0)

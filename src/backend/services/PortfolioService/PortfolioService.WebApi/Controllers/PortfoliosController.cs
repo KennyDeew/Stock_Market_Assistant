@@ -165,7 +165,7 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
         {
             try
             {
-                CreatingPortfolioDto createDto = new(request.UserId, request.Name, request.Currency);
+                CreatingPortfolioDto createDto = new(request.UserId, request.Name, request.Currency, request.IsPrivate);
                 var createdPortfolioId = await _portfolioAppService.CreateAsync(createDto);
 
                 if (createdPortfolioId == Guid.Empty)
@@ -272,7 +272,7 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
                     return NotFound();
                 }
 
-                var updatingPortfolioDto = new UpdatingPortfolioDto(request.Name, request.Currency);
+                var updatingPortfolioDto = new UpdatingPortfolioDto(request.Name, request.Currency, request.IsPrivate);
                 await _portfolioAppService.UpdateAsync(id, updatingPortfolioDto);
 
                 _logger.LogInformation("Портфель {PortfolioId} успешно обновлен", id);
