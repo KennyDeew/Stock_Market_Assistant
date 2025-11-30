@@ -110,35 +110,46 @@ namespace StockMarketAssistant.StockCardService.WebApi
 
             var app = builder.Build();
 
-            app.MapGet("/", () => Results.Redirect("/swagger"));
-
-            //var StockCardServisConnectionString = builder.Configuration.GetConnectionString("pg-stock-card-db");
-            //DbInitializer.Initialize(StockCardServisConnectionString);
-
-
-
-            // Configure the HTTP request pipeline.
-
             if (app.Environment.IsDevelopment())
             {
+                app.MapGet("/", () => Results.Redirect("/swagger"));
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
+
             app.UseHttpsRedirection();
-
-
             app.UseRouting();
             app.UseCors(StockCardServiceCORsName);
             app.UseAuthorization();
             app.MapControllers();
 
+            // Раздача фронтенда из wwwroot
+            app.UseDefaultFiles();  // index.html
+            app.UseStaticFiles();
+
+            // SPA fallback для клиентского роутинга
+            app.Use(async (context, next) =>
+            {
+                await next();
+
+                if (context.Response.StatusCode == 404 &&
+                    !Path.HasExtension(context.Request.Path.Value) &&
+                    !context.Request.Path.Value.StartsWith("/api"))
+                {
+                    context.Request.Path = "/index.html";
+                    context.Response.StatusCode = 200;
+                    await context.Response.SendFileAsync(Path.Combine(app.Environment.ContentRootPath, "wwwroot", "index.html"));
+                }
+            });
+
             app.MigrateDatabase<StockCardDbContext>();
-            //Заполняем БД объектами из FakeDataFactory
+
             using (var scope = app.Services.CreateScope())
             {
                 var initializer = scope.ServiceProvider.GetRequiredService<IDbInitializer>();
                 initializer.InitializeAsync(CancellationToken.None).GetAwaiter().GetResult();
             }
+
             app.Run();
         }
     }
