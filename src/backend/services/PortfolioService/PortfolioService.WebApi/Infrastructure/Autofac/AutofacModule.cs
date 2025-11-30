@@ -2,23 +2,22 @@
 using Confluent.Kafka;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.StackExchangeRedis;
-using Microsoft.Extensions.Options;
+using OptionsExtensions = Microsoft.Extensions.Options;
 using StockMarketAssistant.PortfolioService.Application.Interfaces;
 using StockMarketAssistant.PortfolioService.Application.Interfaces.Caching;
-using StockMarketAssistant.PortfolioService.Application.Interfaces.Gateways;
 using StockMarketAssistant.PortfolioService.Application.Interfaces.Repositories;
 using StockMarketAssistant.PortfolioService.Application.Interfaces.Security;
 using StockMarketAssistant.PortfolioService.Application.Services;
 using StockMarketAssistant.PortfolioService.Infrastructure.Caching;
 using StockMarketAssistant.PortfolioService.Infrastructure.EntityFramework;
-using StockMarketAssistant.PortfolioService.Infrastructure.Gateways;
 using StockMarketAssistant.PortfolioService.Infrastructure.Repositories;
 using StockMarketAssistant.PortfolioService.Infrastructure.Security;
 using StockMarketAssistant.PortfolioService.WebApi.Options;
 
-namespace StockMarketAssistant.PortfolioService.Infrastructure.Autofac;
+namespace StockMarketAssistant.PortfolioService.WebApi.Infrastructure.Autofac;
 
 /// <summary>
 /// Модуль Autofac для регистрации всех зависимостей приложения.
@@ -31,6 +30,9 @@ namespace StockMarketAssistant.PortfolioService.Infrastructure.Autofac;
 /// <param name="configuration">Конфигурация приложения</param>
 public class AutofacModule(IConfiguration configuration) : Module
 {
+    // Общий InMemoryDatabaseRoot для ВСЕХ тестов в сборке
+    // Обеспечивает общий пул данных между запросами
+    private static readonly InMemoryDatabaseRoot _databaseRoot = new();
     private readonly IConfiguration _configuration = configuration;
     private readonly bool _isRunningIntegrationTests = Environment.GetEnvironmentVariable("INTEGRATION_TESTS") == "1";
 
@@ -92,8 +94,8 @@ public class AutofacModule(IConfiguration configuration) : Module
         }
         else
         {
-            // Используем метод расширения для InMemory
-            builder.ConfigureInMemoryContext();
+            // метод расширения для InMemory
+            builder.ConfigureInMemoryContext(_databaseRoot);
         }
     }
 
@@ -114,7 +116,7 @@ public class AutofacModule(IConfiguration configuration) : Module
                 {
                     Configuration = configuration
                 };
-                return new RedisCache(Options.Create(options));
+                return new RedisCache(OptionsExtensions.Options.Create(options));
             }).As<IDistributedCache>().SingleInstance();
 
             // Затем используем IDistributedCache в RedisCacheService

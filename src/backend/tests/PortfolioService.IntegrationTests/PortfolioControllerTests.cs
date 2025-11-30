@@ -17,9 +17,6 @@ namespace StockMarketAssistant.PortfolioService.IntegrationTests
         public async Task CreatePortfolio_ReturnsCreated()
         {
             // Arrange
-            using var scope = _factory.Services.CreateScope();
-            var context = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
-
             var userId = Guid.NewGuid();
 
             // Обновляем токен

@@ -1,5 +1,6 @@
 ﻿using Autofac;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using StockMarketAssistant.PortfolioService.Infrastructure.EntityFramework.Context;
 
@@ -53,12 +54,13 @@ public static class EntityFrameworkInstaller
     /// Регистрирует InMemory DbContext в Autofac ContainerBuilder для тестов.
     /// </summary>
     /// <param name="builder">Строитель контейнера Autofac</param>
-    public static void ConfigureInMemoryContext(this ContainerBuilder builder)
+    public static void ConfigureInMemoryContext(this ContainerBuilder builder, InMemoryDatabaseRoot databaseRoot)
     {
         builder.Register(c =>
         {
             var optionsBuilder = new DbContextOptionsBuilder<DatabaseContext>();
-            optionsBuilder.UseInMemoryDatabase($"TestDb_{Guid.NewGuid()}");
+            // Используем общий InMemoryDatabaseRoot для всех тестов
+            optionsBuilder.UseInMemoryDatabase("IntegrationTestDb", databaseRoot);
             return new DatabaseContext(optionsBuilder.Options);
         }).InstancePerLifetimeScope();
     }
