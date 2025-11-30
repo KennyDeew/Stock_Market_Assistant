@@ -21,7 +21,7 @@
         public required string Name { get; init; }
 
         /// <summary>
-        /// Скрыть из публичной статистики
+        /// Скрыть портфель из публичной статистики
         /// </summary>
         public bool IsPrivate { get; init; }
 

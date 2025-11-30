@@ -7,6 +7,6 @@
     /// <param name="UserId">Идентификатор пользователя-владельца портфеля</param>
     /// <param name="Name">Наименование портфеля</param>
     /// <param name="Currency">Валюта портфеля (RUB, USD и т.д.)</param>
-    /// <param name="IsPrivate">Скрыть из публичной статистики</param>
+    /// <param name="IsPrivate">Скрыть портфель из публичной статистики</param>
     public record PortfolioShortResponse(Guid Id, Guid UserId, string Name, string Currency, bool IsPrivate);
 }

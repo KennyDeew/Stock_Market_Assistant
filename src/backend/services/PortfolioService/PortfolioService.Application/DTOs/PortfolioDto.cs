@@ -26,7 +26,7 @@
         public required string Currency { get; init; }
 
         /// <summary>
-        /// Скрыть из публичной статистики
+        /// Скрыть портфель из публичной статистики
         /// </summary>
         public bool IsPrivate { get; init; }
 
