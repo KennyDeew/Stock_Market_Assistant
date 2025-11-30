@@ -4,18 +4,21 @@ export type CreatePortfolioRequest = {
   name: string;
   userId: string;
   currency?: string;
+  isPrivate?: boolean;
 };
 
 export type UpdatePortfolioRequest = {
   name: string;
   currency?: string;
+  isPrivate?: boolean;
 };
 
 export type PortfolioShort = {
   id: string;
   userId: string;
   name: string;
-  currency: string;  
+  currency: string;
+  isPrivate: boolean;
 };
 
 export type PortfolioResponse = {
@@ -23,6 +26,7 @@ export type PortfolioResponse = {
   userId: string;
   name: string;
   currency: string;
+  isPrivate: boolean;
   assets: PortfolioAssetShort[];
 };
 

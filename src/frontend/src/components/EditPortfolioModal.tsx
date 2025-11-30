@@ -8,6 +8,9 @@ import {
   TextField,
   MenuItem,
   Typography,
+  Box,
+  Checkbox,
+  FormControlLabel,
 } from '@mui/material';
 
 // Пропсы для модалки
@@ -18,8 +21,9 @@ interface EditPortfolioModalProps {
     id: string;
     name: string;
     currency: string;
+    isPrivate: boolean;
   };
-  onSave: (id: string, data: { name: string; currency: string }) => Promise<void>;
+  onSave: (id: string, data: { name: string; currency: string; isPrivate: boolean }) => Promise<void>;
 }
 
 export default function EditPortfolioModal({
@@ -31,6 +35,7 @@ export default function EditPortfolioModal({
   const [formData, setFormData] = useState({
     name: portfolio.name,
     currency: portfolio.currency,
+    isPrivate: portfolio.isPrivate
   });
   const [errors, setErrors] = useState({
     name: '',
@@ -74,6 +79,11 @@ export default function EditPortfolioModal({
     }
   };
 
+  const handlePrivateFlagChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData((prev) => ({ ...prev, isPrivate: e.target.checked }));
+  };
+
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Редактировать портфель</DialogTitle>
@@ -108,6 +118,21 @@ export default function EditPortfolioModal({
             </MenuItem>
           ))}
         </TextField>
+
+        <Box mt={2}>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={formData.isPrivate}
+                onChange={handlePrivateFlagChange}
+              />
+            }
+            label="Скрыть из рейтингов"
+          />
+          <Typography variant="caption" color="text.secondary" component="div">
+            Портфель не будет участвовать в публичных рейтингах
+          </Typography>
+        </Box>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} disabled={submitting}>

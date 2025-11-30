@@ -16,7 +16,10 @@ import {
   Alert,
   Button,
   useTheme,
+  Tooltip,
+  IconButton,
 } from '@mui/material';
+import { Delete as DeleteIcon, Edit as EditIcon, Visibility as VisibilityIcon, VisibilityOff as VisibilityOffIcon} from '@mui/icons-material';
 import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Pagination from '@mui/material/Pagination';
@@ -85,17 +88,43 @@ export default function PortfolioListPage() {
   }
 
   // Обработчик сохранения изменений
-  const handleSave = async (id: string, data: { name: string; currency: string }) => {
+  const handleSave = async (id: string, data: { name: string; currency: string; isPrivate: boolean }) => {
     try {
       await portfolioApi.update(id, data);
       setPortfolios((prev) =>
-        prev.map((p) => (p.id === id ? { ...p, name: data.name, currency: data.currency } : p))
-      );
+          prev.map((p) => (p.id === id ? { ...p, name: data.name, currency: data.currency, isPrivate: data.isPrivate } : p))
+        );
       setEditingPortfolio(null);
       openSnackbar('Портфель успешно обновлён', 'success');
     } catch (err: any) {
       openSnackbar('Не удалось обновить портфель', 'error');
       throw err;
+    }
+  };
+
+  // Состояние для подтверждения удаления
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  // Обработчик клика по удалению
+  const handleDeleteClick = (id: string) => {
+    if (window.confirm('Вы уверены, что хотите удалить этот портфель? Все данные будут потеряны.')) {
+      handleDelete(id);
+    }
+  };
+
+  // Обработчик удаления
+  const handleDelete = async (id: string) => {
+    if (!id) return;
+
+    setDeletingId(id);
+    try {
+      await portfolioApi.delete(id);
+      setPortfolios((prev) => prev.filter((p) => p.id !== id));
+      openSnackbar('Портфель удалён', 'success');
+    } catch (err: any) {
+      openSnackbar('Не удалось удалить портфель', 'error');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -155,6 +184,18 @@ export default function PortfolioListPage() {
                       }}
                     >
                       Валюта
+                    </TableCell>
+                    <TableCell
+                      align="center"
+                      sx={{
+                        fontWeight: 600,
+                        color: 'text.primary',
+                        borderBottom: `2px solid ${theme.palette.divider}`,
+                        px: 3,
+                        py: 2,
+                      }}
+                    >
+                      Приватность
                     </TableCell>
                     <TableCell
                       align="right"
@@ -219,23 +260,48 @@ export default function PortfolioListPage() {
                           </Typography>
                         </TableCell>
 
+                        {/* Приватность */}
+                        <TableCell align="center" sx={{ px: 3, py: 2 }}>
+                          {p.isPrivate ? (
+                            <Tooltip title="Скрыт из рейтингов">
+                              <VisibilityOffIcon color="error" fontSize="small" />
+                            </Tooltip>
+                          ) : (
+                            <Tooltip title="Участвует в рейтингах">
+                              <VisibilityIcon color="success" fontSize="small" />
+                            </Tooltip>
+                          )}
+                        </TableCell>
+
                         {/* Действия */}
                         <TableCell align="right" sx={{ px: 3, py: 2 }}>
-                          <Button
-                            size="small"
-                            color="primary"
-                            variant="outlined"
-                            onClick={() => setEditingPortfolio(p)} // 🔹 Открываем модалку
-                            sx={{
-                              textTransform: 'none',
-                              borderRadius: 2,
-                              px: 1.5,
-                              minWidth: 'auto',
-                            }}
-                          >
-                            Редактировать
-                          </Button>
+                          <Box display="flex" justifyContent="flex-end" gap={1}>
+                            {/* Редактировать */}
+                            <Tooltip title="Редактировать">
+                              <IconButton
+                                size="small"
+                                color="primary"
+                                onClick={() => setEditingPortfolio(p)}
+                                sx={{ borderRadius: 1 }}
+                              >
+                                <EditIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+
+                            {/* Удалить */}
+                            <Tooltip title="Удалить">
+                              <IconButton
+                                size="small"
+                                color="error"
+                                onClick={() => handleDeleteClick(p.id)}
+                                sx={{ borderRadius: 1 }}
+                              >
+                                <DeleteIcon fontSize="small" sx={{ opacity: deletingId === p.id ? 0.5 : 1 }} />
+                              </IconButton>
+                            </Tooltip>
+                          </Box>
                         </TableCell>
+
                       </TableRow>
                     ))
                   )}

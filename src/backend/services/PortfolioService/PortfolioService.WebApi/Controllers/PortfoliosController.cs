@@ -62,7 +62,7 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
                     .ToList();
 
                 var portfolioResponses = pagedPortfolios.Select(p =>
-                    new PortfolioShortResponse(p.Id, p.UserId, p.Name, p.Currency));
+                    new PortfolioShortResponse(p.Id, p.UserId, p.Name, p.Currency, p.IsPrivate));
 
                 var paginatedResponse = new PaginatedResponse<PortfolioShortResponse>(
                     portfolioResponses,
@@ -129,7 +129,7 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
                     .ToList();
 
                 var portfolioResponses = pagedPortfolios.Select(p =>
-                    new PortfolioShortResponse(p.Id, p.UserId, p.Name, p.Currency));
+                    new PortfolioShortResponse(p.Id, p.UserId, p.Name, p.Currency, p.IsPrivate));
 
                 var paginatedResponse = new PaginatedResponse<PortfolioShortResponse>(
                     portfolioResponses,
@@ -179,7 +179,8 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
                     createdPortfolioId,
                     createDto.UserId,
                     createDto.Name,
-                    createDto.Currency);
+                    createDto.Currency,
+                    createDto.IsPrivate);
 
                 _logger.LogInformation("Портфель {PortfolioId} успешно создан для пользователя {UserId}",
                                      createdPortfolioId, request.UserId);
@@ -225,6 +226,7 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
                     UserId = portfolioDto.UserId,
                     Name = portfolioDto.Name,
                     Currency = portfolioDto.Currency,
+                    IsPrivate = portfolioDto.IsPrivate,
                     Assets = [.. portfolioDto.Assets.Select(a => new PortfolioAssetShortResponse(
                         a.Id,
                         a.PortfolioId,

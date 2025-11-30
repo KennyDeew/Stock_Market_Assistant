@@ -21,6 +21,11 @@
         public required string Name { get; init; }
 
         /// <summary>
+        /// Скрыть из публичной статистики
+        /// </summary>
+        public bool IsPrivate { get; init; }
+
+        /// <summary>
         /// Валюта портфеля (RUB, USD и т.д.)
         /// </summary>
         public required string Currency { get; init; }

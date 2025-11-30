@@ -34,6 +34,16 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
         }
 
         /// <summary>
+        /// Инвалидация записи кэша для списка портфеля ценных бумаг по конкретному пользователю
+        /// </summary>
+        /// <param name="portfolioId">Id портфеля</param>
+        /// <returns></returns>
+        private async Task InvalidatePortfoliosByUserCacheAsync(Guid userId)
+        {
+            await _cache.RemoveAsync($"user_portfolios_short_{userId}");
+        }
+
+        /// <summary>
         /// Создать портфель ценных бумаг
         /// </summary>
         /// <param name="creatingPortfolioDto">DTO создаваемого портфеля</param>
@@ -57,6 +67,8 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
             try
             {
                 Portfolio createdPortfolio = await _portfolioRepository.AddAsync(portfolio);
+                // Сбрасываем кэш
+                await InvalidatePortfoliosByUserCacheAsync(createdPortfolio.UserId);
                 return createdPortfolio.Id;
             }
             catch (Exception ex)
@@ -97,8 +109,9 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                 }
 
                 await _portfolioRepository.DeleteAsync(portfolio);
+                // Сбрасываем кэш
                 await InvalidatePortfolioCacheAsync(id);
-                await _cache.RemoveAsync($"user_portfolios_short_{portfolio.UserId}");
+                await InvalidatePortfoliosByUserCacheAsync(portfolio.UserId);
 
                 _logger.LogInformation("Портфель {PortfolioId} успешно удалён пользователем {UserId}", id, _userContext.UserId);
                 return true;
@@ -139,7 +152,8 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                         Id = p.Id,
                         UserId = p.UserId,
                         Name = p.Name,
-                        Currency = p.Currency
+                        Currency = p.Currency,
+                        IsPrivate = p.IsPrivate
                     });
             }
             catch (Exception ex)
@@ -207,6 +221,7 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                     UserId = portfolio.UserId,
                     Name = portfolio.Name,
                     Currency = portfolio.Currency,
+                    IsPrivate = portfolio.IsPrivate,
                     Assets = [.. validAssets]
                 };
 
@@ -295,6 +310,7 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
 
                 // Сбрасываем кэш
                 await InvalidatePortfolioCacheAsync(id);
+                await InvalidatePortfoliosByUserCacheAsync(portfolio.UserId);
 
                 _logger.LogInformation("Портфель {PortfolioId} успешно обновлён пользователем {UserId}", id, _userContext.UserId);
             }
@@ -620,7 +636,8 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                     Id = p.Id,
                     UserId = p.UserId,
                     Name = p.Name,
-                    Currency = p.Currency
+                    Currency = p.Currency,
+                    IsPrivate = p.IsPrivate
                 }).ToList();
 
                 await _cache.SetAsync(cacheKey, result, _cacheExpiration);
