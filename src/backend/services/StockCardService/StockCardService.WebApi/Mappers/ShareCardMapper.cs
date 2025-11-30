@@ -102,6 +102,24 @@ namespace StockMarketAssistant.StockCardService.WebApi.Mappers
         }
 
         /// <summary>
+        /// Конвертирует DTO карточки акции в неполную модель.
+        /// </summary>
+        /// <param name="dto">Исходный DTO карточки акции.</param>
+        /// <returns>Модель карточки акции.</returns>
+        public static ShareCardShortModel ToShortModel(ShareCardDto dto)
+        {
+            return new ShareCardShortModel
+            {
+                Id = dto.Id,
+                Name = dto.Name,
+                Ticker = dto.Ticker,
+                Description = dto.Description,
+                Currency = dto.Currency,
+                CurrentPrice = dto.CurrentPrice
+            };
+        }
+
+        /// <summary>
         /// Конвертирует DTO создаваемой карточки акции в модель.
         /// </summary>
         /// <param name="dto">Исходный DTO создаваемой карточки акции.</param>

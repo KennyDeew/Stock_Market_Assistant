@@ -34,6 +34,18 @@ namespace StockCardService.WebApi.Controllers
         }
 
         /// <summary>
+        /// Получить все сокращённые карточки акций
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("short")]
+        [ProducesResponseType(typeof(List<ShareCardShortModel>), 200)]
+        public async Task<ActionResult<List<ShareCardShortModel>>> GetShortShareCardsAsync()
+        {
+            var shareCards = (await _shareCardService.GetAllAsync()).Select(ShareCardMapper.ToShortModel).Where(shcm => shcm != null).Select(shcm => shcm!).ToList();
+            return shareCards;
+        }
+
+        /// <summary>
         /// Получить карточку акции по Id
         /// </summary>
         /// <param name="id"></param>

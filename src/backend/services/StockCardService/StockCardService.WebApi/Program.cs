@@ -59,6 +59,20 @@ namespace StockMarketAssistant.StockCardService.WebApi
             builder.Services.Configure<KafkaOptions>(
                 builder.Configuration.GetSection("KafkaOptions"));
 
+            //Найстройка CORs
+            string StockCardServiceCORsName = "StockCardServiceCORs";
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy(name: StockCardServiceCORsName,
+                    corsBuilder =>
+                    {
+                        corsBuilder
+                            .AllowAnyOrigin()
+                            .AllowAnyHeader()
+                            .AllowAnyMethod();
+                    });
+            });
+
             // Настройка логирования
             // ----------------------------------------------
             builder.Logging.ClearProviders();   // Убираем стандартные провайдеры (например, Debug)
@@ -115,7 +129,7 @@ namespace StockMarketAssistant.StockCardService.WebApi
 
 
             app.UseRouting();
-            app.UseCors();
+            app.UseCors(StockCardServiceCORsName);
             app.UseAuthorization();
             app.MapControllers();
 
