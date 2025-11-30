@@ -24,7 +24,7 @@ class Program
 
         var connectionString = configuration.GetConnectionString("analytics-db")
             ?? Environment.GetEnvironmentVariable("ANALYTICS_DB_CONNECTION_STRING")
-            ?? "Host=localhost;Port=5432;Database=analytics_db;Username=postgres;Password=postgres";
+            ?? "Host=localhost;Port=5432;Database=analytics-db;Username=postgres;Password=postgres";
 
         Console.WriteLine($"Подключение к БД: {connectionString.Split(';').First()}...\n");
 

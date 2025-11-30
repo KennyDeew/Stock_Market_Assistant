@@ -59,33 +59,69 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
                 openSearchUrl = openSearchUrl.Replace("https://", "http://");
             }
 
-            var serilogLogger = new LoggerConfiguration()
-                .WriteTo.Console()
-                .WriteTo.OpenSearch(new OpenSearchSinkOptions(new Uri(openSearchUrl))
+            // Настройка Serilog с опциональным OpenSearch
+            var loggerConfig = new LoggerConfiguration()
+                .WriteTo.Console();
+
+            // OpenSearch sink добавляем только если OpenSearch доступен
+            // Делаем его опциональным, чтобы не было ошибок в логах при недоступности OpenSearch
+            try
+            {
+                // Проверяем доступность OpenSearch перед добавлением sink
+                using var testClient = new System.Net.Http.HttpClient();
+                testClient.Timeout = TimeSpan.FromSeconds(2);
+                var testResponse = testClient.GetAsync(openSearchUrl).GetAwaiter().GetResult();
+                if (testResponse.IsSuccessStatusCode)
                 {
-                    AutoRegisterTemplateVersion = AutoRegisterTemplateVersion.OSv1,
-                    MinimumLogEventLevel = LogEventLevel.Information, // Изменено с Verbose на Information для меньшего объема логов
-                    TypeName = "_doc",
-                    InlineFields = false,
-                    // Не используем BasicAuthentication, так как security отключен в OpenSearch
-                    // ModifyConnectionSettings = x => x.BasicAuthentication(username, password),
-                    IndexFormat = "analytics-service-{0:yyyy.MM.dd}",
-                    // Добавляем обработку ошибок
-                    FailureCallback = e => Console.WriteLine($"OpenSearch sink error: {e.Exception?.Message ?? e.MessageTemplate?.Text ?? "Unknown error"}"),
-                    EmitEventFailure = EmitEventFailureHandling.WriteToSelfLog | EmitEventFailureHandling.WriteToFailureSink | EmitEventFailureHandling.RaiseCallback,
-                })
-                .CreateLogger();
+                    loggerConfig = loggerConfig.WriteTo.OpenSearch(new OpenSearchSinkOptions(new Uri(openSearchUrl))
+                    {
+                        AutoRegisterTemplateVersion = AutoRegisterTemplateVersion.OSv1,
+                        MinimumLogEventLevel = LogEventLevel.Information,
+                        TypeName = "_doc",
+                        InlineFields = false,
+                        IndexFormat = "analytics-service-{0:yyyy.MM.dd}",
+                        // Добавляем обработку ошибок - только логируем, не прерываем работу
+                        FailureCallback = e => { /* Игнорируем ошибки OpenSearch, чтобы не засоряли логи */ },
+                        EmitEventFailure = EmitEventFailureHandling.WriteToSelfLog,
+                    });
+                }
+            }
+            catch
+            {
+                // OpenSearch недоступен - продолжаем без него
+                // Логи будут только в консоль
+            }
+
+            var serilogLogger = loggerConfig.CreateLogger();
 
             // Добавляем Serilog в систему логирования
             builder.Logging.AddSerilog(serilogLogger);
 
-            // Получаем строку подключения из Aspire
+            // Получаем строку подключения из конфигурации
+            // Если Aspire переопределяет строку подключения (например, на postgres:5432),
+            // используем значение из appsettings.json напрямую
             var connectionString = builder.Configuration.GetConnectionString("analytics-db");
 
+            // Если строка подключения содержит имя контейнера (postgres:5432), заменяем на localhost
+            // Это необходимо для работы миграций с хоста
+            if (!string.IsNullOrWhiteSpace(connectionString) && connectionString.Contains("Host=postgres"))
+            {
+                var connectionStringFromSettings = builder.Configuration.GetSection("ConnectionStrings:analytics-db").Value;
+                if (!string.IsNullOrWhiteSpace(connectionStringFromSettings))
+                {
+                    connectionString = connectionStringFromSettings;
+                }
+            }
+
             // Регистрируем DbContext (EF Core)
-            if (connectionString is not null)
+            if (!string.IsNullOrWhiteSpace(connectionString))
             {
                 builder.Services.ConfigureContext(connectionString);
+            }
+            else
+            {
+                var logger = LoggerFactory.Create(b => b.AddConsole()).CreateLogger<Program>();
+                logger.LogWarning("Строка подключения к базе данных 'analytics-db' не настроена. DbContext не будет зарегистрирован.");
             }
 
             // Регистрация FluentValidation
@@ -106,21 +142,21 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
             // Регистрируем JWT только если ключ указан
             if (!string.IsNullOrEmpty(jwtKey))
             {
-                builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                    .AddJwtBearer(options =>
+            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters()
                     {
-                        options.TokenValidationParameters = new TokenValidationParameters()
-                        {
                             ValidateIssuer = !string.IsNullOrEmpty(jwtSettings["Issuer"]),
                             ValidateAudience = !string.IsNullOrEmpty(jwtSettings["Audience"]),
-                            ValidateLifetime = true,
-                            ValidateIssuerSigningKey = true,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
                             ValidIssuer = jwtSettings["Issuer"] ?? "AuthService",
                             ValidAudience = jwtSettings["Audience"] ?? "AuthServiceClients",
-                            RoleClaimType = "Role",
+                        RoleClaimType = "Role",
                             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
-                        };
-                    });
+                    };
+                });
             }
             else
             {
@@ -155,40 +191,48 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
             builder.Services.Configure<KafkaConfiguration>(
                 builder.Configuration.GetSection("Kafka"));
 
-            // Регистрация Kafka Consumer и Producer через Aspire
-            // Делаем Kafka опциональным - не блокируем запуск приложения при недоступности Kafka
+            // Регистрация Kafka Consumer и Producer
+            // Используем прямой Confluent.Kafka вместо Aspire, так как Kafka настроен через обычную конфигурацию
             var kafkaConfig = builder.Configuration.GetSection("Kafka").Get<KafkaConfiguration>();
+
+            // Регистрируем Kafka Consumer и Producer напрямую через Confluent.Kafka
             if (kafkaConfig != null && !string.IsNullOrEmpty(kafkaConfig.BootstrapServers))
             {
-                try
+                // Регистрация Kafka Consumer
+                builder.Services.AddSingleton<IConsumer<string, string>>(provider =>
                 {
-                    // Настройка таймаутов для предотвращения блокировки при недоступности Kafka
-                    builder.AddKafkaProducer<string, string>("kafka", options =>
+                    var config = new ConsumerConfig
                     {
+                        BootstrapServers = kafkaConfig.BootstrapServers,
+                        GroupId = kafkaConfig.ConsumerGroup,
+                        AutoOffsetReset = AutoOffsetReset.Earliest,
+                        EnableAutoCommit = false,
                         // Уменьшаем таймауты для быстрого обнаружения недоступности брокера
-                        options.Config.SocketTimeoutMs = 5000; // 5 секунд вместо 10
-                        options.Config.MessageTimeoutMs = 5000; // 5 секунд
-                        // Отключаем автоматический запрос версии API (может вызывать таймауты)
-                        options.Config.ApiVersionRequest = false;
-                    });
+                        SocketTimeoutMs = 5000
+                        // Убрали ApiVersionRequest = false, так как это deprecated свойство
+                    };
+                    return new ConsumerBuilder<string, string>(config).Build();
+                });
 
-                    builder.AddKafkaConsumer<string, string>("kafka", options =>
-                    {
-                        options.Config.GroupId = kafkaConfig.ConsumerGroup;
-                        options.Config.AutoOffsetReset = AutoOffsetReset.Earliest;
-                        options.Config.EnableAutoCommit = false;
-                        // Уменьшаем таймауты для быстрого обнаружения недоступности брокера
-                        options.Config.SocketTimeoutMs = 5000;
-                        // Отключаем автоматический запрос версии API
-                        options.Config.ApiVersionRequest = false;
-                    });
-                }
-                catch (Exception ex)
+                // Регистрация Kafka Producer (для Dead Letter Queue)
+                builder.Services.AddSingleton<IProducer<string, string>>(provider =>
                 {
-                    // Логируем ошибку, но не блокируем запуск приложения
-                    var logger = LoggerFactory.Create(b => b.AddConsole()).CreateLogger<Program>();
-                    logger.LogWarning(ex, "Не удалось зарегистрировать Kafka. Приложение будет работать без Kafka.");
-                }
+                    var config = new ProducerConfig
+                    {
+                        BootstrapServers = kafkaConfig.BootstrapServers,
+                        Acks = Acks.All,
+                        MessageSendMaxRetries = 3,
+                        RetryBackoffMs = 1000,
+                        LingerMs = 5,
+                        BatchSize = 16384,
+                        EnableIdempotence = true,
+                        // Уменьшаем таймауты для быстрого обнаружения недоступности брокера
+                        SocketTimeoutMs = 5000,
+                        MessageTimeoutMs = 5000
+                        // Убрали ApiVersionRequest = false, так как это deprecated свойство
+                    };
+                    return new ProducerBuilder<string, string>(config).Build();
+                });
             }
 
             // Регистрация Domain Services

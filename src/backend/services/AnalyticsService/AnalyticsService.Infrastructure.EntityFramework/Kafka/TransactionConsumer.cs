@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Confluent.Kafka;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -9,6 +10,7 @@ using StockMarketAssistant.AnalyticsService.Application.Interfaces.Repositories;
 using StockMarketAssistant.AnalyticsService.Domain.Entities;
 using StockMarketAssistant.AnalyticsService.Domain.Enums;
 using StockMarketAssistant.AnalyticsService.Domain.Events;
+using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Persistence;
 using KafkaException = Confluent.Kafka.KafkaException;
 
 namespace StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Kafka
@@ -221,10 +223,13 @@ namespace StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.K
         {
             var processedMessages = new List<ConsumeResult<string, string>>();
             var failedMessages = new List<(ConsumeResult<string, string> Message, Exception Error)>();
+            var transactionsToSave = new List<(ConsumeResult<string, string> Message, AssetTransaction Transaction)>();
 
             using var scope = _serviceProvider.CreateScope();
             var transactionRepository = scope.ServiceProvider.GetRequiredService<IAssetTransactionRepository>();
+            var dbContext = scope.ServiceProvider.GetRequiredService<AnalyticsDbContext>();
 
+            // Шаг 1: Десериализация и валидация всех сообщений
             foreach (var consumeResult in batch)
             {
                 try
@@ -240,48 +245,109 @@ namespace StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.K
 
                     // Преобразуем TransactionMessage в AssetTransaction
                     var assetTransaction = MapToAssetTransaction(message);
-
-                    // Сохраняем транзакцию в базу данных
-                    await transactionRepository.AddAsync(assetTransaction, cancellationToken);
-                    await transactionRepository.SaveChangesAsync(cancellationToken);
-
-                    _logger.LogInformation(
-                        "Транзакция сохранена: PortfolioId={PortfolioId}, StockCardId={StockCardId}, Type={Type}, Quantity={Quantity}",
-                        assetTransaction.PortfolioId,
-                        assetTransaction.StockCardId,
-                        assetTransaction.TransactionType,
-                        assetTransaction.Quantity);
-
-                    // Публикация события TransactionReceivedEvent после сохранения
-                    if (_eventBus != null)
-                    {
-                        var transactionEvent = new TransactionReceivedEvent(assetTransaction);
-                        await _eventBus.PublishAsync(transactionEvent, cancellationToken);
-                        _logger.LogInformation(
-                            "Событие TransactionReceivedEvent опубликовано: TransactionId={TransactionId}",
-                            assetTransaction.Id);
-                    }
-                    else
-                    {
-                        _logger.LogWarning("EventBus не настроен, событие TransactionReceivedEvent не будет опубликовано");
-                    }
-
-                    processedMessages.Add(consumeResult);
+                    transactionsToSave.Add((consumeResult, assetTransaction));
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Ошибка при обработке сообщения: {Value}", consumeResult.Message.Value);
+                    _logger.LogError(ex, "Ошибка при десериализации/маппинге сообщения: {Value}", consumeResult.Message.Value);
                     failedMessages.Add((consumeResult, ex));
                 }
             }
 
-            // Обработка неудачных сообщений (Dead Letter Queue)
+            // Шаг 2: Батчевое сохранение всех транзакций в одной транзакции БД
+            if (transactionsToSave.Count > 0)
+            {
+                try
+                {
+                    // Используем транзакцию БД для атомарности
+                    using var dbTransaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+                    try
+                    {
+                        // Собираем все транзакции для батчевого сохранения
+                        var transactions = transactionsToSave.Select(t => t.Transaction).ToList();
+
+                        // Сохраняем все транзакции одним запросом
+                        await transactionRepository.AddRangeAsync(transactions, cancellationToken);
+                        var savedCount = await transactionRepository.SaveChangesAsync(cancellationToken);
+
+                        // Коммитим транзакцию БД
+                        await dbTransaction.CommitAsync(cancellationToken);
+
+                        _logger.LogInformation(
+                            "Батч транзакций сохранен: {Count} транзакций за один запрос к БД",
+                            savedCount);
+
+                        // Шаг 3: Публикация событий для всех успешно сохраненных транзакций
+                        if (_eventBus != null)
+                        {
+                            foreach (var (message, transaction) in transactionsToSave)
+                            {
+                                try
+                                {
+                                    var transactionEvent = new TransactionReceivedEvent(transaction);
+                                    await _eventBus.PublishAsync(transactionEvent, cancellationToken);
+
+                                    _logger.LogDebug(
+                                        "Событие TransactionReceivedEvent опубликовано: TransactionId={TransactionId}, PortfolioId={PortfolioId}, StockCardId={StockCardId}",
+                                        transaction.Id,
+                                        transaction.PortfolioId,
+                                        transaction.StockCardId);
+                                }
+                                catch (Exception ex)
+                                {
+                                    // Логируем ошибку публикации события, но не прерываем обработку
+                                    _logger.LogWarning(ex,
+                                        "Ошибка при публикации события для транзакции {TransactionId}. Транзакция уже сохранена в БД.",
+                                        transaction.Id);
+                                }
+                            }
+
+                            _logger.LogInformation(
+                                "Опубликовано событий TransactionReceivedEvent: {Count}",
+                                transactionsToSave.Count);
+                        }
+                        else
+                        {
+                            _logger.LogWarning("EventBus не настроен, события TransactionReceivedEvent не будут опубликованы");
+                        }
+
+                        // Все сообщения успешно обработаны
+                        processedMessages.AddRange(transactionsToSave.Select(t => t.Message));
+                    }
+                    catch (Exception ex)
+                    {
+                        // Откатываем транзакцию БД при ошибке
+                        await dbTransaction.RollbackAsync(cancellationToken);
+                        _logger.LogError(ex, "Ошибка при сохранении батча транзакций. Транзакция БД откачена.");
+
+                        // Все сообщения из батча считаются неудачными
+                        foreach (var (message, _) in transactionsToSave)
+                        {
+                            failedMessages.Add((message, ex));
+                        }
+                        transactionsToSave.Clear();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Критическая ошибка при обработке батча транзакций");
+                    // Все сообщения из батча считаются неудачными
+                    foreach (var (message, _) in transactionsToSave)
+                    {
+                        failedMessages.Add((message, ex));
+                    }
+                    transactionsToSave.Clear();
+                }
+            }
+
+            // Шаг 4: Обработка неудачных сообщений (Dead Letter Queue)
             if (failedMessages.Count > 0)
             {
+                _logger.LogWarning("Обнаружено {Count} неудачных сообщений из батча {BatchSize}", failedMessages.Count, batch.Count);
                 await HandleFailedMessagesAsync(failedMessages, cancellationToken);
             }
 
-            // Коммитим только успешно обработанные сообщения
+            // Шаг 5: Коммитим только успешно обработанные сообщения в Kafka
             if (processedMessages.Count > 0)
             {
                 try
@@ -289,11 +355,14 @@ namespace StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.K
                     // Коммитим последнее сообщение в батче (все предыдущие будут закоммичены автоматически)
                     var lastMessage = processedMessages.Last();
                     _consumer.Commit(lastMessage);
-                    _logger.LogInformation("Успешно обработано и закоммичено {Count} сообщений", processedMessages.Count);
+                    _logger.LogInformation(
+                        "Успешно обработано и закоммичено {ProcessedCount} из {TotalCount} сообщений в Kafka",
+                        processedMessages.Count,
+                        batch.Count);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Ошибка при коммите сообщений");
+                    _logger.LogError(ex, "Ошибка при коммите сообщений в Kafka. Сообщения могут быть обработаны повторно.");
                 }
             }
         }

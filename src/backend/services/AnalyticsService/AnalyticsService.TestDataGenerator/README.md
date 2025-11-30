@@ -23,14 +23,14 @@
 ```json
 {
   "ConnectionStrings": {
-    "analytics-db": "Host=localhost;Port=5432;Database=analytics_db;Username=postgres;Password=postgres"
+    "analytics-db": "Host=localhost;Port=5432;Database=analytics-db;Username=postgres;Password=postgres"
   }
 }
 ```
 
 Или установите переменную окружения:
 ```bash
-export ANALYTICS_DB_CONNECTION_STRING="Host=localhost;Port=5432;Database=analytics_db;Username=postgres;Password=postgres"
+export ANALYTICS_DB_CONNECTION_STRING="Host=localhost;Port=5432;Database=analytics-db;Username=postgres;Password=postgres"
 ```
 
 ## Использование
