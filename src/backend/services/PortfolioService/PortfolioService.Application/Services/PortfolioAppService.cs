@@ -481,6 +481,58 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
         }
 
         /// <summary>
+        /// Рассчитывает общую стоимость покупок (cost basis), использованных при продажах по методу FIFO.
+        /// </summary>
+        /// <param name="buyTransactions">Список покупок, отсортированных по дате</param>
+        /// <param name="sellTransactions">Список продаж</param>
+        /// <returns>Суммарная стоимость закрытых позиций (инвестиции, ушедшие в реализованную прибыль)</returns>
+        private static decimal GetCostBasisFromFifoSales(
+            List<PortfolioAssetTransaction> buyTransactions,
+            List<PortfolioAssetTransaction> sellTransactions)
+        {
+            if (sellTransactions.Count == 0)
+                return 0;
+
+            var availableBuys = new Queue<PortfolioAssetTransaction>(buyTransactions);
+            decimal totalCostBasis = 0;
+            var sellQuantityRemaining = sellTransactions.Sum(s => s.Quantity);
+
+            foreach (var sell in sellTransactions)
+            {
+                var remainingSellQuantity = sell.Quantity;
+
+                while (remainingSellQuantity > 0 && availableBuys.Count > 0)
+                {
+                    var buy = availableBuys.Peek();
+                    var quantityToUse = Math.Min(buy.Quantity, remainingSellQuantity);
+
+                    totalCostBasis += quantityToUse * buy.PricePerUnit;
+
+                    if (buy.Quantity == quantityToUse)
+                    {
+                        availableBuys.Dequeue();
+                    }
+                    else
+                    {
+                        availableBuys.Dequeue();
+                        availableBuys.Enqueue(new PortfolioAssetTransaction(
+                            buy.Id,
+                            buy.PortfolioAssetId,
+                            buy.TransactionType,
+                            buy.Quantity - quantityToUse,
+                            buy.PricePerUnit,
+                            buy.TransactionDate,
+                            buy.Currency));
+                    }
+
+                    remainingSellQuantity -= quantityToUse;
+                }
+            }
+
+            return totalCostBasis;
+        }
+
+        /// <summary>
         /// Расчет доходности для отдельного актива в контексте портфеля
         /// </summary>
         /// <param name="asset">Актив портфеля</param>
@@ -495,28 +547,50 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
             try
             {
                 StockCardInfoDto cardInfo = await _portfolioAssetAppService.GetStockCardInfoAsync(asset.AssetType, asset.StockCardId);
-                int totalQuantity = asset.TotalQuantity;
-                decimal averagePurchasePrice = asset.AveragePurchasePrice;
-                decimal? currentValue = cardInfo.CurrentPrice.HasValue ? totalQuantity * cardInfo.CurrentPrice.Value : null;
-                decimal investmentAmount = totalQuantity * averagePurchasePrice;
+                int currentQuantity = asset.TotalQuantity;
+                decimal? currentPrice = cardInfo.CurrentPrice;
+                decimal? currentValue = currentPrice.HasValue ? currentQuantity * currentPrice.Value : (decimal?)null;
+
                 decimal absoluteReturn = 0;
                 decimal percentageReturn = 0;
+                decimal investmentAmount;
+
+                var buyTransactions = asset.Transactions
+                    .Where(t => t.TransactionType == PortfolioAssetTransactionType.Buy)
+                    .OrderBy(t => t.TransactionDate)
+                    .ToList();
+
+                var sellTransactions = asset.Transactions
+                    .Where(t => t.TransactionType == PortfolioAssetTransactionType.Sell)
+                    .OrderBy(t => t.TransactionDate)
+                    .ToList();
 
                 if (calculationType == CalculationType.Realized)
                 {
-                    decimal realizedProfitLoss = CalculateRealizedProfitLoss(asset.Transactions);
-                    absoluteReturn = realizedProfitLoss;
-                    percentageReturn = investmentAmount != 0 ? decimal.Round(absoluteReturn / investmentAmount * 100) : 0;
-                    currentValue = 0;
-                    totalQuantity = 0;
+                    // Реализованная доходность
+                    decimal realizedPnL = CalculateRealizedProfitLoss(asset.Transactions);
+                    absoluteReturn = realizedPnL;
+
+                    // Инвестиции, участвовавшие в продажах (cost basis)
+                    decimal costBasis = GetCostBasisFromFifoSales(buyTransactions, sellTransactions);
+                    investmentAmount = costBasis;
+
+                    percentageReturn = costBasis != 0 ? decimal.Round(absoluteReturn / costBasis * 100, 2) : 0;
                 }
-                else if (currentValue.HasValue)
+                else
                 {
-                    absoluteReturn = currentValue.Value - investmentAmount;
-                    percentageReturn = investmentAmount == 0 ? 0 : decimal.Round(absoluteReturn / investmentAmount * 100);
+                    // Текущая доходность
+                    investmentAmount = currentQuantity * asset.AveragePurchasePrice;
+                    absoluteReturn = currentValue.HasValue ? currentValue.Value - investmentAmount : 0;
+                    percentageReturn = investmentAmount == 0 ? 0 : decimal.Round(absoluteReturn / investmentAmount * 100, 2);
                 }
 
-                decimal? weightInPortfolio = portfolioTotalValue == 0 ? 0 : decimal.Round((currentValue ?? 0) / portfolioTotalValue * 100);
+                // Вес в портфеле — всегда на основе текущей рыночной стоимости
+                decimal? weightInPortfolio = portfolioTotalValue == 0
+                    ? 0
+                    : currentValue.HasValue && portfolioTotalValue > 0
+                        ? Math.Round((currentValue.Value / portfolioTotalValue) * 100, 2)
+                        : 0;
 
                 return new PortfolioAssetProfitLossItemDto(
                     asset.Id,
@@ -527,9 +601,9 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                     investmentAmount,
                     currentValue,
                     cardInfo.Currency,
-                    totalQuantity,
-                    averagePurchasePrice,
-                    cardInfo.CurrentPrice,
+                    currentQuantity,
+                    asset.AveragePurchasePrice,
+                    currentPrice,
                     weightInPortfolio);
             }
             catch (Exception ex)
