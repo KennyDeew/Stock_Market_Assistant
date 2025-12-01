@@ -196,12 +196,29 @@ if __name__ == '__main__':
 
     # Определяем пути относительно скрипта
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    mmd_file = os.path.join(script_dir, 'Архитектура.mmd')
-    docx_file = os.path.join(script_dir, 'Архитектура.docx')
+
+    # Если передан аргумент командной строки - используем его как путь к .mmd файлу
+    if len(sys.argv) > 1:
+        mmd_file = sys.argv[1]
+        if not os.path.isabs(mmd_file):
+            # Если путь относительный, делаем его абсолютным относительно рабочей директории
+            mmd_file = os.path.abspath(mmd_file)
+
+        # Проверяем расширение файла
+        if not mmd_file.lower().endswith('.mmd'):
+            print(f"Предупреждение: файл {mmd_file} не имеет расширения .mmd")
+    else:
+        # По умолчанию используем Архитектура.mmd в той же директории, что и скрипт
+        mmd_file = os.path.join(script_dir, 'Архитектура.mmd')
 
     if not os.path.exists(mmd_file):
         print(f"Ошибка: файл {mmd_file} не найден!")
         sys.exit(1)
+
+    # Генерируем имя выходного файла на основе входного
+    mmd_dir = os.path.dirname(mmd_file)
+    mmd_basename = os.path.splitext(os.path.basename(mmd_file))[0]
+    docx_file = os.path.join(mmd_dir, f"{mmd_basename}.docx")
 
     print(f"Конвертация {mmd_file} -> {docx_file}")
     print("=" * 50)

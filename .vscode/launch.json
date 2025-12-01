@@ -2,6 +2,30 @@
 	"version": "0.2.0",
 	"configurations": [
 		{
+			"name": "Convert MMD to SVG",
+			"type": "debugpy",
+			"request": "launch",
+			"program": "${workspaceFolder}/Presentation/convert_mmd_to_svg.py",
+			"args": [
+				"${file}"
+			],
+			"console": "integratedTerminal",
+			"justMyCode": true,
+			"cwd": "${workspaceFolder}"
+		},
+		{
+			"name": "Convert MMD to DOCX",
+			"type": "debugpy",
+			"request": "launch",
+			"program": "${workspaceFolder}/Presentation/convert_mmd_to_docx.py",
+			"args": [
+				"${file}"
+			],
+			"console": "integratedTerminal",
+			"justMyCode": true,
+			"cwd": "${workspaceFolder}"
+		},
+		{
 			// Use IntelliSense to find out which attributes exist for C# debugging
 			// Use hover for the description of the existing attributes
 			// For further information visit https://github.com/dotnet/vscode-csharp/blob/main/debugger-launchjson.md.
