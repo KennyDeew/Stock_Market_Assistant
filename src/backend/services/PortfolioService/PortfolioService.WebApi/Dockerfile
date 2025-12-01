@@ -17,10 +17,12 @@ COPY ["src/StockMarketAssistant.ServiceDefaults/StockMarketAssistant.ServiceDefa
 COPY ["src/backend/services/PortfolioService/PortfolioService.Application/PortfolioService.Application.csproj", "src/backend/services/PortfolioService/PortfolioService.Application/"]
 COPY ["src/StockMarketAssistant.SharedLibrary/StockMarketAssistant.SharedLibrary.csproj", "src/StockMarketAssistant.SharedLibrary/"]
 COPY ["src/backend/services/PortfolioService/PortfolioService.Domain/PortfolioService.Domain.csproj", "src/backend/services/PortfolioService/PortfolioService.Domain/"]
+COPY ["src/backend/services/PortfolioService/PortfolioService.Infrastructure.BackgroundServices/PortfolioService.Infrastructure.BackgroundServices.csproj", "src/backend/services/PortfolioService/PortfolioService.Infrastructure.BackgroundServices/"]
 COPY ["src/backend/services/PortfolioService/PortfolioService.Infrastructure.Caching/PortfolioService.Infrastructure.Caching.csproj", "src/backend/services/PortfolioService/PortfolioService.Infrastructure.Caching/"]
 COPY ["src/backend/services/PortfolioService/PortfolioService.Infrastructure.EntityFramework/PortfolioService.Infrastructure.EntityFramework.csproj", "src/backend/services/PortfolioService/PortfolioService.Infrastructure.EntityFramework/"]
 COPY ["src/backend/services/PortfolioService/PortfolioService.Infrastructure.Gateways/PortfolioService.Infrastructure.Gateways.csproj", "src/backend/services/PortfolioService/PortfolioService.Infrastructure.Gateways/"]
 COPY ["src/backend/services/PortfolioService/PortfolioService.Infrastructure.Repositories/PortfolioService.Infrastructure.Repositories.csproj", "src/backend/services/PortfolioService/PortfolioService.Infrastructure.Repositories/"]
+COPY ["src/backend/services/PortfolioService/PortfolioService.Infrastructure.Security/PortfolioService.Infrastructure.Security.csproj", "src/backend/services/PortfolioService/PortfolioService.Infrastructure.Security/"]
 RUN dotnet restore "./src/backend/services/PortfolioService/PortfolioService.WebApi/PortfolioService.WebApi.csproj"
 COPY . .
 WORKDIR "/src/src/backend/services/PortfolioService/PortfolioService.WebApi"

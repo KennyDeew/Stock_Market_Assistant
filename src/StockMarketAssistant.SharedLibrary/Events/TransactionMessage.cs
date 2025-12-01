@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace StockMarketAssistant.SharedLibrary.Models
+namespace StockMarketAssistant.SharedLibrary.Events
 {
     /// <summary>
     /// DTO для сообщения о транзакции из PortfolioService

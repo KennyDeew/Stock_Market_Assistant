@@ -1,4 +1,4 @@
-﻿namespace StockMarketAssistant.SharedLibrary.Models
+﻿namespace StockMarketAssistant.SharedLibrary.Events
 {
     public class FinancialReportCreatedMessage
     {
