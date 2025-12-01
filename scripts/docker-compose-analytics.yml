@@ -58,14 +58,31 @@ services:
       timeout: 5s
       retries: 10
 
+  akhq:
+    image: tchiotludo/akhq:latest
+    container_name: analytics-akhq
+    depends_on:
+      - kafka
+      - zookeeper
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./akhq-application.yml:/app/application.yml
+    networks:
+      - analytics_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/api || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
 volumes:
   postgres_analytics_data:
 
 networks:
   analytics_network:
     driver: bridge
-
-
 
 
 

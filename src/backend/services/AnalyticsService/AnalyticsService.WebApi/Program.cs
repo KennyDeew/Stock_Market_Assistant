@@ -1,3 +1,4 @@
+using System;
 using System.Text;
 using Confluent.Kafka;
 using Confluent.Kafka.Admin;
@@ -24,6 +25,7 @@ using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Kafka
 using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Persistence;
 using StockMarketAssistant.AnalyticsService.WebApi.Middleware;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.OpenSearch;
@@ -35,7 +37,7 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
@@ -44,6 +46,24 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
 
             // Включаем отладочное логирование Serilog
             Serilog.Debugging.SelfLog.Enable(msg => Console.WriteLine(msg));
+
+            // Настройка Kestrel с таймаутами для предотвращения TaskCanceledException
+            // Не указываем порты явно, чтобы не конфликтовать с Aspire ServiceDefaults
+            builder.WebHost.ConfigureKestrel(options =>
+            {
+                options.Limits.KeepAliveTimeout = TimeSpan.FromMinutes(2);
+                options.Limits.RequestHeadersTimeout = TimeSpan.FromSeconds(30);
+                // Увеличиваем таймауты для предотвращения ошибок при привязке
+                options.Limits.MinRequestBodyDataRate = null;
+                options.Limits.MinResponseDataRate = null;
+            });
+
+            // Устанавливаем переменную окружения для использования только HTTP (без HTTPS)
+            // Это помогает избежать проблем с сертификатами при привязке
+            if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ASPNETCORE_URLS")))
+            {
+                Environment.SetEnvironmentVariable("ASPNETCORE_URLS", "http://localhost:5157");
+            }
 
             // Добавляем сервисы Aspire
             builder.AddServiceDefaults();
@@ -205,13 +225,42 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
                     {
                         BootstrapServers = kafkaConfig.BootstrapServers,
                         GroupId = kafkaConfig.ConsumerGroup,
-                        AutoOffsetReset = AutoOffsetReset.Earliest,
-                        EnableAutoCommit = false,
-                        // Уменьшаем таймауты для быстрого обнаружения недоступности брокера
-                        SocketTimeoutMs = 5000
-                        // Убрали ApiVersionRequest = false, так как это deprecated свойство
+                        AutoOffsetReset = AutoOffsetReset.Earliest, // Читаем с начала, если нет сохраненного offset
+                        EnableAutoCommit = false, // Ручной коммит после успешной обработки
+                        // Таймауты для надежного подключения
+                        SocketTimeoutMs = 10000, // Увеличиваем для более стабильного подключения
+                        SessionTimeoutMs = 30000, // Таймаут сессии
+                        MaxPollIntervalMs = 300000, // Максимальный интервал между вызовами Poll
+                        // Дополнительные настройки для надежности
+                        FetchMinBytes = 1, // Минимальный размер батча для получения
+                        FetchWaitMaxMs = 500, // Максимальное время ожидания для Fetch
+                        EnablePartitionEof = true // Включаем уведомления о конце партиции
                     };
-                    return new ConsumerBuilder<string, string>(config).Build();
+                    var consumer = new ConsumerBuilder<string, string>(config)
+                        .SetErrorHandler((consumer, error) =>
+                        {
+                            var loggerFactory = provider.GetService<ILoggerFactory>();
+                            var logger = loggerFactory?.CreateLogger<TransactionConsumer>();
+                            if (error.IsFatal)
+                            {
+                                logger?.LogError("Критическая ошибка Kafka Consumer: {Reason} (Code: {Code})",
+                                    error.Reason, error.Code);
+                            }
+                            else
+                            {
+                                logger?.LogWarning("Ошибка Kafka Consumer: {Reason} (Code: {Code})",
+                                    error.Reason, error.Code);
+                            }
+                        })
+                        .SetLogHandler((consumer, logMessage) =>
+                        {
+                            var loggerFactory = provider.GetService<ILoggerFactory>();
+                            var logger = loggerFactory?.CreateLogger<TransactionConsumer>();
+                            logger?.LogDebug("Kafka Consumer Log: {Message} (Level: {Level})",
+                                logMessage.Message, logMessage.Level);
+                        })
+                        .Build();
+                    return consumer;
                 });
 
                 // Регистрация Kafka Producer (для Dead Letter Queue)
@@ -306,60 +355,80 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
             var eventBus = app.Services.GetRequiredService<IEventBus>();
             eventBus.Subscribe<TransactionReceivedEvent, TransactionReceivedEventHandler>();
 
-            // Автоматическое применение миграций
-            using (var scope = app.Services.CreateScope())
+            // Автоматическое применение миграций (асинхронно, не блокируем запуск Kestrel)
+            _ = Task.Run(async () =>
             {
-                var dbContext = scope.ServiceProvider.GetService<AnalyticsDbContext>();
-                if (dbContext is not null)
-                {
-                    var logger = scope.ServiceProvider.GetService<ILogger<Program>>();
-                    try
-                    {
-                        logger?.LogInformation("Проверка подключения к базе данных...");
+                await Task.Delay(TimeSpan.FromSeconds(2)); // Небольшая задержка для запуска Kestrel
 
-                        // Проверяем подключение
-                        if (!dbContext.Database.CanConnect())
+                using (var scope = app.Services.CreateScope())
+                {
+                    var dbContext = scope.ServiceProvider.GetService<AnalyticsDbContext>();
+                    if (dbContext is not null)
+                    {
+                        var logger = scope.ServiceProvider.GetService<ILogger<Program>>();
+                        try
                         {
-                            logger?.LogWarning("Не удалось подключиться к базе данных. Миграции будут применены при следующем успешном подключении.");
-                            // Не используем return здесь, так как Build() уже был вызван
-                            // Просто пропускаем применение миграций
-                        }
-                        else
-                        {
+                            logger?.LogInformation("Проверка подключения к базе данных...");
+
+                            // Проверяем подключение с таймаутом
+                            var canConnect = false;
+                            try
+                            {
+                                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                                canConnect = await dbContext.Database.CanConnectAsync(cts.Token);
+                            }
+                            catch (OperationCanceledException)
+                            {
+                                logger?.LogWarning("Таймаут при проверке подключения к базе данных. Миграции будут применены позже.");
+                                return;
+                            }
+
+                            if (!canConnect)
+                            {
+                                logger?.LogWarning("Не удалось подключиться к базе данных. Миграции будут применены при следующем успешном подключении.");
+                                return;
+                            }
+
                             // Проверяем, существует ли таблица истории миграций, и создаем её, если нет
                             try
                             {
-                                // Пытаемся прочитать из таблицы истории миграций
-                                var _ = dbContext.Database.ExecuteSqlRaw("SELECT 1 FROM \"__EFMigrationsHistory\" LIMIT 1;");
+                                using var cts2 = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                                await dbContext.Database.ExecuteSqlRawAsync("SELECT 1 FROM \"__EFMigrationsHistory\" LIMIT 1;", cts2.Token);
                             }
                             catch
                             {
                                 // Таблица не существует, создаем её
                                 logger?.LogInformation("Таблица истории миграций не найдена. Создание таблицы...");
-                                dbContext.Database.ExecuteSqlRaw(@"
+                                using var cts3 = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                                await dbContext.Database.ExecuteSqlRawAsync(@"
                                     CREATE TABLE IF NOT EXISTS ""__EFMigrationsHistory"" (
                                         ""migration_id"" VARCHAR(150) NOT NULL,
                                         ""product_version"" VARCHAR(32) NOT NULL,
                                         CONSTRAINT ""pk___ef_migrations_history"" PRIMARY KEY (""migration_id"")
-                                    );");
+                                    );", cts3.Token);
                                 logger?.LogInformation("Таблица истории миграций создана.");
                             }
 
                             logger?.LogInformation("Применение миграций базы данных...");
 
                             // Применяем миграции - они создадут таблицы, если их нет
-                            dbContext.Database.Migrate();
+                            using var cts4 = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                            await dbContext.Database.MigrateAsync(cts4.Token);
 
                             logger?.LogInformation("Миграции успешно применены.");
                         }
-                    }
-                    catch (Exception ex)
-                    {
-                        // Логируем ошибку, но не прерываем запуск приложения
-                        logger?.LogError(ex, "Не удалось применить миграции базы данных. Проверьте подключение к базе данных и настройки.");
+                        catch (OperationCanceledException)
+                        {
+                            logger?.LogWarning("Таймаут при применении миграций. Миграции будут применены позже.");
+                        }
+                        catch (Exception ex)
+                        {
+                            // Логируем ошибку, но не прерываем запуск приложения
+                            logger?.LogError(ex, "Не удалось применить миграции базы данных. Проверьте подключение к базе данных и настройки.");
+                        }
                     }
                 }
-            }
+            });
 
             // Configure the HTTP request pipeline
 
@@ -375,7 +444,8 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
                 });
             }
 
-            app.UseHttpsRedirection();
+            // Временно отключаем HTTPS редирект для диагностики
+            // app.UseHttpsRedirection();
             app.UseRouting();
 
             // Аутентификация должна быть перед авторизацией
@@ -386,7 +456,22 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
             app.MapControllers();
             app.MapGet("/", () => "Analytics Service API - Use /swagger for API documentation");
 
-            app.Run();
+            // Запуск приложения с обработкой ошибок
+            try
+            {
+                app.Logger.LogInformation("Запуск Kestrel сервера...");
+                await app.RunAsync();
+            }
+            catch (TaskCanceledException ex)
+            {
+                app.Logger.LogError(ex, "Ошибка при запуске Kestrel сервера. Возможно, порт занят или есть проблема с привязкой.");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                app.Logger.LogError(ex, "Критическая ошибка при запуске приложения.");
+                throw;
+            }
         }
 
         /// <summary>

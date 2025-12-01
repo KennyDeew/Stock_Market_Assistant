@@ -3,8 +3,10 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Confluent.Kafka;
 
-class Program
+namespace SendKafkaMessage
 {
+    class Program
+    {
     static async Task Main(string[] args)
     {
         var bootstrapServer = "localhost:9092";
@@ -165,5 +167,6 @@ class Program
         Console.WriteLine();
         Console.WriteLine("💡 Проверьте логи AnalyticsService для подтверждения обработки");
         Console.WriteLine("💡 Проверьте базу данных: SELECT * FROM asset_transactions ORDER BY transaction_time DESC LIMIT 10;");
+    }
     }
 }

@@ -253,30 +253,33 @@ if (-not $SkipDbCheck) {
         if ($psql) {
             # Используем psql, если доступен
             $env:PGPASSWORD = $DbPassword
-            $createDb = psql -h $DbHost -p $DbPort -U $DbUser -d postgres -c "CREATE DATABASE $DbName;" 2>&1
+            # Имя базы данных с дефисом нужно заключать в кавычки
+            $createDb = psql -h $DbHost -p $DbPort -U $DbUser -d postgres -c "CREATE DATABASE `"$DbName`";" 2>&1
             Remove-Item Env:\PGPASSWORD -ErrorAction SilentlyContinue
             if ($LASTEXITCODE -eq 0) {
                 Write-Host "   ✅ База данных '$DbName' создана" -ForegroundColor Green
             } else {
                 Write-Host "   ⚠️ Не удалось создать базу данных через psql" -ForegroundColor Yellow
                 Write-Host "   Пробуем через Docker..." -ForegroundColor Gray
-                $createDbDocker = docker exec analytics-postgres psql -U $DbUser -d postgres -c "CREATE DATABASE $DbName;" 2>&1
+                # Имя базы данных с дефисом нужно заключать в кавычки
+                $createDbDocker = docker exec analytics-postgres psql -U $DbUser -d postgres -c "CREATE DATABASE `"$DbName`";" 2>&1
                 if ($LASTEXITCODE -eq 0) {
                     Write-Host "   ✅ База данных '$DbName' создана через Docker" -ForegroundColor Green
                 } else {
                     Write-Host "   ⚠️ Не удалось создать базу данных" -ForegroundColor Yellow
-                    Write-Host "   Создайте базу вручную: CREATE DATABASE $DbName;" -ForegroundColor Gray
+                    Write-Host "   Создайте базу вручную: CREATE DATABASE `"$DbName`";" -ForegroundColor Gray
                 }
             }
         } else {
             # Используем Docker для создания БД
-            $createDbDocker = docker exec analytics-postgres psql -U $DbUser -d postgres -c "CREATE DATABASE $DbName;" 2>&1
+            # Имя базы данных с дефисом нужно заключать в кавычки
+            $createDbDocker = docker exec analytics-postgres psql -U $DbUser -d postgres -c "CREATE DATABASE `"$DbName`";" 2>&1
             if ($LASTEXITCODE -eq 0) {
                 Write-Host "   ✅ База данных '$DbName' создана через Docker" -ForegroundColor Green
             } else {
                 Write-Host "   ⚠️ Не удалось создать базу данных через Docker" -ForegroundColor Yellow
                 Write-Host "   Ошибка: $createDbDocker" -ForegroundColor Gray
-                Write-Host "   Создайте базу вручную: docker exec -it analytics-postgres psql -U $DbUser -d postgres -c 'CREATE DATABASE $DbName;'" -ForegroundColor Gray
+                Write-Host "   Создайте базу вручную: docker exec -it analytics-postgres psql -U $DbUser -d postgres -c 'CREATE DATABASE `"$DbName`";'" -ForegroundColor Gray
             }
         }
     }
@@ -357,7 +360,7 @@ if (-not $SkipKafkaCheck) {
 
             # Инициализируем переменные
             $useExistingZookeeper = $false
-            $servicesToStart = "zookeeper kafka"
+            $servicesToStart = "zookeeper kafka akhq"
             $zookeeperHostPort = 2183  # Порт на хосте для Zookeeper (внутри контейнера остается 2181)
 
             # Проверяем, запущен ли уже наш контейнер Zookeeper
@@ -365,7 +368,7 @@ if (-not $SkipKafkaCheck) {
             if ($existingZookeeper -and $existingZookeeper -notmatch "Error") {
                 Write-Host "   ℹ️ Контейнер Zookeeper уже запущен" -ForegroundColor Yellow
                 $useExistingZookeeper = $true
-                $servicesToStart = "kafka"
+                $servicesToStart = "kafka akhq"
             } else {
                 # Проверяем занятость порта 2182 (наш порт для Zookeeper)
                 $zookeeperPortCheck = Test-NetConnection -ComputerName localhost -Port $zookeeperHostPort -InformationLevel Quiet -WarningAction SilentlyContinue
@@ -379,7 +382,7 @@ if (-not $SkipKafkaCheck) {
                         Write-Host "   ℹ️ Найден Zookeeper в другом контейнере: $allZookeeper" -ForegroundColor Yellow
                         Write-Host "   Используем существующий Zookeeper" -ForegroundColor Green
                         $useExistingZookeeper = $true
-                        $servicesToStart = "kafka"
+                        $servicesToStart = "kafka akhq"
                     } else {
                         Write-Host "   ⚠️ Порт $zookeeperHostPort занят, но Zookeeper не найден в контейнерах" -ForegroundColor Yellow
                         Write-Host "   Пытаемся запустить Zookeeper на порту $zookeeperHostPort..." -ForegroundColor Yellow
@@ -420,13 +423,17 @@ if (-not $SkipKafkaCheck) {
 
                 # Формируем команду с правильными аргументами (явно указываем элементы массива)
                 if ($useDockerCompose) {
-                    if ($servicesArray.Count -eq 2) {
+                    if ($servicesArray.Count -eq 3) {
+                        $dockerOutput = & docker-compose -f docker-compose-analytics.yml up -d $servicesArray[0] $servicesArray[1] $servicesArray[2] 2>&1
+                    } elseif ($servicesArray.Count -eq 2) {
                         $dockerOutput = & docker-compose -f docker-compose-analytics.yml up -d $servicesArray[0] $servicesArray[1] 2>&1
                     } else {
                         $dockerOutput = & docker-compose -f docker-compose-analytics.yml up -d $servicesArray[0] 2>&1
                     }
                 } else {
-                    if ($servicesArray.Count -eq 2) {
+                    if ($servicesArray.Count -eq 3) {
+                        $dockerOutput = & docker compose -f docker-compose-analytics.yml up -d $servicesArray[0] $servicesArray[1] $servicesArray[2] 2>&1
+                    } elseif ($servicesArray.Count -eq 2) {
                         $dockerOutput = & docker compose -f docker-compose-analytics.yml up -d $servicesArray[0] $servicesArray[1] 2>&1
                     } else {
                         $dockerOutput = & docker compose -f docker-compose-analytics.yml up -d $servicesArray[0] 2>&1
@@ -434,7 +441,7 @@ if (-not $SkipKafkaCheck) {
                 }
 
                 if ($LASTEXITCODE -eq 0) {
-                    Write-Host "   ✅ Kafka и Zookeeper запущены в Docker" -ForegroundColor Green
+                    Write-Host "   ✅ Kafka, Zookeeper и AKHQ запущены в Docker" -ForegroundColor Green
                     Write-Host "   ⏳ Ожидание готовности Kafka (до 30 секунд)..." -ForegroundColor Yellow
 
                     # Ждем готовности Kafka
@@ -454,8 +461,20 @@ if (-not $SkipKafkaCheck) {
 
                     if ($kafkaReady) {
                         Write-Host "   ✅ Kafka готов" -ForegroundColor Green
+
+                        # Проверяем доступность AKHQ
+                        Write-Host "   ⏳ Проверка доступности AKHQ..." -ForegroundColor Yellow
+                        Start-Sleep -Seconds 3
+                        $akhqCheck = Test-NetConnection -ComputerName localhost -Port 8080 -InformationLevel Quiet -WarningAction SilentlyContinue
+                        if ($akhqCheck) {
+                            Write-Host "   ✅ AKHQ доступен на http://localhost:8080" -ForegroundColor Green
+                        } else {
+                            Write-Host "   ⚠️ AKHQ еще не готов, но будет доступен через несколько секунд" -ForegroundColor Yellow
+                            Write-Host "   💡 AKHQ будет доступен на http://localhost:8080" -ForegroundColor Cyan
+                        }
                     } else {
                         Write-Host "   ⚠️ Kafka запущен, но еще не готов. Продолжаем..." -ForegroundColor Yellow
+                        Write-Host "   💡 AKHQ будет доступен на http://localhost:8080 после готовности Kafka" -ForegroundColor Cyan
                     }
                 } else {
                     Write-Host "   ❌ Не удалось запустить Kafka через Docker" -ForegroundColor Red
@@ -486,6 +505,41 @@ if (-not $SkipKafkaCheck) {
         }
     } else {
         Write-Host "   ✅ Kafka доступен на $KafkaBootstrapServer" -ForegroundColor Green
+
+        # Проверяем, запущен ли AKHQ
+        if (-not $SkipDockerStart) {
+            $runningAkhq = docker ps --filter "name=analytics-akhq" --format "{{.Names}}" 2>&1
+            if (-not ($runningAkhq -and $runningAkhq -notmatch "Error")) {
+                Write-Host "   🐳 Запуск AKHQ через Docker..." -ForegroundColor Yellow
+
+                if (-not (Test-Path $dockerComposePath)) {
+                    Write-Host "   ❌ Файл docker-compose-analytics.yml не найден" -ForegroundColor Red
+                    Write-Host "   Ожидаемый путь: $dockerComposePath" -ForegroundColor Yellow
+                } else {
+                    Push-Location $scriptRoot
+                    try {
+                        if ($useDockerCompose) {
+                            $akhqOutput = docker-compose -f docker-compose-analytics.yml up -d akhq 2>&1
+                        } else {
+                            $akhqOutput = docker compose -f docker-compose-analytics.yml up -d akhq 2>&1
+                        }
+
+                        if ($LASTEXITCODE -eq 0) {
+                            Write-Host "   ✅ AKHQ запущен" -ForegroundColor Green
+                            Write-Host "   💡 AKHQ доступен на http://localhost:8080" -ForegroundColor Cyan
+                        } else {
+                            Write-Host "   ⚠️ Не удалось запустить AKHQ" -ForegroundColor Yellow
+                            $akhqOutput | ForEach-Object { Write-Host "   $_" -ForegroundColor Gray }
+                        }
+                    } finally {
+                        Pop-Location
+                    }
+                }
+            } else {
+                Write-Host "   ✅ AKHQ уже запущен" -ForegroundColor Green
+                Write-Host "   💡 AKHQ доступен на http://localhost:8080" -ForegroundColor Cyan
+            }
+        }
     }
 } else {
     Write-Host "3. Проверка Kafka пропущена (-SkipKafkaCheck)" -ForegroundColor Gray
@@ -541,6 +595,7 @@ try {
     Write-Host "💡 Для остановки нажмите Ctrl+C" -ForegroundColor Gray
     Write-Host "💡 Логи будут отображаться ниже" -ForegroundColor Gray
     Write-Host "💡 Docker контейнеры будут продолжать работать после остановки" -ForegroundColor Gray
+    Write-Host "💡 AKHQ доступен на http://localhost:8080" -ForegroundColor Cyan
     Write-Host ""
 
     # Запускаем dotnet run
