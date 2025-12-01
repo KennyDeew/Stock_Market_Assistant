@@ -62,7 +62,7 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
                     .ToList();
 
                 var portfolioResponses = pagedPortfolios.Select(p =>
-                    new PortfolioShortResponse(p.Id, p.UserId, p.Name, p.Currency));
+                    new PortfolioShortResponse(p.Id, p.UserId, p.Name, p.Currency, p.IsPrivate));
 
                 var paginatedResponse = new PaginatedResponse<PortfolioShortResponse>(
                     portfolioResponses,
@@ -129,7 +129,7 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
                     .ToList();
 
                 var portfolioResponses = pagedPortfolios.Select(p =>
-                    new PortfolioShortResponse(p.Id, p.UserId, p.Name, p.Currency));
+                    new PortfolioShortResponse(p.Id, p.UserId, p.Name, p.Currency, p.IsPrivate));
 
                 var paginatedResponse = new PaginatedResponse<PortfolioShortResponse>(
                     portfolioResponses,
@@ -155,7 +155,7 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
         /// Создать новый портфель
         /// </summary>
         /// <param name="request">Параметры создаваемого портфеля</param>
-        /// <returns></returns>
+        /// <returns>Созданный портфель с краткой информацией</returns>
         [Authorize(Roles = "USER")]
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(PortfolioShortResponse))]
@@ -165,14 +165,7 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
         {
             try
             {
-                // Проверяем валидность модели
-                if (!ModelState.IsValid)
-                {
-                    _logger.LogWarning("Некорректные данные при создании портфеля для пользователя {UserId}", request.UserId);
-                    return BadRequest(ModelState);
-                }
-
-                CreatingPortfolioDto createDto = new(request.UserId, request.Name, request.Currency);
+                CreatingPortfolioDto createDto = new(request.UserId, request.Name, request.Currency, request.IsPrivate);
                 var createdPortfolioId = await _portfolioAppService.CreateAsync(createDto);
 
                 if (createdPortfolioId == Guid.Empty)
@@ -186,7 +179,8 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
                     createdPortfolioId,
                     createDto.UserId,
                     createDto.Name,
-                    createDto.Currency);
+                    createDto.Currency,
+                    createDto.IsPrivate);
 
                 _logger.LogInformation("Портфель {PortfolioId} успешно создан для пользователя {UserId}",
                                      createdPortfolioId, request.UserId);
@@ -209,7 +203,7 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
         /// Получить данные портфеля по Id
         /// </summary>
         /// <param name="id">Id портфеля</param>
-        /// <returns></returns>
+        /// <returns>Полная информация о портфеле</returns>
         [Authorize(Roles = "ADMIN,USER")]
         [HttpGet("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(PortfolioResponse))]
@@ -232,6 +226,7 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
                     UserId = portfolioDto.UserId,
                     Name = portfolioDto.Name,
                     Currency = portfolioDto.Currency,
+                    IsPrivate = portfolioDto.IsPrivate,
                     Assets = [.. portfolioDto.Assets.Select(a => new PortfolioAssetShortResponse(
                         a.Id,
                         a.PortfolioId,
@@ -261,6 +256,7 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
         /// </summary>
         /// <param name="id">Id портфеля</param>
         /// <param name="request">Данные для редактирования портфеля</param>
+        /// <returns>Нет содержимого (204 No Content)</returns>
         [Authorize(Roles = "USER")]
         [HttpPut("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -271,13 +267,6 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
         {
             try
             {
-                // Проверяем валидность модели
-                if (!ModelState.IsValid)
-                {
-                    _logger.LogWarning("Некорректные данные при обновлении портфеля {PortfolioId}", id);
-                    return BadRequest(ModelState);
-                }
-
                 // Проверяем существование портфеля
                 var exists = await _portfolioAppService.ExistsAsync(id);
                 if (!exists)
@@ -286,7 +275,7 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
                     return NotFound();
                 }
 
-                var updatingPortfolioDto = new UpdatingPortfolioDto(request.Name, request.Currency);
+                var updatingPortfolioDto = new UpdatingPortfolioDto(request.Name, request.Currency, request.IsPrivate);
                 await _portfolioAppService.UpdateAsync(id, updatingPortfolioDto);
 
                 _logger.LogInformation("Портфель {PortfolioId} успешно обновлен", id);
@@ -304,7 +293,7 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
         /// Удалить портфель по Id
         /// </summary>
         /// <param name="id">Id портфеля</param>
-        /// <returns></returns>
+        /// <returns>Нет содержимого (204 No Content)</returns>
         [Authorize(Roles = "USER")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(string))]

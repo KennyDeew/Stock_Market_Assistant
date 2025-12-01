@@ -1,9 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.EntityFrameworkCore;
-using StockMarketAssistant.PortfolioService.Infrastructure.EntityFramework.Context;
+﻿using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Configuration;
 using StockMarketAssistant.PortfolioService.WebApi;
-using StockMarketAssistant.PortfolioService.IntegrationTests.Helpers;
 using Xunit;
 
 namespace StockMarketAssistant.PortfolioService.IntegrationTests
@@ -15,24 +13,22 @@ namespace StockMarketAssistant.PortfolioService.IntegrationTests
 
         public IntegrationTestBase(WebApplicationFactory<Program> factory)
         {
+            Environment.SetEnvironmentVariable("INTEGRATION_TESTS", "1");
+
             _factory = factory.WithWebHostBuilder(builder =>
             {
-                builder.ConfigureServices(services =>
+                builder.ConfigureAppConfiguration(config =>
                 {
-                    var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<DatabaseContext>));
-                    if (descriptor != null)
-                        services.Remove(descriptor);
-
-                    services.AddDbContext<DatabaseContext>(options =>
+                    config.AddInMemoryCollection(new Dictionary<string, string?>
                     {
-                        options.UseInMemoryDatabase("TestDb");
+                        ["Jwt:Issuer"] = "TestIssuer",
+                        ["Jwt:Audience"] = "TestAudience",
+                        ["Jwt:Key"] = "TestKeyVeryLongAndSecureEnoughForTests12345"
                     });
                 });
             });
 
             _client = _factory.CreateClient();
-            _client.DefaultRequestHeaders.Add("Authorization", "Bearer " + JwtHelper.GenerateTestToken("user1", "USER"));
         }
     }
 }
-

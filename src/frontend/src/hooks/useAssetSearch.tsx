@@ -20,16 +20,19 @@ export const useAssetSearch = (): UseAssetSearchResult => {
 
   const loadAssets = useCallback(async (query: string, type?: string) => {
     const trimmedQuery = query.trim();
+    const isImmediate = trimmedQuery === '' && query === ''; // Разрешаем пустой запрос для `loadAssetsImmediately`
 
-    if (!trimmedQuery) {
+    // Только `searchAssets` должен блокировать пустые запросы
+    // `loadAssetsImmediately` — может загружать всё
+    if (!trimmedQuery && !isImmediate) {
       setAssets([]);
       setError(null);
       setLoading(false);
       return;
     }
 
-    console.log('🔍 Поиск активов:', { query: trimmedQuery, type });
-    latestQueryRef.current = trimmedQuery;
+    console.log('🔍 Поиск активов:', { query: trimmedQuery || '(все)', type });
+    latestQueryRef.current = query;
     setLoading(true);
     setError(null);
 
@@ -38,26 +41,20 @@ export const useAssetSearch = (): UseAssetSearchResult => {
         search: trimmedQuery,
         type,
         page: 0,
-        pageSize: 20,
+        pageSize: 1000,
       });
 
-      // Проверяем, не устарел ли запрос
-      if (latestQueryRef.current !== trimmedQuery) {
-        console.log(`❌ Игнорируем устаревший ответ для "${trimmedQuery}"`);
-        return;
-      }
+      if (latestQueryRef.current !== query) return;
 
-      console.log('✅ Получены активы:', response.data.length);
-      setAssets(response.data); // 🔥 Убедитесь, что это выполняется
+      setAssets(response.data);
     } catch (err: any) {
-      console.error('Ошибка загрузки активов', err);
       const message = err.message || 'Не удалось загрузить активы';
       setError(message);
-      if (latestQueryRef.current === trimmedQuery) {
+      if (latestQueryRef.current === query) {
         setAssets([]);
       }
     } finally {
-      if (latestQueryRef.current === trimmedQuery) {
+      if (latestQueryRef.current === query) {
         setLoading(false);
       }
     }
@@ -72,12 +69,12 @@ export const useAssetSearch = (): UseAssetSearchResult => {
     // Обёртка: чтобы не передавать пустой query напрямую в debouncedSearch
     searchAssets: useCallback(
       (query: string, type?: string) => {
-        if (query.trim()) {
-          debouncedSearch(query, type);
+        const trimmed = query.trim();
+        if (trimmed) {
+          debouncedSearch(trimmed, type);
         } else {
           setAssets([]);
           setError(null);
-          setLoading(false);
         }
       },
       [debouncedSearch]

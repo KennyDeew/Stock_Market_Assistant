@@ -88,6 +88,7 @@
             .WithReference(pgPortfolioDb)
             .WithReference(apiStockCardService)
             .WithReference(kafka)
+            .WithEnvironment("OpenSearchConfig__Url", openSearch.GetEndpoint("http"))
             .WaitFor(pgPortfolioDb)
             .WaitFor(kafka);
 
@@ -106,7 +107,10 @@
         //    args: ["run", "dev"],
         //    workingDirectory: "../frontend")
 
-        var webui = builder.AddNpmApp("webui", "../frontend", scriptName: "dev")
+        //var webui = builder.AddNpmApp("webui", "../frontend", scriptName: "dev")
+        var webui = builder.AddContainer("webui", "webui")
+        //.WithHttpEndpoint(port: 80, targetPort: 80)
+        .WithDockerfile("../frontend", "Dockerfile")
         .WithHttpEndpoint(
             port: 5273,           // порт, который будет открыт
             targetPort: 5273,     // порт, на котором слушает Vite

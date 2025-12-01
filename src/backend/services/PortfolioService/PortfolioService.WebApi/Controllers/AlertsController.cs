@@ -68,9 +68,6 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<AlertResponse>> Create([FromBody] CreateAlertRequest request)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(new ValidationProblemDetails(ModelState));
-
             try
             {
                 var userId = GetUserIdFromClaims();

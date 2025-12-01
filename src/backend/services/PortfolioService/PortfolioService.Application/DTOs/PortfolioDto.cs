@@ -26,6 +26,11 @@
         public required string Currency { get; init; }
 
         /// <summary>
+        /// Скрыть портфель из публичной статистики
+        /// </summary>
+        public bool IsPrivate { get; init; }
+
+        /// <summary>
         /// Коллекция финансовых активов в портфеле (только для чтения)
         /// </summary>
         public IReadOnlyCollection<PortfolioAssetDto> Assets { get; init; } = [];

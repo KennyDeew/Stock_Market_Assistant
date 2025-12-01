@@ -28,7 +28,7 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
         /// Создать новый финансовый актив в портфеле с начальной транзакцией покупки
         /// </summary>
         /// <param name="request">Параметры создаваемого актива ценной бумаги</param>
-        /// <returns></returns>
+        /// <returns>Созданный актив портфеля с полной информацией</returns>
         [Authorize(Roles = "USER")]
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(PortfolioAssetShortResponse))]
@@ -36,10 +36,6 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(string))]
         public async Task<ActionResult<PortfolioAssetShortResponse>> CreatePortfolioAsset([FromBody]CreatePortfolioAssetRequest request)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
             try
             {
                 if (!await _portfolioAppService.ExistsAsync(request.PortfolioId))
@@ -68,7 +64,7 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
         /// Получить данные актива ценной бумаги из портфеля по Id
         /// </summary>
         /// <param name="assetId">Id актива ценной бумаги из портфеля</param>
-        /// <returns></returns>
+        /// <returns>Полная информация об активе портфеля</returns>
         [HttpGet("{assetId:guid}")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(PortfolioAssetResponse))]
         [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(string))]
@@ -109,7 +105,7 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
         /// Удалить актив портфеля по Id
         /// </summary>
         /// <param name="assetId">Id актива ценной бумаги из портфеля</param>
-        /// <returns></returns>
+        /// <returns>Нет содержимого (204 No Content)</returns>
         [HttpDelete("{assetId:guid}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(string))]
@@ -138,7 +134,7 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
         /// </summary>
         /// <param name="transactionId">Id транзакции</param>
         /// <param name="assetId">Id актива</param>
-        /// <returns></returns>
+        /// <returns>Полная информация о транзакции актива портфеля</returns>
         [HttpGet("{assetId:guid}/transactions/{transactionId:guid}")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(PortfolioAssetTransactionResponse))]
         [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(string))]
@@ -238,6 +234,7 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
         /// </summary>
         /// <param name="assetId">Идентификатор актива</param>
         /// <param name="request">Параметры добавляемой транзакции к активу</param>
+        /// <returns>Созданная транзакция с полной информацией</returns>
         [HttpPost("{assetId:guid}/transactions")]
         [ProducesResponseType(typeof(PortfolioAssetTransactionResponse), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -246,10 +243,6 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
             Guid assetId,
             [FromBody] CreatePortfolioAssetTransactionRequest request)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
             try
             {
                 if (!await _portfolioAssetAppService.ExistsAsync(assetId))
@@ -290,6 +283,7 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
         /// <param name="transactionId">Идентификатор транзакции</param>
         /// <param name="request">Данные для редактирования транзакции актива портфеля</param>
         /// <param name="assetId">Идентификатор актива</param>
+        /// <returns>Нет содержимого (204 No Content)</returns>
         [HttpPut("{assetId:guid}/transactions/{transactionId:guid}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
@@ -299,10 +293,6 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
             Guid transactionId,
             [FromBody] UpdatePortfolioAssetTransactionRequest request)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
             try
             {
                 var transaction = await _portfolioAssetAppService.GetAssetTransactionByIdAsync(transactionId);
@@ -334,7 +324,7 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
         /// </summary>
         /// <param name="assetId">Идентификатор актива</param>
         /// <param name="transactionId">Идентификатор транзакции</param>
-        /// <returns></returns>
+        /// <returns>Нет содержимого (204 No Content)</returns>
         [HttpDelete("{assetId:guid}/transactions/{transactionId:guid}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(string))]

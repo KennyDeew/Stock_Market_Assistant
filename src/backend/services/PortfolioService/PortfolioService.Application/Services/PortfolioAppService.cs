@@ -34,26 +34,41 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
         }
 
         /// <summary>
+        /// Инвалидация записи кэша для списка портфеля ценных бумаг по конкретному пользователю
+        /// </summary>
+        /// <param name="portfolioId">Id портфеля</param>
+        /// <returns></returns>
+        private async Task InvalidatePortfoliosByUserCacheAsync(Guid userId)
+        {
+            await _cache.RemoveAsync($"user_portfolios_short_{userId}");
+        }
+
+        /// <summary>
         /// Создать портфель ценных бумаг
         /// </summary>
         /// <param name="creatingPortfolioDto">DTO создаваемого портфеля</param>
         /// <returns>Идентификатор созданного портфеля</returns>
         public async Task<Guid> CreateAsync(CreatingPortfolioDto creatingPortfolioDto)
         {
+            if (_userContext.UserId == Guid.Empty)
+                throw new SecurityException("Пользователь не аутентифицирован");
+
             // Проверка: если USER — то UserId должен совпадать
             if (!_userContext.IsAdmin && creatingPortfolioDto.UserId != _userContext.UserId)
             {
                 _logger.LogWarning(
                     "Пользователь {CurrentUserId} (роль: {Role}) пытается создать портфель от имени {TargetUserId}",
-                    _userContext.UserId, _userContext.Role ?? "не задана", creatingPortfolioDto.UserId);
+                    _userContext.UserId, _userContext.Role ?? "UNKNOWN", creatingPortfolioDto.UserId);
 
                 throw new SecurityException("Недопустимая операция: нельзя создавать портфели от имени других пользователей");
             }
 
-            Portfolio portfolio = new(Guid.NewGuid(), creatingPortfolioDto.UserId, creatingPortfolioDto.Name, creatingPortfolioDto.Currency);
+            Portfolio portfolio = new(Guid.NewGuid(), creatingPortfolioDto.UserId, creatingPortfolioDto.Name, creatingPortfolioDto.Currency, creatingPortfolioDto.IsPrivate);
             try
             {
                 Portfolio createdPortfolio = await _portfolioRepository.AddAsync(portfolio);
+                // Сбрасываем кэш
+                await InvalidatePortfoliosByUserCacheAsync(createdPortfolio.UserId);
                 return createdPortfolio.Id;
             }
             catch (Exception ex)
@@ -80,6 +95,9 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                     return false;
                 }
 
+                if (_userContext.UserId == Guid.Empty)
+                    throw new SecurityException("Пользователь не аутентифицирован");
+
                 // Проверка прав доступа: USER может удалять только свои портфели
                 if (!_userContext.IsAdmin && portfolio.UserId != _userContext.UserId)
                 {
@@ -91,8 +109,9 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                 }
 
                 await _portfolioRepository.DeleteAsync(portfolio);
+                // Сбрасываем кэш
                 await InvalidatePortfolioCacheAsync(id);
-                await _cache.RemoveAsync($"user_portfolios_short_{portfolio.UserId}");
+                await InvalidatePortfoliosByUserCacheAsync(portfolio.UserId);
 
                 _logger.LogInformation("Портфель {PortfolioId} успешно удалён пользователем {UserId}", id, _userContext.UserId);
                 return true;
@@ -133,7 +152,8 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                         Id = p.Id,
                         UserId = p.UserId,
                         Name = p.Name,
-                        Currency = p.Currency
+                        Currency = p.Currency,
+                        IsPrivate = p.IsPrivate
                     });
             }
             catch (Exception ex)
@@ -165,12 +185,15 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                     return null;
                 }
 
+                if (_userContext.UserId == Guid.Empty)
+                    throw new SecurityException("Пользователь не аутентифицирован");
+
                 // Проверка прав доступа: USER может читать только свои портфели
                 if (!_userContext.IsAdmin && portfolio.UserId != _userContext.UserId)
                 {
                     _logger.LogWarning(
                         "Пользователь {CurrentUserId} (роль: {Role}) пытается получить доступ к портфелю {PortfolioId}, принадлежащему {OwnerId}",
-                        _userContext.UserId, _userContext.Role ?? "не задана", id, portfolio.UserId);
+                        _userContext.UserId, _userContext.Role ?? "UNKNOWN", id, portfolio.UserId);
 
                     // Не возвращаем 403 — чтобы не раскрывать существование портфеля
                     // Возвращаем 404 — "не найден"
@@ -198,6 +221,7 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                     UserId = portfolio.UserId,
                     Name = portfolio.Name,
                     Currency = portfolio.Currency,
+                    IsPrivate = portfolio.IsPrivate,
                     Assets = [.. validAssets]
                 };
 
@@ -223,6 +247,9 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
             {
                 var portfolio = await _portfolioRepository.GetByIdAsync(id);
                 if (portfolio == null) return false;
+
+                if (_userContext.UserId == Guid.Empty)
+                    throw new SecurityException("Пользователь не аутентифицирован");
 
                 // Проверка доступа: либо владелец, либо админ
                 if (!_userContext.IsAdmin && portfolio.UserId != _userContext.UserId)
@@ -259,12 +286,15 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                     throw new KeyNotFoundException($"Портфель с ID {id} не найден");
                 }
 
+                if (_userContext.UserId == Guid.Empty)
+                    throw new SecurityException("Пользователь не аутентифицирован");
+
                 // Проверка прав доступа: USER может редактировать только свои портфели
                 if (!_userContext.IsAdmin && portfolio.UserId != _userContext.UserId)
                 {
                     _logger.LogWarning(
                         "Пользователь {CurrentUserId} (роль: {Role}) пытается изменить портфель {PortfolioId}, принадлежащий {OwnerId}",
-                        _userContext.UserId, _userContext.Role ?? "не задана", id, portfolio.UserId);
+                        _userContext.UserId, _userContext.Role ?? "UNKNOWN", id, portfolio.UserId);
 
                     // Не раскрываем существование портфеля — выбрасываем KeyNotFoundException
                     throw new KeyNotFoundException($"Портфель с ID {id} не найден");
@@ -273,12 +303,14 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                 // Обновляем данные
                 portfolio.Name = updatingPortfolioDto.Name;
                 portfolio.Currency = updatingPortfolioDto.Currency;
+                portfolio.IsPrivate = updatingPortfolioDto.IsPrivate;
 
                 // Сохраняем изменения
                 await _portfolioRepository.UpdateAsync(portfolio);
 
                 // Сбрасываем кэш
                 await InvalidatePortfolioCacheAsync(id);
+                await InvalidatePortfoliosByUserCacheAsync(portfolio.UserId);
 
                 _logger.LogInformation("Портфель {PortfolioId} успешно обновлён пользователем {UserId}", id, _userContext.UserId);
             }
@@ -313,6 +345,9 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                     _logger.LogWarning("Портфель с ID {PortfolioId} не найден", id);
                     return null;
                 }
+
+                if (_userContext.UserId == Guid.Empty)
+                    throw new SecurityException("Пользователь не аутентифицирован");
 
                 // Проверка прав доступа: USER может читать только свои портфели
                 if (!_userContext.IsAdmin && portfolio.UserId != _userContext.UserId)
@@ -387,6 +422,9 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                     _logger.LogWarning("Портфель с ID {id} не найден", id);
                     return [];
                 }
+
+                if (_userContext.UserId == Guid.Empty)
+                    throw new SecurityException("Пользователь не аутентифицирован");
 
                 // Проверка прав доступа
                 if (!_userContext.IsAdmin && portfolio.UserId != _userContext.UserId)
@@ -571,6 +609,9 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                     return cached;
                 }
 
+                if (_userContext.UserId == Guid.Empty)
+                    throw new SecurityException("Пользователь не аутентифицирован");
+
                 // Проверка: USER может запрашивать только свои данные
                 if (!_userContext.IsAdmin && _userContext.UserId != userId)
                 {
@@ -595,7 +636,8 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                     Id = p.Id,
                     UserId = p.UserId,
                     Name = p.Name,
-                    Currency = p.Currency
+                    Currency = p.Currency,
+                    IsPrivate = p.IsPrivate
                 }).ToList();
 
                 await _cache.SetAsync(cacheKey, result, _cacheExpiration);

@@ -1,8 +1,10 @@
-import { useState, useEffect, createContext, useContext, useMemo } from 'react';
+import { useState, useEffect, createContext, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { parseJwt } from '../utils/jwt';
 import type { UserType, AuthContextType } from '../types/authTypes';
 import { login as apiLogin, register as apiRegister, checkEmail as apiCheckEmail, logout as apiLogout, refreshTokens } from '../services/authApi';
+import { deleteAccount as apiDeleteAccount} from '../services/accountApi';
+import { useSnackbar } from './useSnackbar';
 
 // Создаём контекст
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -19,52 +21,62 @@ export const useAuth = () => {
 // Провайдер аутентификации
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
-
-  // isAuthenticated: вычисляем сразу при монтировании
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+  const { openSnackbar } = useSnackbar();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState<UserType | undefined>(undefined);
+  
+  // Функция восстановления из localStorage
+  const restoreUser = () => {
     const stored = localStorage.getItem('user');
-    if (!stored) return false;
+    if (!stored) {
+      setIsAuthenticated(false);
+      setUser(undefined);
+      return;
+    }
 
     try {
-      const { accessToken } = JSON.parse(stored);
-      const payload = parseJwt(accessToken);
-      if (!payload) return false;
+      const parsed = JSON.parse(stored);
+      const payload = parseJwt(parsed.accessToken);
+      if (!payload || !payload.Id || !payload.Email) {
+        throw new Error('Invalid token');
+      }
 
       // Проверка срока действия
       if (payload.exp && Date.now() >= payload.exp * 1000) {
-        console.warn('Токен истёк — удаление сессии при инициализации');
         localStorage.removeItem('user');
-        return false;
+        setIsAuthenticated(false);
+        setUser(undefined);
+        return;
       }
 
-      // Проверяем обязательные поля
-      return !!(payload.Id && payload.Email);
-    } catch (error) {
-      console.error('Ошибка при парсинге токена при инициализации:', error);
-      localStorage.removeItem('user');
-      return false;
-    }
-  });
-
-  // user: вычисляем один раз при монтировании
-  const user = useMemo((): UserType | undefined => {
-    const storedUser = localStorage.getItem('user');
-    if (!storedUser) return undefined;
-
-    try {
-      const parsed = JSON.parse(storedUser);
-      const payload = parseJwt(parsed.accessToken);
-      if (!payload || !payload.Id || !payload.Email) return undefined;
-
-      return {
+      const userData: UserType = {
         id: payload.Id,
         email: payload.Email,
-        fullName: payload.FullName || '',
+        userName: payload.UserName || '',
       };
+
+      setUser(userData);
+      setIsAuthenticated(true);
     } catch (error) {
-      console.error('Ошибка при восстановлении пользователя из localStorage:', error);
-      return undefined;
+      console.error('Ошибка восстановления пользователя:', error);
+      localStorage.removeItem('user');
+      setIsAuthenticated(false);
+      setUser(undefined);
     }
+  };
+
+  // Инициализация при монтировании
+  useEffect(() => {
+    restoreUser();
+  }, []);
+
+  // Прослушка localStorage (вход/выход в другой вкладке, или после login)
+  useEffect(() => {
+    const handleStorageChange = () => {
+      restoreUser();
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   // Функция входа
@@ -80,14 +92,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const userData: UserType = {
         id: payload.Id,
         email: payload.Email,
-        fullName: payload.FullName || '',
+        userName: payload.UserName || '',
       };
 
-      localStorage.setItem(
-        'user',
-        JSON.stringify({ accessToken, refreshToken, user: userData })
-      );
+      const userPayload = { accessToken, refreshToken, user: userData };
+      localStorage.setItem('user', JSON.stringify(userPayload));
 
+      setUser(userData);
       setIsAuthenticated(true);
       navigate('/portfolios', { replace: true });
     } catch (error) {
@@ -96,10 +107,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+    // Функция выхода
+  const logout = () => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      const { refreshToken } = JSON.parse(storedUser);
+      apiLogout(refreshToken).catch(console.warn);
+    }
+    localStorage.removeItem('user');
+    setUser(undefined);
+    setIsAuthenticated(false);
+    navigate('/login');
+  };
+
   // Функция регистрации
   const register = async (email: string, password: string, fullName: string) => {
     try {
-      const { accessToken, refreshToken } = await apiRegister({ email, password, confirmPassword: password, fullName });
+      const { accessToken, refreshToken } = await apiRegister({ email, password, confirmPassword: password, fullName: fullName });
       const payload = parseJwt(accessToken);
 
       if (!payload?.Id || !payload?.Email) {
@@ -109,7 +133,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const userData: UserType = {
         id: payload.Id,
         email: payload.Email,
-        fullName: payload.FullName || fullName,
+        userName: payload.UserName || fullName,
       };
 
       localStorage.setItem(
@@ -125,18 +149,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  // Функция выхода
-  const logout = () => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      const { refreshToken } = JSON.parse(storedUser);
-      if (refreshToken) {
-        apiLogout(refreshToken).catch(console.warn);
-      }
+  const deleteAccount = async () => {
+    if (!window.confirm('Вы уверены, что хотите удалить аккаунт? Все данные будут безвозвратно удалены.')) {
+      return;
     }
-    localStorage.removeItem('user');
-    setIsAuthenticated(false);
-    navigate('/login');
+
+    try {
+      await apiDeleteAccount();
+      localStorage.removeItem('user');
+      setIsAuthenticated(false);
+      navigate('/login', { replace: true });
+      openSnackbar('Аккаунт удалён', 'success');
+    } catch (err: any) {
+      console.error('Delete account failed:', err);
+      openSnackbar(err.message || 'Не удалось удалить аккаунт', 'error');
+    }
   };
 
   // Проверка email
@@ -211,6 +238,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       logout,
       register,
       checkEmail,
+      deleteAccount
     }}>
       {children}
     </AuthContext.Provider>

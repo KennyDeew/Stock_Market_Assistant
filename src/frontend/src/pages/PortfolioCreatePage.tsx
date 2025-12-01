@@ -14,6 +14,8 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  FormControlLabel,
+  Checkbox,
 } from '@mui/material';
 import { Link } from 'react-router-dom';
 import type { SelectChangeEvent } from '@mui/material/Select';
@@ -27,6 +29,7 @@ export default function PortfolioCreatePage() {
   const [formData, setFormData] = useState<Omit<CreatePortfolioRequest, 'userId'>>({
     name: '',
     currency: 'RUB',
+    isPrivate: false
   });
 
   const [touched, setTouched] = useState({
@@ -92,6 +95,7 @@ export default function PortfolioCreatePage() {
         name: formData.name.trim(),
         userId,
         currency: formData.currency,
+        isPrivate: formData.isPrivate
       });
       navigate('/portfolios');
     } catch (err: any) {
@@ -134,7 +138,7 @@ export default function PortfolioCreatePage() {
               <Select
                 name="currency"
                 value={formData.currency}
-                onChange={handleCurrencyChange} // ✅ Теперь совместимо
+                onChange={handleCurrencyChange}
                 label="Валюта"
               >
                 <MenuItem value="RUB">RUB ₽</MenuItem>
@@ -142,6 +146,23 @@ export default function PortfolioCreatePage() {
                 <MenuItem value="EUR">EUR €</MenuItem>
               </Select>
             </FormControl>
+
+            <Box mt={2}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={formData.isPrivate}
+                    onChange={(e) => setFormData(prev => ({ ...prev, isPrivate: e.target.checked }))}
+                    name="isPrivate"
+                  />
+                }
+                label="Скрыть из рейтингов"
+              />
+              <Typography variant="caption" color="text.secondary" component="div">
+                Ваш портфель не будет участвовать в публичных рейтингах и статистике
+              </Typography>
+            </Box>
+
 
             <Box mt={3} display="flex" gap={2}>
               <Button

@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace StockMarketAssistant.PortfolioService.WebApi.Models
+﻿namespace StockMarketAssistant.PortfolioService.WebApi.Models
 {
     /// <summary>
     /// Модель контроллера для создаваемого портфеля ценных бумаг
@@ -8,5 +6,6 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Models
     /// <param name="UserId">Идентификатор пользователя-владельца портфеля</param>
     /// <param name="Name">Наименование портфеля</param>
     /// <param name="Currency">Валюта портфеля (RUB, USD и т.д.)</param>
-    public record CreatePortfolioRequest([Required] Guid UserId, [Required] string Name, string Currency);
+    /// <param name="IsPrivate">Скрыть портфель из публичной статистики</param>
+    public record CreatePortfolioRequest(Guid UserId, string Name, string Currency, bool IsPrivate = false);
 }

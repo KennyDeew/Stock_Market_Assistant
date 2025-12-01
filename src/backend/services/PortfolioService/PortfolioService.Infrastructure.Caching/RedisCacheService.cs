@@ -21,11 +21,11 @@ namespace StockMarketAssistant.PortfolioService.Infrastructure.Caching
             return json is null ? default : JsonSerializer.Deserialize<T>(json, _jsonOptions);
         }
 
-        public async Task SetAsync<T>(string key, T value, TimeSpan? expiry = null, CancellationToken cancellationToken = default)
+        public async Task SetAsync<T>(string key, T value, TimeSpan? expiration = null, CancellationToken cancellationToken = default)
         {
             var options = new DistributedCacheEntryOptions();
-            if (expiry.HasValue)
-                options.SetAbsoluteExpiration(expiry.Value);
+            if (expiration.HasValue)
+                options.SetAbsoluteExpiration(expiration.Value);
 
             var json = JsonSerializer.Serialize(value, _jsonOptions);
             await _cache.SetStringAsync(key, json, options, cancellationToken);
