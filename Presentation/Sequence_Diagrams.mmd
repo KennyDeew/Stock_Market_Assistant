@@ -78,46 +78,62 @@ sequenceDiagram
         Gateway-->>Frontend: 404 Not Found
         Frontend-->>User: Ошибка: Портфель не найден
     else Портфель найден
-        PortfolioService->>PortfolioDb: Получение PortfolioAsset<br/>WHERE id = assetId
+        PortfolioService->>PortfolioDb: Получение PortfolioAsset<br/>WHERE id = assetId<br/>AND portfolio_id = portfolioId
         PortfolioDb-->>PortfolioService: PortfolioAsset entity
 
-        PortfolioService->>StockCardService: HTTP GET /stockcard/{stockCardId}
-        StockCardService->>Redis: Проверка кэша
+        alt PortfolioAsset не найден или не принадлежит портфелю
+            PortfolioService-->>Gateway: 404 Not Found
+            Gateway-->>Frontend: 404 Not Found
+            Frontend-->>User: Ошибка: Актив не найден
+        else PortfolioAsset найден
+            PortfolioService->>StockCardService: HTTP GET /stockcard/{stockCardId}<br/>(stockCardId из PortfolioAsset)
+            StockCardService->>Redis: Проверка кэша<br/>GET stockcard:{stockCardId}
 
-        alt Данные в кэше
-            Redis-->>StockCardService: StockCard data
-        else Данных нет в кэше
-            StockCardService->>StockCardService: Получение из БД
-            StockCardService->>Redis: Сохранение в кэш
-            StockCardService-->>PortfolioService: StockCard data
-        end
+            alt Данные в кэше
+                Redis-->>StockCardService: StockCard data (JSON)
+                StockCardService->>StockCardService: Десериализация
+                StockCardService-->>PortfolioService: StockCard data
+            else Данных нет в кэше
+                StockCardService->>StockCardService: Получение из БД
+                StockCardService->>Redis: Сохранение в кэш<br/>SET stockcard:{stockCardId}<br/>EXPIRE 300
+                StockCardService-->>PortfolioService: StockCard data
+            end
 
-        PortfolioService->>PortfolioService: Валидация транзакции<br/>(проверка баланса для продажи)
+            PortfolioService->>PortfolioService: Валидация транзакции:<br/>- Проверка баланса для продажи<br/>- Проверка quantity > 0<br/>- Проверка pricePerUnit > 0
 
-        PortfolioService->>PortfolioDb: Создание PortfolioAssetTransaction<br/>INSERT INTO portfolio_asset_transaction
-        PortfolioDb-->>PortfolioService: Transaction entity
+            alt Валидация не прошла
+                PortfolioService-->>Gateway: 400 Bad Request
+                Gateway-->>Frontend: 400 Bad Request
+                Frontend-->>User: Ошибка валидации
+            else Валидация прошла
+                PortfolioService->>PortfolioDb: BEGIN TRANSACTION
 
-        PortfolioService->>PortfolioDb: Обновление PortfolioAsset<br/>(TotalQuantity, AveragePurchasePrice)
-        PortfolioDb-->>PortfolioService: OK
+                PortfolioService->>PortfolioDb: Создание PortfolioAssetTransaction<br/>INSERT INTO portfolio_asset_transaction<br/>(id, portfolio_asset_id, transaction_type,<br/>quantity, price_per_unit, total_amount,<br/>transaction_date, currency)
+                PortfolioDb-->>PortfolioService: Transaction entity
 
-        PortfolioService->>PortfolioDb: COMMIT транзакции
+                PortfolioService->>PortfolioDb: Обновление PortfolioAsset<br/>UPDATE portfolio_asset<br/>SET total_quantity = ...,<br/>average_purchase_price = ...<br/>WHERE id = assetId
+                PortfolioDb-->>PortfolioService: OK
 
-        PortfolioService->>Kafka: Публикация события<br/>Topic: portfolio.transactions<br/>{transactionId, portfolioId, stockCardId,<br/>assetType, transactionType, quantity,<br/>pricePerUnit, totalAmount, transactionTime}
+                PortfolioService->>PortfolioDb: COMMIT TRANSACTION
 
-        PortfolioService-->>Gateway: 201 Created<br/>{transactionId, ...}
-        Gateway-->>Frontend: 201 Created
-        Frontend-->>User: Транзакция создана успешно
+                PortfolioService->>Kafka: Публикация события<br/>(через Outbox pattern)<br/>Topic: portfolio.transactions<br/>{transactionId, portfolioId, stockCardId,<br/>assetType, transactionType, quantity,<br/>pricePerUnit, totalAmount, transactionTime,<br/>currency}
 
-        Note over Kafka: Асинхронная обработка
+                PortfolioService-->>Gateway: 201 Created<br/>{transactionId, portfolioAssetId,<br/>transactionType, quantity, pricePerUnit,<br/>totalAmount, transactionDate, currency}
+                Gateway-->>Frontend: 201 Created
+                Frontend-->>User: Транзакция создана успешно
 
-        Kafka->>AnalyticsService: Потребление события
-        AnalyticsService->>AnalyticsService: Сохранение AssetTransaction
-        AnalyticsService->>AnalyticsService: Обновление рейтингов
+                Note over Kafka: Асинхронная обработка<br/>(Outbox pattern гарантирует доставку)
 
-        Kafka->>NotificationService: Потребление события
-        NotificationService->>NotificationService: Проверка триггеров оповещений
-        alt Триггер сработал
-            NotificationService->>NotificationService: Отправка Email/SMS
+                Kafka->>AnalyticsService: Потребление события<br/>(Consumer Group: analytics-service)
+                AnalyticsService->>AnalyticsDb: INSERT INTO asset_transactions<br/>(id, transaction_id, portfolio_id,<br/>stock_card_id, asset_type, ...)
+                AnalyticsService->>AnalyticsService: Обновление рейтингов активов<br/>(агрегация по периодам)
+
+                Kafka->>NotificationService: Потребление события<br/>(Consumer Group: notification-service)
+                NotificationService->>NotificationService: Проверка триггеров оповещений<br/>(по stockCardId и pricePerUnit)
+                alt Триггер сработал
+                    NotificationService->>NotificationService: Отправка Email/SMS<br/>(через SendGrid/Twilio)
+                end
+            end
         end
     end
 ```
@@ -383,8 +399,6 @@ sequenceDiagram
     participant Gateway as API Gateway
     participant AnalyticsService as AnalyticsService
     participant AnalyticsDb as AnalyticsDb<br/>(PostgreSQL)
-    participant PortfolioService as PortfolioService
-    participant PortfolioDb as PortfolioDb<br/>(PostgreSQL)
 
     User->>Frontend: Запрос аналитики портфеля<br/>{portfolioId, startDate, endDate}
     Frontend->>Gateway: GET /api/analytics/portfolio/{portfolioId}<br/>?startDate=...&endDate=...<br/>Authorization: Bearer {token}
@@ -399,23 +413,26 @@ sequenceDiagram
         Gateway-->>Frontend: 400 Bad Request
         Frontend-->>User: Ошибка валидации
     else Валидация прошла
-        AnalyticsService->>PortfolioService: HTTP GET /portfolio/{portfolioId}<br/>Authorization: Bearer {token}
-        PortfolioService->>PortfolioDb: SELECT * FROM portfolio<br/>WHERE id = {portfolioId}
-        PortfolioDb-->>PortfolioService: Portfolio entity
-        PortfolioService-->>AnalyticsService: Portfolio data
+        Note over AnalyticsService: Данные уже реплицированы<br/>через Kafka из PortfolioService
 
-        AnalyticsService->>AnalyticsDb: SELECT * FROM asset_transactions<br/>WHERE portfolio_id = {portfolioId}<br/>AND transaction_time >= {startDate}<br/>AND transaction_time <= {endDate}
+        AnalyticsService->>AnalyticsDb: SELECT * FROM asset_transactions<br/>WHERE portfolio_id = {portfolioId}<br/>AND transaction_time >= {startDate}<br/>AND transaction_time <= {endDate}<br/>ORDER BY transaction_time
         AnalyticsDb-->>AnalyticsService: List<AssetTransaction>
 
-        AnalyticsService->>AnalyticsDb: SELECT * FROM asset_ratings<br/>WHERE portfolio_id = {portfolioId}<br/>AND period_start >= {startDate}<br/>AND period_end <= {endDate}
+        AnalyticsService->>AnalyticsDb: SELECT * FROM asset_ratings<br/>WHERE portfolio_id = {portfolioId}<br/>AND period_start <= {endDate}<br/>AND period_end >= {startDate}<br/>ORDER BY period_start
         AnalyticsDb-->>AnalyticsService: List<AssetRating>
 
-        AnalyticsService->>AnalyticsService: Агрегация данных:<br/>- Общая стоимость транзакций<br/>- Топ активов по объему<br/>- PnL (прибыль/убыток)<br/>- График изменений
+        alt Данные не найдены
+            AnalyticsService-->>Gateway: 404 Not Found<br/>{message: "Данные за указанный период не найдены"}
+            Gateway-->>Frontend: 404 Not Found
+            Frontend-->>User: Нет данных за период
+        else Данные найдены
+            AnalyticsService->>AnalyticsService: Агрегация данных:<br/>- Общая стоимость транзакций<br/>- Топ активов по объему<br/>- PnL (прибыль/убыток)<br/>- График изменений<br/>- Статистика по периодам
 
-        AnalyticsService-->>Gateway: 200 OK<br/>{totalValue, totalPnL, topAssets,<br/>chartData, statistics}
-        Gateway-->>Frontend: 200 OK
-        Frontend->>Frontend: Визуализация аналитики<br/>(графики, таблицы)
-        Frontend-->>User: Отображение аналитики
+            AnalyticsService-->>Gateway: 200 OK<br/>{totalValue, totalPnL, topAssets,<br/>chartData, statistics}
+            Gateway-->>Frontend: 200 OK
+            Frontend->>Frontend: Визуализация аналитики<br/>(графики, таблицы)
+            Frontend-->>User: Отображение аналитики
+        end
     end
 ```
 
