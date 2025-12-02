@@ -181,3 +181,4 @@ AKHQ будет доступен по адресу: http://localhost:8081
 - Официальная документация AKHQ: https://akhq.io/
 - GitHub: https://github.com/tchiotludo/akhq
 
+
