@@ -97,34 +97,6 @@ export type CreatePortfolioAssetRequest = {
 };
 
 /**
- * Сводка по доходности портфеля
- */
-export type PortfolioProfitLoss = {
-  portfolioId: string;
-  portfolioName: string;
-  totalAbsoluteReturn: number;
-  totalPercentageReturn: number;
-  totalInvestment: number;
-  totalCurrentValue: number;
-  baseCurrency: string;
-  calculatedAt: string;
-  assetBreakdown: Array<{
-    assetId: string;
-    ticker: string;
-    assetName: string;
-    absoluteReturn: number;
-    percentageReturn: number;
-    investmentAmount: number;
-    currentValue: number;
-    currency: string;
-    quantity: number;
-    averagePurchasePrice: number;
-    currentPrice: number;
-    weightInPortfolio: number;
-  }>;
-};
-
-/**
  * Запрос на создание транзакции
  */
 export interface CreateTransactionRequest {

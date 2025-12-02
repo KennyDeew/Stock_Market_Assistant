@@ -5,6 +5,7 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import DeleteForeverOutlined from '@mui/icons-material/DeleteForeverOutlined';
+import InfoIcon from '@mui/icons-material/Info';
 import {
   Container,
   Typography,
@@ -20,13 +21,15 @@ import {
   TableRow,
   Chip,
   Collapse,
-  IconButton
+  IconButton,
+  ButtonGroup,
+  Tooltip,
 } from '@mui/material';
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useSnackbar } from '../hooks/useSnackbar';
 import { portfolioApi, portfolioAssetApi } from '../services/portfolioApi';
-import type { PortfolioResponse, PortfolioShort } from '../types/portfolioTypes';
+import type { PortfolioResponse, PortfolioShort, PortfolioAssetProfitLossItem } from '../types/portfolioTypes';
 import {
   PortfolioAssetTypeValue,
   type PortfolioAssetShort,
@@ -59,7 +62,7 @@ function AssetTransactions({
     if (!transaction) {
       console.error('Транзакция не найдена');
       return;
-    }    
+    }
     onTransactionDelete(transactionId);
   };
 
@@ -153,11 +156,20 @@ export default function PortfolioDetailPage() {
   const [assetTransactions, setAssetTransactions] = useState<Record<string, PortfolioAssetTransaction[]>>({});
   const [loadingTransactions, setLoadingTransactions] = useState<string | null>(null);
 
+  // ✅ Доходность
+  const [profitLoss, setProfitLoss] = useState<PortfolioResponse['assets'][number] extends never ? null : { portfolio: any; assets: PortfolioAssetProfitLossItem[] } | null>(null);
+  const [loadingPL, setLoadingPL] = useState(false);
+  const [calculationType, setCalculationType] = useState<'Current' | 'Realized'>('Current');
+
   useEffect(() => {
     if (!id) return;
     loadPortfolio();
     loadAvailablePortfolios();
   }, [id]);
+
+  useEffect(() => {
+    if (id) loadProfitLoss();
+  }, [id, calculationType]);
 
   const loadPortfolio = async () => {
     setLoading(true);
@@ -172,6 +184,23 @@ export default function PortfolioDetailPage() {
     }
   };
 
+  const loadProfitLoss = async () => {
+    if (!id) return;
+    setLoadingPL(true);
+    try {
+      const [portfolioPL, assetsPL] = await Promise.all([
+        portfolioApi.getPortfolioProfitLoss(id, calculationType),
+        portfolioApi.getPortfolioAssetsProfitLoss(id, calculationType),
+      ]);
+      setProfitLoss({ portfolio: portfolioPL, assets: assetsPL });
+    } catch (err) {
+      console.error('Failed to load profit/loss data', err);
+      openSnackbar('Не удалось загрузить доходность', 'error');
+    } finally {
+      setLoadingPL(false);
+    }
+  };
+
   const loadAssetTransactions = async (assetId: string, force = false) => {
     if (loadingTransactions === assetId) return;
 
@@ -182,8 +211,6 @@ export default function PortfolioDetailPage() {
     setLoadingTransactions(assetId);
     try {
       const fullAsset = await portfolioAssetApi.getById(assetId);
-      console.log('Loaded transactions:', fullAsset.transactions);
-
       setAssetTransactions((prev) => ({
         ...prev,
         [assetId]: fullAsset.transactions || [],
@@ -275,10 +302,8 @@ export default function PortfolioDetailPage() {
     try {
       await portfolioAssetApi.deleteTransaction(assetId, transactionId);
 
-      // Загружаем обновлённый актив
       const updatedAsset = await portfolioAssetApi.getById(assetId);
 
-      // Обновляем данные актива в списке
       setAssets((prev) =>
         prev.map((a) =>
           a.id === updatedAsset.id
@@ -291,7 +316,6 @@ export default function PortfolioDetailPage() {
         )
       );
 
-      // Удаляем транзакцию из UI
       setAssetTransactions((prev) => ({
         ...prev,
         [assetId]: (prev[assetId] || []).filter((tx) => tx.id !== transactionId),
@@ -315,8 +339,6 @@ export default function PortfolioDetailPage() {
     try {
       const transactionTypeValue = toTransactionTypeValue(data.transactionType);
       const isSell = data.transactionType === 'Sell';
-
-      // Проверим, станет ли количество 0 после продажи
       const willBeZero = isSell && selectedAssetForTransaction.totalQuantity <= data.quantity;
 
       await portfolioAssetApi.addTransaction(selectedAssetForTransaction.id, {
@@ -327,18 +349,15 @@ export default function PortfolioDetailPage() {
       openSnackbar('Операция добавлена', 'success');
 
       if (willBeZero) {
-        // Актив будет удалён с бэка
         setAssets((prev) => prev.filter((a) => a.id !== selectedAssetForTransaction.id));
         setAssetTransactions((prev) => {
           const next = { ...prev };
           delete next[selectedAssetForTransaction.id];
           return next;
         });
-        setOpenAssetId(null); // Закрываем, если он был открыт
+        setOpenAssetId(null);
       } else {
-        // 🔁 Обычный случай: обновляем актив
         const updatedAsset = await portfolioAssetApi.getById(selectedAssetForTransaction.id);
-
         setAssets((prev) =>
           prev.map((a) =>
             a.id === updatedAsset.id
@@ -350,13 +369,10 @@ export default function PortfolioDetailPage() {
               : a
           )
         );
-
-        // Обновляем транзакции
         await loadAssetTransactions(selectedAssetForTransaction.id, true);
       }
 
       setIsTransactionModalOpen(false);
-
     } catch (err) {
       console.error('Ошибка при добавлении операции', err);
       openSnackbar('Ошибка при добавлении операции', 'error');
@@ -447,7 +463,6 @@ export default function PortfolioDetailPage() {
                     </TableCell>
                   </TableRow>
 
-                  {/* Раскрытие операций */}
                   <TableRow>
                     <TableCell colSpan={7} sx={{ py: 0 }}>
                       <Collapse in={openAssetId === asset.id} timeout="auto">
@@ -470,6 +485,149 @@ export default function PortfolioDetailPage() {
             </TableBody>
           </Table>
         </Paper>
+
+        {/* Доходность */}
+        <Box mt={5}>
+          <Typography variant="h5" gutterBottom>
+            Доходность портфеля
+          </Typography>
+
+          <Box mb={2} display="flex" alignItems="center" gap={1}>
+            <ButtonGroup variant="outlined" color="primary">
+              <Button
+                onClick={() => setCalculationType('Current')}
+                disabled={calculationType === 'Current'}
+              >
+                Текущая
+              </Button>
+              <Button
+                onClick={() => setCalculationType('Realized')}
+                disabled={calculationType === 'Realized'}
+              >
+                Реализованная
+              </Button>
+            </ButtonGroup>
+            <Tooltip
+              title={
+                <Box>
+                  <strong>Текущая:</strong> Прибыль/убыток на основе текущей рыночной цены.<br />
+                  <strong>Реализованная:</strong> Прибыль/убыток от проданных активов.
+                </Box>
+              }
+              arrow
+            >
+              <InfoIcon color="action" fontSize="small" sx={{ cursor: 'pointer' }} />
+            </Tooltip>
+          </Box>
+
+          {loadingPL ? (
+            <Box display="flex" justifyContent="center" my={4}>
+              <CircularProgress size={24} />
+            </Box>
+          ) : profitLoss ? (
+            <>
+            {/* Общая доходность */}
+            <Paper sx={{ p: 3, mb: 3, backgroundColor: 'background.paper' }}>
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+                  gap: 3,
+                }}
+              >
+                {/* Всего инвестировано */}
+                <Box>
+                  <Typography color="text.secondary">Всего инвестировано</Typography>
+                  <Typography variant="h6">
+                    {profitLoss.portfolio.totalInvestment.toFixed(2)} {profitLoss.portfolio.baseCurrency}
+                  </Typography>
+                </Box>
+
+                {/* Текущая стоимость */}
+                <Box>
+                  <Typography color="text.secondary">Текущая стоимость</Typography>
+                  <Typography variant="h6">
+                    {profitLoss.portfolio.totalCurrentValue.toFixed(2)} {profitLoss.portfolio.baseCurrency}
+                  </Typography>
+                </Box>
+
+                {/* Абсолютная доходность */}
+                <Box>
+                  <Typography color="text.secondary">Абсолютная доходность</Typography>
+                  <Typography
+                    variant="h6"
+                    color={profitLoss.portfolio.totalAbsoluteReturn >= 0 ? 'success.main' : 'error.main'}
+                  >
+                    {profitLoss.portfolio.totalAbsoluteReturn >= 0 ? '+' : ''}
+                    {profitLoss.portfolio.totalAbsoluteReturn.toFixed(2)} {profitLoss.portfolio.baseCurrency}
+                  </Typography>
+                </Box>
+
+                {/* Процентная доходность */}
+                <Box>
+                  <Typography color="text.secondary">Процентная доходность</Typography>
+                  <Typography
+                    variant="h6"
+                    color={profitLoss.portfolio.totalPercentageReturn >= 0 ? 'success.main' : 'error.main'}
+                  >
+                    {profitLoss.portfolio.totalPercentageReturn >= 0 ? '+' : ''}
+                    {profitLoss.portfolio.totalPercentageReturn.toFixed(2)} %
+                  </Typography>
+                </Box>
+              </Box>
+            </Paper>
+              {/* Доходность по активам */}
+              <Typography variant="h6" gutterBottom>
+                По активам
+              </Typography>
+              <Paper>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Тикер</TableCell>
+                      <TableCell>Актив</TableCell>
+                      <TableCell>Кол-во</TableCell>
+                      <TableCell>Ср. цена</TableCell>
+                      <TableCell>Тек. цена</TableCell>
+                      <TableCell>Доход</TableCell>
+                      <TableCell>Вес</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {profitLoss.assets.map((item) => (
+                      <TableRow key={item.assetId}>
+                        <TableCell sx={{ fontWeight: 500 }}>{item.ticker}</TableCell>
+                        <TableCell>{item.assetName}</TableCell>
+                        <TableCell>{item.quantity}</TableCell>
+                        <TableCell>{item.averagePurchasePrice.toFixed(2)}</TableCell>
+                        <TableCell>{item.currentPrice.toFixed(2)}</TableCell>
+                        <TableCell>
+                          <Typography
+                            color={item.absoluteReturn >= 0 ? 'success.main' : 'error.main'}
+                            fontSize="0.875rem"
+                          >
+                            {item.absoluteReturn >= 0 ? '+' : ''}
+                            {item.absoluteReturn.toFixed(2)} {item.currency}
+                          </Typography>
+                          <Typography
+                            color={item.percentageReturn >= 0 ? 'success.main' : 'error.main'}
+                            fontSize="0.75rem"
+                          >
+                            {item.percentageReturn >= 0 ? '+' : ''}
+                            {item.percentageReturn.toFixed(2)} %
+                          </Typography>
+                        </TableCell>
+                        <TableCell>{(item.weightInPortfolio).toFixed(1)}%</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </Paper>
+            </>
+          ) : (
+            <Alert severity="info">Нет данных о доходности</Alert>
+          )}
+        </Box>
 
         {/* Кнопка "Назад" */}
         <Box mt={3}>
@@ -513,10 +671,9 @@ export default function PortfolioDetailPage() {
             assetName={selectedAssetForTransaction.name}
             initialType="Buy"
             isLoading={false}
-            asset={selectedAssetForTransaction} // Передаём актив
+            asset={selectedAssetForTransaction}
           />
         )}
-
       </Container>
     </AppLayout>
   );

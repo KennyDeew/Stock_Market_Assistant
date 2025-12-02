@@ -9,7 +9,7 @@ using StockMarketAssistant.PortfolioService.Domain.Entities;
 using StockMarketAssistant.PortfolioService.Domain.Enums;
 using StockMarketAssistant.PortfolioService.Domain.Exceptions;
 using StockMarketAssistant.SharedLibrary.Enums;
-using StockMarketAssistant.SharedLibrary.Models;
+using StockMarketAssistant.SharedLibrary.Events;
 using System.Text.Json;
 
 namespace StockMarketAssistant.PortfolioService.Application.Services

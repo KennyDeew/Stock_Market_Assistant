@@ -5,6 +5,7 @@ import type {
   CreatePortfolioRequest,
   UpdatePortfolioRequest,
   PortfolioResponse,
+  PortfolioProfitLoss,
 } from '../types/portfolioTypes';
 import type { PaginatedResponse } from '../types/paginationTypes';
 import type {
@@ -14,17 +15,16 @@ import type {
   PortfolioAssetProfitLoss,
   PortfolioAssetShort,
   PortfolioAssetTransaction,
-  PortfolioProfitLoss,
   UpdateTransactionRequest,
 } from '../types/portfolioAssetTypes';
 
-// 🔹 Инстанс для /portfolios
+// Инстанс для /portfolios
 const portfolioApiInstance = createPrivateApiClient(import.meta.env.VITE_PORTFOLIO_API_URL + '/api/v1/portfolios');
 
-// 🔹 Инстанс для /portfolio-assets
+// Инстанс для /portfolio-assets
 const portfolioAssetsApi = createPrivateApiClient(import.meta.env.VITE_PORTFOLIO_API_URL + '/api/v1/portfolio-assets');
 
-// 🔹 Основные методы портфеля
+// Основные методы портфеля
 export const portfolioApi = {
   /**
    * Получить все портфели пользователя
@@ -86,6 +86,48 @@ export const portfolioApi = {
         params: { calculationType },
       }
     );
+    return response.data;
+  },
+
+  /**
+   * Расчёт доходности по всем активам портфеля (для детализации)
+   * Возвращает список: один элемент на каждый актив
+   */
+  getPortfolioAssetsProfitLoss: async (
+    id: string,
+    calculationType: 'Current' | 'Realized' = 'Current'
+  ): Promise<Array<{
+    assetId: string;
+    ticker: string;
+    assetName: string;
+    absoluteReturn: number;
+    percentageReturn: number;
+    investmentAmount: number;
+    currentValue: number;
+    currency: string;
+    quantity: number;
+    averagePurchasePrice: number;
+    currentPrice: number;
+    weightInPortfolio: number;
+  }>> => {
+    const response = await portfolioApiInstance.get<
+      Array<{
+        assetId: string;
+        ticker: string;
+        assetName: string;
+        absoluteReturn: number;
+        percentageReturn: number;
+        investmentAmount: number;
+        currentValue: number;
+        currency: string;
+        quantity: number;
+        averagePurchasePrice: number;
+        currentPrice: number;
+        weightInPortfolio: number;
+      }>
+    >(`/${id}/assets/profit-loss`, {
+      params: { calculationType },
+    });
     return response.data;
   },
 };
