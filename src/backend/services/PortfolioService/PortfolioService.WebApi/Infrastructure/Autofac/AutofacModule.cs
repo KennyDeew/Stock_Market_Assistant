@@ -27,7 +27,7 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Infrastructure.Autofac;
 
 /// <summary>
 /// Модуль Autofac для регистрации всех зависимостей приложения.
-/// Обеспечивает централизованную настройку DI-контейнера с поддержкой 
+/// Обеспечивает централизованную настройку DI-контейнера с поддержкой
 /// как production-окружения (PostgreSQL, Redis, Kafka), так и интеграционных тестов (InMemory).
 /// </summary>
 /// <remarks>
@@ -143,6 +143,7 @@ public class AutofacModule(IConfiguration configuration) : Module
     /// <summary>
     /// Регистрирует DbContext для Entity Framework Core.
     /// В production-режиме используется PostgreSQL, в тестах — InMemoryDatabase.
+    /// Если строка подключения отсутствует в production, используется InMemory с предупреждением.
     /// </summary>
     /// <param name="builder">Строитель контейнера Autofac</param>
     private void RegisterDbContext(ContainerBuilder builder)
@@ -154,6 +155,15 @@ public class AutofacModule(IConfiguration configuration) : Module
             {
                 // Используем метод расширения для Autofac
                 builder.ConfigureContext(connectionString);
+            }
+            else
+            {
+                // Строка подключения отсутствует - используем InMemory с предупреждением
+                Log.Warning(
+                    "Строка подключения 'portfolio-db' не найдена в конфигурации. " +
+                    "Используется InMemory база данных. Это не рекомендуется для production окружения!");
+
+                builder.ConfigureInMemoryContext(_databaseRoot);
             }
         }
         else
