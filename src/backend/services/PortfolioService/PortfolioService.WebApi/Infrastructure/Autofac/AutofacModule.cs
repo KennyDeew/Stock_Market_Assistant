@@ -27,7 +27,7 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Infrastructure.Autofac;
 
 /// <summary>
 /// Модуль Autofac для регистрации всех зависимостей приложения.
-/// Обеспечивает централизованную настройку DI-контейнера с поддержкой 
+/// Обеспечивает централизованную настройку DI-контейнера с поддержкой
 /// как production-окружения (PostgreSQL, Redis, Kafka), так и интеграционных тестов (InMemory).
 /// </summary>
 /// <remarks>
@@ -142,7 +142,8 @@ public class AutofacModule(IConfiguration configuration) : Module
 
     /// <summary>
     /// Регистрирует DbContext для Entity Framework Core.
-    /// В production-режиме используется PostgreSQL, в тестах — InMemoryDatabase.
+    /// DbContext всегда регистрируется. В production-режиме используется PostgreSQL, в тестах — InMemoryDatabase.
+    /// Если строка подключения отсутствует в production, используется InMemory база данных с предупреждением.
     /// </summary>
     /// <param name="builder">Строитель контейнера Autofac</param>
     private void RegisterDbContext(ContainerBuilder builder)
@@ -152,13 +153,23 @@ public class AutofacModule(IConfiguration configuration) : Module
             var connectionString = _configuration.GetConnectionString("portfolio-db");
             if (!string.IsNullOrEmpty(connectionString))
             {
-                // Используем метод расширения для Autofac
+                // Используем метод расширения для Autofac с PostgreSQL
                 builder.ConfigureContext(connectionString);
+            }
+            else
+            {
+                // Всегда регистрируем DbContext, даже если строка подключения отсутствует
+                // Используем InMemory базу данных с предупреждением
+                Log.Warning("Строка подключения 'portfolio-db' не найдена в конфигурации. " +
+                           "Используется InMemory база данных. " +
+                           "Данные не будут сохраняться между перезапусками приложения. " +
+                           "Для production окружения необходимо настроить строку подключения 'portfolio-db'.");
+                builder.ConfigureInMemoryContext(_databaseRoot);
             }
         }
         else
         {
-            // метод расширения для InMemory
+            // В тестовом режиме всегда используем InMemory
             builder.ConfigureInMemoryContext(_databaseRoot);
         }
     }
