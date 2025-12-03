@@ -191,10 +191,12 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
             builder.Services.AddControllers();
 
             // Настройка OpenAPI/Swagger с JWT Bearer
+            var customControllersOrder = new[] { "Transactions", "Portfolio Analytics", "Asset Analytics", "Test Data Management" };
             builder.Services.AddOpenApiDocument(options =>
             {
-                options.Title = "Analytics Service API Doc";
-                options.Version = "1.0";
+                options.Title = "Analytics Service API";
+                options.Version = "v1";
+                options.Description = "API сервиса аналитики для работы с транзакциями, рейтингами активов и аналитикой портфелей";
                 options.AddSecurity("Bearer", new NSwag.OpenApiSecurityScheme
                 {
                     Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
@@ -205,6 +207,17 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
                 });
                 // Применяем Bearer security ко всем операциям, которые требуют авторизации
                 options.OperationProcessors.Add(new NSwag.Generation.Processors.Security.AspNetCoreOperationSecurityScopeProcessor("Bearer"));
+
+                // Настройка порядка тегов (контроллеров) в Swagger UI
+                options.PostProcess = (document) =>
+                {
+                    document.Tags = document.Tags?
+                        .OrderBy(t =>
+                        {
+                            var index = Array.IndexOf(customControllersOrder, t.Name);
+                            return index > -1 ? index : int.MaxValue;
+                        }).ToList();
+                };
             });
 
             // Конфигурация Kafka

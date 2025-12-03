@@ -9,13 +9,13 @@ using StockMarketAssistant.AnalyticsService.Domain.Enums;
 namespace StockMarketAssistant.AnalyticsService.WebApi.Controllers;
 
 /// <summary>
-/// Контроллер для работы с транзакциями
+/// Транзакции
 /// </summary>
 [ApiController]
 [Route("api/analytics/transactions")]
 [Produces("application/json")]
 [Authorize]
-[OpenApiTag("Transactions")]
+[OpenApiTag("Transactions", Description = "Операции для получения информации о транзакциях активов с фильтрацией по периоду и типу")]
 public class TransactionsController : ControllerBase
 {
     private readonly GetAllTransactionsUseCase _getAllTransactionsUseCase;
@@ -32,9 +32,41 @@ public class TransactionsController : ControllerBase
     /// <summary>
     /// Получить все сделки за период с возможностью фильтрации по типу
     /// </summary>
-    /// <param name="request">Параметры запроса (период и тип транзакции)</param>
-    /// <param name="cancellationToken">Токен отмены</param>
-    /// <returns>Список транзакций за указанный период</returns>
+    /// <param name="request">Параметры запроса: период (Today, Week, Month, Custom), тип транзакции (Buy, Sell или null для всех), даты для произвольного периода (StartDate, EndDate)</param>
+    /// <param name="cancellationToken">Токен отмены операции</param>
+    /// <returns>Список транзакций за указанный период с информацией о фильтрах и общем количестве</returns>
+    /// <remarks>
+    /// Получает список всех транзакций активов за указанный период с возможностью фильтрации по типу транзакции (покупка/продажа).
+    ///
+    /// Поддерживаемые типы периодов:
+    /// - Today: транзакции за сегодня
+    /// - Week: транзакции за последние 7 дней (по умолчанию)
+    /// - Month: транзакции за последний месяц
+    /// - Custom: произвольный период (требует указания StartDate и EndDate)
+    ///
+    /// Типы транзакций:
+    /// - Buy: только покупки
+    /// - Sell: только продажи
+    /// - null: все транзакции
+    ///
+    /// Пример запроса за неделю:
+    /// GET /api/analytics/transactions?periodType=Week
+    ///
+    /// Пример запроса за месяц с фильтром по покупкам:
+    /// GET /api/analytics/transactions?periodType=Month&amp;transactionType=Buy
+    ///
+    /// Пример запроса за произвольный период:
+    /// GET /api/analytics/transactions?periodType=Custom&amp;startDate=2024-01-01T00:00:00Z&amp;endDate=2024-01-31T23:59:59Z
+    ///
+    /// Пример ответа:
+    /// {
+    ///   "transactions": [...],
+    ///   "totalCount": 150,
+    ///   "startDate": "2024-01-01T00:00:00Z",
+    ///   "endDate": "2024-01-31T23:59:59Z",
+    ///   "filteredTransactionType": "Buy"
+    /// }
+    /// </remarks>
     [HttpGet]
     [ProducesResponseType(typeof(TransactionsListResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
