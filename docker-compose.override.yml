@@ -18,8 +18,20 @@ services:
       - ASPNETCORE_HTTP_PORTS=8080
       - ASPNETCORE_HTTPS_PORTS=8081
       - ConnectionStrings__notificationDb=Host=notification-db;Port=5432;Database=notificationDb;Username=postgres;Password=postgres
+      - OpenSearchConfig__Url=admin
+      - OpenSearchConfig__Password=admin
       - OpenSearchConfig__Url=http://opensearch:9200
       - FRONTEND_ORIGIN=http://localhost:5273 
+      - Aspire__Confluent__Kafka__Producer__BootstrapServers=kafka:9092
+      - Aspire__Confluent__Kafka__Producer__ClientId=my-docker-producer
+      - Aspire__Confluent__Kafka__Producer__Acks=all
+      - Aspire__Confluent__Kafka__Producer__EnableIdempotence=true
+      - Aspire__Confluent__Kafka__Producer__MaxInFlight=5
+
+      - Aspire__Confluent__Kafka__Consumer__BootstrapServers=kafka:9092
+      - Aspire__Confluent__Kafka__Consumer__GroupId=notification
+      - Aspire__Confluent__Kafka__Consumer__AutoOffsetReset=earliest
+      - Aspire__Confluent__Kafka__Consumer__EnableAutoCommit=false
     ports:
       - "8080"
       - "8081"
@@ -34,9 +46,9 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_HTTP_PORTS=8080
       - ASPNETCORE_HTTPS_PORTS=8081
-      - ConnectionStrings__analytics-db=Host=pg-analytics-db;Port=5432;Database=analytics-db;Username=postgres;Password=postgres
+      - ConnectionStrings__portfolio-db=Host=pg-portfolio-db;Port=5432;Database=portfolio-db;Username=postgres;Password=postgres
       - OpenSearchConfig__Url=http://opensearch:9200
-      - PortfolioService__BaseUrl=http://portfolioservice-api:8080
+      # - PortfolioService__BaseUrl=http://portfolioservice-api:8080
       - FRONTEND_ORIGIN=http://localhost:5273 
     ports:
       - "8080"
@@ -52,7 +64,7 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_HTTP_PORTS=8080
       - ASPNETCORE_HTTPS_PORTS=8081
-      - ConnectionStrings__pg-stock-card-db=Host=pg-stock-card-db;Port=5432;Database=stock-card-db;Username=postgres;Password=postgres
+      - ConnectionStrings__stock-card-db=Host=pg-stock-card-db;Port=5432;Database=stock-card-db;Username=postgres;Password=postgres
       - ConnectionStrings__mongo=mongodb://mongo-stock-card-db:27017/finantial-report-db
       - FRONTEND_ORIGIN=http://localhost:5273
     ports:

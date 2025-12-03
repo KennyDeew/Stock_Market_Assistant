@@ -16,6 +16,7 @@ services:
       - opensearch
     networks:
       - aspire-net
+
   portfolioservice.webapi:
     image: ${DOCKER_REGISTRY-}portfolioservicewebapi
     build:
