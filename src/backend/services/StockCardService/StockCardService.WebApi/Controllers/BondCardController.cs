@@ -118,7 +118,7 @@ namespace StockCardService.WebApi.Controllers
         }
 
         /// <summary>
-        /// Обновить все цены акций
+        /// Обновить все цены облигаций
         /// </summary>
         /// <returns></returns>
         [HttpPut("UpdateAllPrices", Name = "UpdateBondCardPrices")]

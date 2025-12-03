@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Builder;
-using Microsoft.EntityFrameworkCore;
-using Npgsql;
+﻿using Microsoft.EntityFrameworkCore;
 using StockCardService.Abstractions.Repositories;
 using StockCardService.Infrastructure.EntityFramework;
 using StockCardService.Infrastructure.Integrations.Moex;
@@ -10,12 +8,13 @@ using StockCardService.Infrastructure.Repositories;
 using StockMarketAssistant.StockCardService.Application.Interfaces;
 using StockMarketAssistant.StockCardService.Application.Services;
 using StockMarketAssistant.StockCardService.Domain.Entities;
-using StockMarketAssistant.StockCardService.Domain.Interfaces;
 using StockMarketAssistant.StockCardService.Infrastructure.EntityFramework;
 using StockMarketAssistant.StockCardService.Infrastructure.MongoDb;
 using StockMarketAssistant.StockCardService.Infrastructure.MongoDb.Settings;
 using StockMarketAssistant.StockCardService.Infrastructure.Repositories;
+using StockMarketAssistant.StockCardService.WebApi.BackgroundServices;
 using StockMarketAssistant.StockCardService.WebApi.Helper;
+using StockMarketAssistant.StockCardService.WebApi.Hubs;
 
 namespace StockMarketAssistant.StockCardService.WebApi
 {
@@ -74,12 +73,14 @@ namespace StockMarketAssistant.StockCardService.WebApi
                     policy
                         .WithOrigins(frontendOrigin) // Разрешить источник фронтенда
                         .AllowAnyHeader()            // Любой заголовок
-                        .AllowAnyMethod();           // GET, POST, PUT, DELETE
+                        .AllowAnyMethod()           // GET, POST, PUT, DELETE
+                        .AllowCredentials();
                 });
             });
 
 
             //IOC
+            builder.Services.AddSignalR();
             builder.Services.AddControllers();
             builder.Services.AddScoped(typeof(IRepository<ShareCard, Guid>), typeof(ShareCardRepository));
             builder.Services.AddScoped(typeof(IRepository<BondCard, Guid>), typeof(BondCardRepository));
@@ -87,9 +88,12 @@ namespace StockMarketAssistant.StockCardService.WebApi
             builder.Services.AddScoped(typeof(ISubRepository<Dividend, Guid>), typeof(DividendRepository));
             builder.Services.AddScoped(typeof(ISubRepository<Coupon, Guid>), typeof(CouponRepository));
             builder.Services.AddScoped(typeof(IMongoRepository<FinancialReport, Guid>), typeof(FinancialReportRepository));
+            builder.Services.AddHttpClient<IPriceService, PriceService>();
             builder.Services.AddHttpClient<IMoexCardService, MoexCardService>();
             builder.Services.AddScoped<IDbInitializer, DbInitializer>();
             builder.Services.AddScoped<IStockPriceService, MoexStockPriceService>();
+            builder.Services.AddSingleton<PriceStreamingService>();
+            builder.Services.AddHostedService(sp => sp.GetRequiredService<PriceStreamingService>());
             builder.Services.AddSingleton<IMongoDBContext, MongoDBContext>();
             builder.Services.AddSingleton<IKafkaProducerFactory, KafkaProducerFactory>();
             builder.Services.AddSingleton<IKafkaProducer<string, FinancialReportCreatedMessage>, FinReportCreatedMessageProducer>();
@@ -131,9 +135,11 @@ namespace StockMarketAssistant.StockCardService.WebApi
 
             //app.UseAuthentication();
             app.UseAuthorization();
+            app.MapHub<PriceHub>("/pricehub");
 
             app.MapControllers();
             app.MapGet("/", () => Results.Redirect("/swagger"));
+
             app.MapDefaultEndpoints();
 
 

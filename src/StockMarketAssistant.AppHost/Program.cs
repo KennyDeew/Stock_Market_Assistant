@@ -45,6 +45,7 @@
             .AddDatabase("Database");
         var pgStockCardDb = builder.AddPostgres("pg-stock-card-db")
             .WithImage("postgres:17.5")
+            .WithDataVolume("stockcard-pg-data")
             .WithHostPort(14052)
             .WithPgWeb(n => n.WithHostPort(5001))
             .AddDatabase("stock-card-db");
