@@ -24,6 +24,8 @@ using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Jobs;
 using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Kafka;
 using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Persistence;
 using StockMarketAssistant.AnalyticsService.WebApi.Middleware;
+using StockMarketAssistant.AnalyticsService.Application.Interfaces.Security;
+using StockMarketAssistant.AnalyticsService.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
 using Serilog;
@@ -186,6 +188,12 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
             }
 
             builder.Services.AddAuthorization();
+
+            // Регистрация HttpContextAccessor для UserContext
+            builder.Services.AddHttpContextAccessor();
+
+            // Регистрация UserContext
+            builder.Services.AddScoped<IUserContext, UserContext>();
 
             // Регистрация контроллеров
             builder.Services.AddControllers();
@@ -476,6 +484,9 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
 
             // Глобальная обработка исключений (должна быть первой в pipeline)
             app.UseMiddleware<GlobalExceptionMiddleware>();
+
+            // Middleware для обработки SecurityException (должен быть перед UseAuthentication)
+            app.UseMiddleware<SecurityExceptionMiddleware>();
 
             if (app.Environment.IsDevelopment())
             {
