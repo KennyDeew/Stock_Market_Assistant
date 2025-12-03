@@ -9,13 +9,13 @@ using StockMarketAssistant.AnalyticsService.Application.UseCases;
 namespace StockMarketAssistant.AnalyticsService.WebApi.Controllers
 {
     /// <summary>
-    /// Контроллер для аналитики портфелей
+    /// Аналитика портфелей
     /// </summary>
     [ApiController]
     [Route("api/analytics/portfolios")]
     [Produces("application/json")]
     [Authorize]
-    [OpenApiTag("Portfolio Analytics")]
+    [OpenApiTag("Portfolio Analytics", Description = "Операции для получения аналитики по портфелям: история транзакций и сравнение портфелей")]
     public class PortfolioAnalyticsController : ControllerBase
     {
         private readonly GetPortfolioHistoryUseCase _getPortfolioHistoryUseCase;
@@ -33,13 +33,35 @@ namespace StockMarketAssistant.AnalyticsService.WebApi.Controllers
         }
 
         /// <summary>
-        /// Получить историю транзакций портфеля
+        /// Получить историю транзакций портфеля за указанный период
         /// </summary>
-        /// <param name="id">Идентификатор портфеля</param>
-        /// <param name="startDate">Начальная дата периода</param>
-        /// <param name="endDate">Конечная дата периода</param>
-        /// <param name="cancellationToken">Токен отмены</param>
-        /// <returns>История транзакций портфеля</returns>
+        /// <param name="id">Уникальный идентификатор портфеля</param>
+        /// <param name="startDate">Начальная дата периода (включительно) в формате UTC</param>
+        /// <param name="endDate">Конечная дата периода (включительно) в формате UTC</param>
+        /// <param name="cancellationToken">Токен отмены операции</param>
+        /// <returns>История транзакций портфеля с детализацией по активам и транзакциям</returns>
+        /// <remarks>
+        /// Возвращает полную историю транзакций портфеля за указанный период времени.
+        /// Включает информацию о всех активах портфеля и их транзакциях (покупки и продажи).
+        ///
+        /// Пример запроса:
+        /// GET /api/analytics/portfolios/3fa85f64-5717-4562-b3fc-2c963f66afa6/history?startDate=2024-01-01T00:00:00Z&amp;endDate=2024-01-31T23:59:59Z
+        ///
+        /// Пример ответа:
+        /// {
+        ///   "portfolioId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        ///   "startDate": "2024-01-01T00:00:00Z",
+        ///   "endDate": "2024-01-31T23:59:59Z",
+        ///   "assets": [
+        ///     {
+        ///       "stockCardId": "...",
+        ///       "ticker": "SBER",
+        ///       "name": "Сбербанк",
+        ///       "transactions": [...]
+        ///     }
+        ///   ]
+        /// }
+        /// </remarks>
         [HttpGet("{id:guid}/history")]
         [ProducesResponseType(typeof(PortfolioHistoryResponseDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -85,11 +107,46 @@ namespace StockMarketAssistant.AnalyticsService.WebApi.Controllers
         }
 
         /// <summary>
-        /// Сравнить несколько портфелей
+        /// Сравнить несколько портфелей за указанный период
         /// </summary>
-        /// <param name="request">Параметры запроса для сравнения</param>
-        /// <param name="cancellationToken">Токен отмены</param>
-        /// <returns>Результат сравнения портфелей</returns>
+        /// <param name="request">Параметры запроса для сравнения: список идентификаторов портфелей, начальная и конечная даты периода</param>
+        /// <param name="cancellationToken">Токен отмены операции</param>
+        /// <returns>Результат сравнения портфелей с аналитикой по каждому портфелю</returns>
+        /// <remarks>
+        /// Сравнивает несколько портфелей по различным метрикам за указанный период времени.
+        /// Возвращает детальную аналитику для каждого портфеля, включая:
+        /// - Общее количество транзакций
+        /// - Количество активов
+        /// - Общую стоимость транзакций
+        /// - Статистику по покупкам и продажам
+        ///
+        /// Пример запроса:
+        /// POST /api/analytics/portfolios/compare
+        /// Content-Type: application/json
+        /// {
+        ///   "portfolioIds": [
+        ///     "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        ///     "7fa85f64-5717-4562-b3fc-2c963f66afa7"
+        ///   ],
+        ///   "startDate": "2024-01-01T00:00:00Z",
+        ///   "endDate": "2024-01-31T23:59:59Z"
+        /// }
+        ///
+        /// Пример ответа:
+        /// {
+        ///   "portfolios": [
+        ///     {
+        ///       "portfolioId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        ///       "totalTransactions": 150,
+        ///       "totalAssets": 25,
+        ///       "totalAmount": 1000000.00,
+        ///       ...
+        ///     }
+        ///   ],
+        ///   "startDate": "2024-01-01T00:00:00Z",
+        ///   "endDate": "2024-01-31T23:59:59Z"
+        /// }
+        /// </remarks>
         [HttpPost("compare")]
         [ProducesResponseType(typeof(PortfolioComparisonDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]

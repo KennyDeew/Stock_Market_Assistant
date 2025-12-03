@@ -213,3 +213,4 @@ SELECT COUNT(*) FROM asset_transactions;
 5. Нажмите на топик для просмотра сообщений
 6. Проверьте Consumer Groups - должна быть группа "analytics-service-transactions"
 
+

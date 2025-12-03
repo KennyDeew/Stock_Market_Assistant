@@ -58,6 +58,14 @@ namespace StockMarketAssistant.AnalyticsService.Application.Interfaces.Repositor
             CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Получить транзакции за период с фильтрацией по типу транзакции
+        /// </summary>
+        Task<IEnumerable<AssetTransaction>> GetByPeriodAndTypeAsync(
+            Period period,
+            TransactionType? transactionType,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Получить транзакции, сгруппированные по StockCardId
         /// </summary>
         Task<IEnumerable<IGrouping<Guid, AssetTransaction>>> GetGroupedByStockCardAsync(

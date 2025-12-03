@@ -27,6 +27,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\StockMarketAssistant.ServiceDefaults\StockMarketAssistant.ServiceDefaults.csproj" />
     <ProjectReference Include="..\AnalyticsService.Infrastructure.EntityFramework\AnalyticsService.Infrastructure.EntityFramework.csproj" />
+    <ProjectReference Include="..\AnalyticsService.Infrastructure.Security\AnalyticsService.Infrastructure.Security.csproj" />
     <ProjectReference Include="..\AnalyticsService.TestDataGenerator\AnalyticsService.TestDataGenerator.csproj" />
   </ItemGroup>
 
