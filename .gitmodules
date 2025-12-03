@@ -4,3 +4,5 @@
 [submodule "src/backend/services/AuthService"]
 	path = src/backend/services/AuthService
 	url = https://github.com/Glixar/AuthService
+	branch = develop
+    
