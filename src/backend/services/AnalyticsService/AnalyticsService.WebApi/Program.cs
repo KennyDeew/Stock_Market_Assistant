@@ -24,6 +24,8 @@ using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Jobs;
 using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Kafka;
 using StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.Persistence;
 using StockMarketAssistant.AnalyticsService.WebApi.Middleware;
+using StockMarketAssistant.AnalyticsService.Application.Interfaces.Security;
+using StockMarketAssistant.AnalyticsService.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
 using Serilog;
@@ -187,14 +189,22 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
 
             builder.Services.AddAuthorization();
 
+            // Регистрация HttpContextAccessor для UserContext
+            builder.Services.AddHttpContextAccessor();
+
+            // Регистрация UserContext
+            builder.Services.AddScoped<IUserContext, UserContext>();
+
             // Регистрация контроллеров
             builder.Services.AddControllers();
 
             // Настройка OpenAPI/Swagger с JWT Bearer
+            var customControllersOrder = new[] { "Transactions", "Portfolio Analytics", "Asset Analytics", "Test Data Management" };
             builder.Services.AddOpenApiDocument(options =>
             {
-                options.Title = "Analytics Service API Doc";
-                options.Version = "1.0";
+                options.Title = "Analytics Service API";
+                options.Version = "v1";
+                options.Description = "API сервиса аналитики для работы с транзакциями, рейтингами активов и аналитикой портфелей";
                 options.AddSecurity("Bearer", new NSwag.OpenApiSecurityScheme
                 {
                     Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
@@ -205,16 +215,55 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
                 });
                 // Применяем Bearer security ко всем операциям, которые требуют авторизации
                 options.OperationProcessors.Add(new NSwag.Generation.Processors.Security.AspNetCoreOperationSecurityScopeProcessor("Bearer"));
+
+                // Настройка порядка тегов (контроллеров) в Swagger UI
+                options.PostProcess = (document) =>
+                {
+                    document.Tags = document.Tags?
+                        .OrderBy(t =>
+                        {
+                            var index = Array.IndexOf(customControllersOrder, t.Name);
+                            return index > -1 ? index : int.MaxValue;
+                        }).ToList();
+                };
             });
 
             // Конфигурация Kafka
-            builder.Services.Configure<KafkaConfiguration>(
-                builder.Configuration.GetSection("Kafka"));
+            // Используем connection string от Aspire, если доступен, иначе используем appsettings.json
+            var kafkaConnectionString = builder.Configuration.GetConnectionString("kafka");
+            var kafkaConfig = builder.Configuration.GetSection("Kafka").Get<KafkaConfiguration>();
+
+            // Если Aspire предоставил connection string, используем его
+            if (!string.IsNullOrEmpty(kafkaConnectionString))
+            {
+                if (kafkaConfig == null)
+                {
+                    kafkaConfig = new KafkaConfiguration();
+                }
+                kafkaConfig.BootstrapServers = kafkaConnectionString;
+            }
+            // Если connection string не предоставлен Aspire, используем значение из appsettings.json
+            else if (kafkaConfig == null || string.IsNullOrEmpty(kafkaConfig.BootstrapServers))
+            {
+                kafkaConfig = new KafkaConfiguration
+                {
+                    BootstrapServers = "localhost:9092", // Fallback на localhost
+                    ConsumerGroup = "analytics-service-transactions",
+                    Topic = "portfolio.transactions",
+                    BatchSize = 100
+                };
+            }
+
+            builder.Services.Configure<KafkaConfiguration>(options =>
+            {
+                options.BootstrapServers = kafkaConfig.BootstrapServers;
+                options.ConsumerGroup = kafkaConfig.ConsumerGroup;
+                options.Topic = kafkaConfig.Topic;
+                options.BatchSize = kafkaConfig.BatchSize;
+            });
 
             // Регистрация Kafka Consumer и Producer
             // Используем прямой Confluent.Kafka вместо Aspire, так как Kafka настроен через обычную конфигурацию
-            var kafkaConfig = builder.Configuration.GetSection("Kafka").Get<KafkaConfiguration>();
-
             // Регистрируем Kafka Consumer и Producer напрямую через Confluent.Kafka
             if (kafkaConfig != null && !string.IsNullOrEmpty(kafkaConfig.BootstrapServers))
             {
@@ -299,6 +348,7 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
             builder.Services.AddScoped<GetTopSoldAssetsUseCase>();
             builder.Services.AddScoped<GetPortfolioHistoryUseCase>();
             builder.Services.AddScoped<ComparePortfoliosUseCase>();
+            builder.Services.AddScoped<GetAllTransactionsUseCase>();
 
             // Регистрация EventBus как Singleton
             builder.Services.AddSingleton<IEventBus, InMemoryEventBus>();
@@ -337,16 +387,16 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
             _ = Task.Run(async () =>
             {
                 await Task.Delay(TimeSpan.FromSeconds(5)); // Ждем инициализации Kafka
-                var kafkaConfigForTopic = app.Configuration.GetSection("Kafka").Get<KafkaConfiguration>();
-                if (kafkaConfigForTopic != null && !string.IsNullOrEmpty(kafkaConfigForTopic.BootstrapServers) && !string.IsNullOrEmpty(kafkaConfigForTopic.Topic))
+                // Используем уже настроенную конфигурацию Kafka
+                if (kafkaConfig != null && !string.IsNullOrEmpty(kafkaConfig.BootstrapServers) && !string.IsNullOrEmpty(kafkaConfig.Topic))
                 {
                     try
                     {
-                        await EnsureKafkaTopicExistsAsync(kafkaConfigForTopic.BootstrapServers, kafkaConfigForTopic.Topic, app.Logger);
+                        await EnsureKafkaTopicExistsAsync(kafkaConfig.BootstrapServers, kafkaConfig.Topic, app.Logger);
                     }
                     catch (Exception ex)
                     {
-                        app.Logger.LogWarning(ex, "Не удалось создать/проверить топик Kafka {Topic}. Consumer попытается создать его автоматически при подписке.", kafkaConfigForTopic.Topic);
+                        app.Logger.LogWarning(ex, "Не удалось создать/проверить топик Kafka {Topic}. Consumer попытается создать его автоматически при подписке.", kafkaConfig.Topic);
                     }
                 }
             });
@@ -434,6 +484,9 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
 
             // Глобальная обработка исключений (должна быть первой в pipeline)
             app.UseMiddleware<GlobalExceptionMiddleware>();
+
+            // Middleware для обработки SecurityException (должен быть перед UseAuthentication)
+            app.UseMiddleware<SecurityExceptionMiddleware>();
 
             if (app.Environment.IsDevelopment())
             {

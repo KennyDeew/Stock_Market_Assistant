@@ -429,3 +429,4 @@ FodyWeavers.xsd
 
 # Reports folder in AnalyticsService
 src/backend/services/AnalyticsService/reports/
+.cursorrules

@@ -36,6 +36,25 @@
 				"${workspaceFolder}/StockMarketAssistant.sln"
 			],
 			"problemMatcher": "$msCompile"
+		},
+		{
+			"label": "Remove All Docker Containers",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-ExecutionPolicy",
+				"Bypass",
+				"-File",
+				"${workspaceFolder}/scripts/remove_all_docker_containers.ps1"
+			],
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "always",
+				"panel": "new"
+			},
+			"options": {
+				"cwd": "${workspaceFolder}"
+			}
 		}
 	]
 }

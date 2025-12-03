@@ -49,13 +49,12 @@
 
 **Сервисы:**
 - ❌ Не упоминают **AnalyticsService** (аналитика транзакций, рейтинги активов)
-- ❌ Не упоминают **NotificationService** (уведомления через Email/SMS)
+- ❌ Не упоминают **NotificationService** (уведомления через Email)
 - ✅ Упомянуты: Auth, Portfolio, Quote, Alert
 
 **Базы данных:**
-- ❌ Не упоминают **MongoDB** (для финансовых отчетов в StockCardService)
-- ❌ Не упоминают **OpenSearch** (для мониторинга и логирования)
-- ✅ Упомянуты: PostgreSQL, Redis, TimescaleDB
+- ✅ Упомянуты: PostgreSQL, Redis, MongoDB, OpenSearch
+- ❌ TimescaleDB не используется (удалено из плана)
 
 **Архитектурные паттерны:**
 - ❌ Не упоминают **Clean Architecture** (Domain, Application, Infrastructure, Presentation слои)
@@ -114,7 +113,7 @@
 3. **StockCardService** - управление карточками активов (акции, облигации, криптовалюты)
 4. **PortfolioService** - управление портфелями пользователей и транзакциями
 5. **AnalyticsService** - аналитика транзакций, расчет рейтингов активов
-6. **NotificationService** - отправка уведомлений (Email/SMS)
+6. **NotificationService** - отправка уведомлений (Email)
 
 ### 3. Заполнить доменную модель
 
@@ -177,7 +176,6 @@
 - Индексы на внешние ключи (portfolio_id, user_id, stock_card_id)
 - Индексы на даты (transaction_date, period_start, period_end)
 - Индексы для поиска (ticker, name)
-- Партиционирование по датам для транзакций (TimescaleDB)
 
 ### 5. Заполнить NFR (Non-Functional Requirements)
 
@@ -212,7 +210,7 @@
 - Unit test coverage: 80%+
 - Integration tests для критических путей
 - Структурированное логирование (OpenSearch)
-- Мониторинг и алертинг (Prometheus + OpenSearch)
+- Мониторинг и алертинг (OpenTelemetry + OpenSearch)
 
 ---
 
@@ -264,7 +262,7 @@
 - Real-time мониторинг котировок акций, облигаций, криптовалют
 - Управление инвестиционными портфелями
 - Трекинг транзакций (покупка/продажа)
-- Система оповещений (Email/SMS) при достижении целевых цен
+- Система оповещений (Email) при достижении целевых цен
 - Аналитика и рейтинги активов
 - Многопользовательский доступ с разделением прав
 
@@ -296,7 +294,7 @@
 
 **AuthService:**
 - **User** (Пользователь) - учетная запись
-- **Role** (Роль) - investor, analyst, admin
+- **Role** (Роль) - ADMIN, USER
 - **Permission** (Разрешение) - гранулярные права доступа
 
 **Ключевые связи:**
@@ -312,9 +310,11 @@
 
 1. **Мониторинг котировок в реальном времени**
    - Пользователь открывает платформу
-   - WebSocket подключение (SignalR) к источнику котировок
-   - Обновления цен < 1 сек
-   - Визуализация изменений в интерфейсе
+   - WebSocket подключение (SignalR PriceHub) к источнику котировок
+   - Подписка на тикеры через `Subscribe(tickers)`
+   - PriceStreamingService опрашивает MOEX API каждые 1.5 секунды
+   - Обновления цен через SignalR `PriceUpdate` событие
+   - Визуализация изменений в интерфейсе (цена, изменение, процент изменения)
 
 2. **Управление портфелем**
    - Создание портфелей
@@ -326,20 +326,23 @@
 3. **Система оповещений**
    - Пользователь устанавливает целевую цену
    - Система мониторит в реальном времени
-   - При достижении цены → Email/SMS уведомление через NotificationService
+   - При достижении цены → Email уведомление через NotificationService
    - Пользователь может управлять оповещениями
 
 4. **Аналитика и рейтинги**
-   - Транзакции реплицируются в AnalyticsService через Kafka
-   - Расчет рейтингов активов (топ покупок/продаж)
-   - Агрегация по периодам (день, неделя, месяц)
+   - Транзакции реплицируются в AnalyticsService через Kafka (Outbox Pattern)
+   - Batch processing транзакций (100 сообщений за раз)
+   - Расчет рейтингов активов (Global и Portfolio контексты)
+   - Агрегация по периодам (день, неделя, месяц, произвольный)
    - Ранжирование активов по популярности
+   - Получение транзакций с фильтрацией (Today, Week, Month, Custom)
+   - Топ активов по покупкам/продажам за период
 
 5. **Многопользовательский доступ**
-   - RBAC (Role-Based Access Control): investor, analyst, admin
+   - RBAC (Role-Based Access Control): ADMIN, USER
    - Каждая роль имеет разные права
    - Логирование действий для аудита
-   - Возможность делиться портфелями с командой
+   - Приватные портфели (IsPrivate флаг)
 
 ---
 
@@ -353,19 +356,19 @@
 
 **Phase 2 (WebSocket & Alerts — неделя 4-6):**
 - SignalR для real-time quotes
-- Email/SMS оповещения через NotificationService
+- Email оповещения через NotificationService
 - Advanced alert management
 - 100 concurrent users
 
-**Phase 3 (Collaboration & Analytics — неделя 7-9):**
-- Portfolio sharing & permissions
-- Team collaboration features
+**Phase 3 (Analytics — неделя 7-9):**
 - AnalyticsService: рейтинги активов
+- Агрегация данных по периодам
+- Топ активов по покупкам/продажам
 - 1000 concurrent users
 
 **Phase 4 (Production hardening — неделя 10-11):**
 - Security audit & penetration testing
-- Monitoring & observability (OpenSearch, Prometheus)
+- Monitoring & observability (OpenTelemetry, OpenSearch)
 - Complete documentation
 - User acceptance testing
 
@@ -387,17 +390,20 @@
 - C# 12
 - Entity Framework Core (ORM)
 - SignalR (WebSocket server)
-- JWT + OAuth 2.0 (authentication)
+- JWT (authentication)
+- Autofac (DI container для PortfolioService)
+- NSwag (Swagger/OpenAPI генерация)
+- Serilog (структурированное логирование)
 
 **Database:**
 - PostgreSQL 17+ (OLTP для всех сервисов)
 - Redis 7+ (cache)
 - MongoDB 8+ (финансовые отчеты в StockCardService)
-- TimescaleDB (time-series, если используется)
 
 **Message Queue & Events:**
 - Apache Kafka (event-driven communication)
 - Confluent Kafka .NET client
+- Kafka UI (веб-интерфейс для управления топиками)
 
 **Infrastructure:**
 - .NET Aspire (оркестрация микросервисов)
@@ -405,14 +411,16 @@
 - Kubernetes (production)
 - GitHub Actions (CI/CD)
 - AWS / Azure / Yandex.Cloud
-- Prometheus + OpenSearch (monitoring)
-- OpenSearch Dashboards (логирование и визуализация)
+- OpenTelemetry (мониторинг и трейсинг)
+- OpenSearch (логирование и визуализация)
+- OpenSearch Dashboards (дашборды)
 
 **External APIs:**
 - MOEX (Московская биржа) - котировки акций и облигаций
-- Alpha Vantage / IEX Cloud (альтернативные источники)
+  - `https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities.json` (акции)
+  - `https://iss.moex.com/iss/securities.json` (облигации ОФЗ и корпоративные)
+  - `https://iss.moex.com/iss/engines/stock/markets/{market}/boards/{board}/securities/{ticker}.json` (текущая цена)
 - SendGrid (email)
-- Twilio / Smartelligence (SMS)
 
 ---
 
@@ -421,9 +429,8 @@
 **6 микросервисов:**
 
 1. **Gateway Service**
-- API Gateway для маршрутизации запросов
+- API Gateway для маршрутизации запросов (базовая реализация)
 - Единая точка входа для клиентов
-- Load balancing
 - CORS настройки
 
 2. **AuthService**
@@ -435,8 +442,10 @@
 3. **StockCardService**
 - Управление карточками активов (акции, облигации, криптовалюты)
 - Интеграция с MOEX для получения котировок
+- Real-time котировки через SignalR (PriceHub, PriceStreamingService)
 - Кэширование данных в Redis
 - Хранение финансовых отчетов в MongoDB
+- Публикация событий создания финансовых отчетов в Kafka
 
 4. **PortfolioService**
 - Управление портфелями пользователей
@@ -445,15 +454,16 @@
 - Публикация событий транзакций в Kafka
 
 5. **AnalyticsService**
-- Потребление событий транзакций из Kafka
-- Расчет рейтингов активов
+- Потребление событий транзакций из Kafka (batch processing)
+- Расчет рейтингов активов (Global и Portfolio контексты)
 - Агрегация данных по периодам
 - API для получения аналитики
+- Тестовое заполнение данных (TestDataController, TestDataGenerator)
+- Получение транзакций с фильтрацией по периоду и типу
 
 6. **NotificationService**
 - Потребление событий из Kafka
 - Отправка Email уведомлений (SendGrid)
-- Отправка SMS уведомлений (Twilio)
 - Интеграция с OpenSearch для логирования
 
 **Архитектурный стиль:**
@@ -492,15 +502,19 @@
 - Repositories (реализация)
 - Kafka Consumers/Producers
 - HTTP Clients (для межсервисной коммуникации)
-- External API integrations (MOEX, SendGrid, Twilio)
+- External API integrations (MOEX, SendGrid)
 - Caching (Redis)
+- Background Services (PriceStreamingService, TransactionConsumer)
+- Outbox Pattern (для гарантированной доставки событий в Kafka)
 
 **Data Flow:**
 - Browser → Gateway → Backend Services
 - Services → PostgreSQL / Redis / MongoDB
 - PortfolioService → Kafka → AnalyticsService / NotificationService
-- Background jobs → Email/SMS notifications
-- SignalR → Real-time quote broadcasting
+- StockCardService → Kafka (financial.report.created) → другие сервисы
+- Background jobs → Email notifications
+- SignalR → Real-time quote broadcasting (PriceStreamingService)
+- PriceStreamingService → MOEX API → SignalR Hub → Frontend
 
 ---
 
@@ -535,7 +549,6 @@
 - Индексы на внешние ключи (portfolio_id, user_id, stock_card_id)
 - Индексы на даты (transaction_date, period_start, period_end) для быстрого поиска
 - Индексы для поиска (ticker, name)
-- Партиционирование по датам для транзакций (если используется TimescaleDB)
 - Кэширование часто запрашиваемых данных в Redis
 
 ---
@@ -576,27 +589,28 @@
 **Поддерживаемость:**
 - Clean Architecture для изоляции слоев
 - Unit test coverage: 80%+
-- Integration tests для критических путей
-- Структурированное логирование (OpenSearch)
-- Мониторинг и алертинг (Prometheus + OpenSearch Dashboards)
-- API documentation (Swagger/OpenAPI)
+- Integration tests для критических путей (TestContainers)
+- Структурированное логирование (Serilog + OpenSearch)
+- Мониторинг и алертинг (OpenTelemetry + OpenSearch Dashboards)
+- API documentation (Swagger/OpenAPI через NSwag)
+- Автоматические миграции БД при старте приложения
+- TestDataGenerator для генерации тестовых данных
 
 ---
 
 ## СЛАЙД 12: SECURITY ARCHITECTURE
 
 **Authentication:**
-- OAuth 2.0 для third-party integrations
-- JWT tokens с 1-hour expiration
-- Refresh token rotation (автоматическая смена)
+- JWT tokens с коротким временем жизни (15 минут для access token)
+- Refresh token rotation (автоматическая смена, 30 дней)
 - Password policy: min 8 chars, complexity requirements
 - ASP.NET Identity для управления пользователями
 
 **Authorization:**
-- RBAC: investor, analyst, admin roles
-- Portfolio sharing с granular permissions
+- RBAC: ADMIN, USER roles
 - Row-level security для user data (фильтрация по user_id)
 - Policy-based authorization в ASP.NET Core
+- Приватные портфели (IsPrivate флаг)
 
 **Data Protection:**
 - TLS 1.3 for transit (HTTPS)
@@ -625,7 +639,7 @@
 
 **Integration Tests:**
 - API endpoints с database (TestContainers для PostgreSQL)
-- External API mocking (MOEX, SendGrid, Twilio)
+- External API mocking (MOEX, SendGrid)
 - Kafka integration tests (Testcontainers)
 - HTTP client testing (WebApplicationFactory)
 
@@ -656,33 +670,37 @@
 
 **Infrastructure:**
 - Docker containers для всех сервисов
-- .NET Aspire для локальной разработки
+- .NET Aspire для локальной разработки и оркестрации
 - Kubernetes для orchestration (production)
 - Database: Managed PostgreSQL (AWS RDS / Azure Database)
 - Cache: Redis cluster (managed service)
 - Load balancer: ALB (AWS) / Azure LB
 - CDN: Cloudflare / AWS CloudFront
-- Monitoring: Prometheus + OpenSearch
-- Logging: OpenSearch Dashboards
+- Monitoring: OpenTelemetry (метрики и трейсинг)
+- Logging: OpenSearch (централизованное логирование)
+- Dashboards: OpenSearch Dashboards (визуализация)
+- Kafka UI (веб-интерфейс для управления топиками, порт 9100)
+- Mongo Express (веб-интерфейс для MongoDB, порт 5005)
+- PgWeb (веб-интерфейс для PostgreSQL, порты 5000, 5001)
 
 **Deployment Strategy:**
 - Blue-Green deployment для zero-downtime
 - Canary releases для постепенного rollout
-- Database migrations через EF Core Migrations
+- Database migrations через EF Core Migrations (автоматические при старте приложения)
+- Health checks для всех сервисов (`/health`, `/alive`)
 
 ---
 
 ## СЛАЙД 15: MONITORING & OBSERVABILITY
 
-**Metrics (Prometheus):**
+**Metrics & Tracing (OpenTelemetry):**
 - API response time (p50, p95, p99)
 - Database query time
 - Cache hit ratio (Redis)
 - WebSocket connections (SignalR)
-- Alert trigger rate
-- User activity
 - Kafka message processing rate
 - Error rates по сервисам
+- Distributed tracing между сервисами
 
 **Dashboards (OpenSearch Dashboards):**
 - System health (CPU, memory, disk)
@@ -693,15 +711,16 @@
 - Kafka topics monitoring
 
 **Logging (OpenSearch):**
-- Structured JSON logs (Serilog)
+- Structured JSON logs
 - Log levels: ERROR, WARN, INFO, DEBUG
 - Centralized search и analysis
-- Error tracking integration (Sentry, если используется)
 - Correlation IDs для трейсинга запросов
+- Интеграция с OpenTelemetry для контекста
 
-**Alerting:**
-- Prometheus Alertmanager
-- Alerts на высокую latency, error rates, недоступность сервисов
+**Observability:**
+- OpenTelemetry для метрик, трейсинга и логов
+- OpenSearch для хранения и анализа логов
+- OpenSearch Dashboards для визуализации
 
 ---
 
@@ -709,34 +728,85 @@
 
 **Kafka Topics:**
 
-**portfolio.transactions**
+**1. portfolio.transactions**
 - Producer: PortfolioService
 - Consumers: AnalyticsService, NotificationService
-- Payload: Transaction event (transactionId, portfolioId, stockCardId, assetType, transactionType, quantity, pricePerUnit, totalAmount, transactionTime, currency)
+- Consumer Group: `analytics-service-transactions`
+- Payload: Transaction event (transactionId, portfolioId, portfolioAssetId, stockCardId, assetType, transactionType, quantity, pricePerUnit, totalAmount, transactionTime, currency)
+- Batch processing: 100 сообщений за раз
+- Manual offset commit после успешной обработки
+
+**2. financial.report.created**
+- Producer: StockCardService
+- Payload: FinancialReportCreatedMessage (событие создания финансового отчета)
+- Хранение отчетов в MongoDB
 
 **Схема взаимодействия:**
 1. Пользователь создает транзакцию в PortfolioService
 2. PortfolioService сохраняет транзакцию в БД
-3. PortfolioService публикует событие в Kafka topic `portfolio.transactions`
-4. AnalyticsService потребляет событие и обновляет рейтинги
-5. NotificationService потребляет событие и проверяет триггеры оповещений
+3. PortfolioService публикует событие в Outbox таблицу (Outbox Pattern)
+4. Background Service обрабатывает Outbox и публикует в Kafka topic `portfolio.transactions`
+5. AnalyticsService потребляет событие (batch processing) и обновляет рейтинги
+6. NotificationService потребляет событие и проверяет триггеры оповещений
 
 **Преимущества:**
 - Асинхронная обработка (decoupling)
 - Масштабируемость (несколько consumers)
-- Надежность (persistent messages)
+- Надежность (persistent messages, Outbox Pattern)
 - Возможность replay событий
+- Batch processing для оптимизации производительности
 
 ---
 
-## СЛАЙД 17: ВЫВОДЫ И ПЕРСПЕКТИВЫ
+## СЛАЙД 17: API ENDPOINTS
+
+**PortfolioService:**
+- `GET /api/v1/portfolios` - список портфелей
+- `POST /api/v1/portfolios` - создание портфеля
+- `GET /api/v1/portfolios/{id}` - детали портфеля
+- `PUT /api/v1/portfolios/{id}` - обновление портфеля
+- `DELETE /api/v1/portfolios/{id}` - удаление портфеля
+- `GET /api/v1/portfolio-assets` - список активов портфеля
+- `POST /api/v1/portfolio-assets` - добавление актива
+- `GET /api/v1/portfolio-assets/{id}/transactions` - транзакции актива
+- `POST /api/v1/portfolio-assets/{id}/transactions` - создание транзакции
+
+**StockCardService:**
+- `GET /api/stockcard/shares` - список акций
+- `GET /api/stockcard/bonds` - список облигаций
+- `GET /api/stockcard/crypto` - список криптовалют
+- `GET /api/stockcard/{ticker}` - детали актива
+- `GET /api/stockcard/{ticker}/price` - текущая цена
+- SignalR Hub: `/priceHub` - подписка на real-time котировки
+
+**AnalyticsService:**
+- `GET /api/analytics/transactions` - все транзакции с фильтрацией
+- `GET /api/analytics/assets/top-bought` - топ активов по покупкам
+- `GET /api/analytics/assets/top-sold` - топ активов по продажам
+- `GET /api/analytics/portfolios/{id}/history` - история портфеля
+- `POST /api/analytics/portfolios/compare` - сравнение портфелей
+
+
+**AuthService:**
+- `POST /api/auth/register` - регистрация
+- `POST /api/auth/login` - вход
+- `POST /api/auth/refresh` - обновление токена
+- `POST /api/auth/logout` - выход
+
+**NotificationService:**
+- `POST /api/notifications/send` - отправка уведомления
+- Потребление событий из Kafka для автоматических уведомлений
+
+---
+
+## СЛАЙД 18: ВЫВОДЫ И ПЕРСПЕКТИВЫ
 
 **Технические результаты:**
 ✓ Масштабируемая микросервисная архитектура с Clean Architecture
 ✓ Real-time infrastructure с SignalR WebSocket
 ✓ Event-Driven Architecture с Kafka
 ✓ Оптимизированные databases с индексами
-✓ Multi-layer security (OAuth, JWT, encryption)
+✓ Multi-layer security (JWT, encryption)
 ✓ Comprehensive monitoring и observability
 
 **Бизнес-результаты:**
@@ -758,27 +828,123 @@
 ## ТРЕБОВАНИЯ К ПРЕЗЕНТАЦИИ
 
 **Формат:**
-- PowerPoint (.pptx) или HTML слайды
-- 17 слайдов
-- Профессиональный дизайн
+- PowerPoint (.pptx) на основе шаблона `StockMarketAssistant_Presentation_template.pptx`
+- 18 слайдов
+- Профессиональный корпоративный дизайн
 
-**Дизайн:**
-- Темный фон с акцентами #38bdf8 (cyan)
+**Дизайн (на основе шаблона):**
+
+**Цветовая схема:**
+- Основной фон: темный (черный или темно-серый)
+- Акцентный цвет: #38bdf8 (cyan/голубой) для заголовков, иконок, акцентов
+- Дополнительные цвета:
+  - Белый/светло-серый для основного текста
+  - Зеленый для положительных метрик/успешных операций
+  - Красный для предупреждений/ошибок
+  - Желтый/оранжевый для важных уведомлений
+
+**Типографика:**
+- Заголовки слайдов: крупный шрифт (32-44pt), жирный, белый или акцентный цвет
+- Подзаголовки: средний шрифт (24-28pt), полужирный
+- Основной текст: 16-20pt, обычный, белый/светло-серый
+- Код/технические термины: моноширинный шрифт (Consolas, Courier New), 14-16pt
+- Шрифт по умолчанию: Calibri, Arial или аналогичный sans-serif
+
+**Композиция слайдов:**
 - Максимум 4-5 bullet points на слайд
-- Диаграммы архитектуры (можно использовать draw.io)
-- Таблицы для сравнения
-- Timeline визуализация для фаз разработки
-- Code snippets для ключевых компонентов (опционально)
+- Отступы: достаточные поля (1-2 см от краев)
+- Выравнивание: по левому краю для текста, по центру для заголовков
+- Интерлиньяж: 1.2-1.5 для читаемости
+
+**Элементы дизайна:**
+- Логотип/брендинг в углу слайда (если есть в шаблоне)
+- Номера слайдов в нижнем правом углу
+- Разделительные линии между секциями (акцентный цвет)
+- Иконки для визуализации концепций (микросервисы, базы данных, API)
+- Градиенты или тени для глубины (если используются в шаблоне)
+
+**Диаграммы и визуализация:**
+- Диаграммы архитектуры: использовать draw.io, Lucidchart или аналоги
+- Цветовое кодирование компонентов:
+  - Сервисы: акцентный цвет (#38bdf8) или вариации
+  - Базы данных: темно-синий или фиолетовый
+  - Очереди сообщений: оранжевый или желтый
+  - Внешние API: серый
+- ER-диаграммы: светлые линии на темном фоне
+- Sequence diagrams: четкие стрелки, подписи
+- Infrastructure diagrams: иконки Docker, Kubernetes, облачных провайдеров
+- Таблицы: чередующиеся строки (темный/светлее), заголовки с акцентным цветом
+- Timeline: горизонтальная или вертикальная линия с точками-событиями
+
+**Специальные слайды:**
+- Титульный слайд: крупный заголовок, подзаголовок, список авторов, дата
+- Слайды с кодом: темный фон, подсветка синтаксиса, моноширинный шрифт
+- Слайды с диаграммами: минимум текста, максимум визуализации
+- Заключительный слайд: краткое резюме, контакты (если нужно)
+
+**Анимации и переходы:**
+- Минимальные анимации (если используются в шаблоне)
+- Плавные переходы между слайдами
+- Появление элементов по клику для сложных диаграмм
 
 **Язык:**
 - Все тексты на русском языке
 - Международно признанные термины на английском (API, RBAC, JWT, Kafka, etc.)
+- Технические названия сервисов на английском (PortfolioService, AnalyticsService)
 
 **Визуализация:**
-- Диаграммы архитектуры микросервисов
+- Диаграммы архитектуры микросервисов (Mermaid или draw.io)
 - ER-диаграммы для основных сущностей
 - Sequence diagrams для бизнес-процессов
 - Infrastructure diagrams (Kubernetes, Docker)
+- Схемы потоков данных (Kafka topics, event flow)
+- Графики и метрики (если применимо)
+
+**Структура слайдов:**
+- Заголовок слайда (верх, акцентный цвет)
+- Основной контент (центр, читаемый размер шрифта)
+- Футер (низ, логотип/номер слайда, опционально)
+
+---
+
+## ИНСТРУКЦИИ ПО ИСПОЛЬЗОВАНИЮ ШАБЛОНА
+
+**Шаблон:** `Presentation/StockMarketAssistant_Presentation_template.pptx`
+
+**Рекомендации по работе с шаблоном:**
+
+1. **Открыть шаблон в PowerPoint**
+   - Использовать существующие макеты слайдов из шаблона
+   - Сохранить цветовую схему и стили из шаблона
+   - Применить шрифты и размеры из шаблона
+
+2. **Создание новых слайдов**
+   - Использовать макеты из шаблона (Title Slide, Content Slide, etc.)
+   - Копировать стили заголовков и текста из существующих слайдов
+   - Сохранять единообразие дизайна
+
+3. **Вставка диаграмм**
+   - Экспортировать диаграммы из draw.io/Mermaid в PNG/SVG
+   - Использовать прозрачный фон для диаграмм
+   - Масштабировать с сохранением пропорций
+   - Добавлять подписи к диаграммам в стиле шаблона
+
+4. **Таблицы**
+   - Использовать стили таблиц из шаблона
+   - Чередующиеся цвета строк для читаемости
+   - Заголовки таблиц с акцентным цветом
+
+5. **Код и технические термины**
+   - Использовать моноширинный шрифт для кода
+   - Темный фон для блоков кода
+   - Подсветка синтаксиса (если возможно)
+
+6. **Проверка перед презентацией**
+   - Единообразие шрифтов и размеров
+   - Корректность цветовой схемы
+   - Читаемость текста на темном фоне
+   - Правильность нумерации слайдов
+   - Отсутствие опечаток
 
 ---
 

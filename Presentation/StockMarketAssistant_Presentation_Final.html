@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stock Market Assistant</title>
+<script type="text/javascript" src="https://ff.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=fOTNEbv8lmDxWaPHrvAjIGIYKQVamqr3DlaofzM_E9bMxLw8AKL0sGe1EVSiTM3FUfsZj5uAuOLs70-e028KysaqqNbzQ6NI4jQxXGa4tvXjRMa0oeAE-LWcvmXV6wMnD7XV1hemhjbhkA3L7xoPEZi8BGQUqrJ89GI7cvql7h7q5BRz9xXvBRmQ0I-WdLvM8cFDH2M3muPYjVf_wVDbTkXHWkBBYgvXQdGgPsvEB0XqB8w8FsIuFfc4tqWC8DyU1h6Qs_WmuSubz4rJCHzdZnUNin5dMeWS7Li9Rl3t5HhSkWBMkUzGWJiCmNpOxTjIhxw3a1Dqa8YheALAJpdj7wh0qpgZvZ45I5rkWFKEZBJmWqLHXZWJQzJm751bmWnY17DYhLOHpKUuiUi0xfqBSdgKmTPLcbSCF1kDwavW9oHaSTa-FSaIpWlGXErs83gUURbyCqclspqyxXBFB6lstXHnBKwMejj_AAkll6nqYdDTZv8WQ_Yk_LYCG818Foc0apF_Wydc-nKmOJ7qjDTTm4MYSFk5AWLvLcxXNbkoRUmRu-9E19u5rbt9Hqigoo2gMWfQijMd71M8w-vVxePNF3_4vA0Hlyk8Gjkxq00eHtAxkS7ewCPR0nnvPxk-dqK4YEx2T6IeDj6mdYEjnlmbOEAhi2GwwrtitHvQhyrEX0wLcN9jZFzl7-DNq4r5dbmi2QKtNy2_R1WsisT6fMz_ojrlH-HckS6nkinSlTcE9dMjLlrv4CFl2ikrjfHAKBlCW7kgsOKbKy2UzHiRPdlblQWEfUbZplHbwNk3Yb5HgP_P6a12ylkHeylp8Zxyv517NPA37Av4YgkPpjEjUX0XuqSntUQ-S72UoppyEfoUHVlRFwpn5ng-BXR1sFQNePq12XjbAxOr3CcuKbGUHuSmWrjHizIijUqOEsl6jWQsbJtWU-ZXv7Tj7c6WMdMAsyKwaxbmCITo0ls5gzaCUEBUkWJ32sxybeu9dRz0VZycpyMUL71ykEqG3yDrP61eFltNcRRV_1h0ZMKISKvTi5F_RICALrHAxKcEzOOshUfD-Std1q5srcGYQz9a4liw_9BShwkzDQ8rCqdeMx9_dOxCOci6OUl1RvwjrmXEr0w-kUajrTFPhMs10u1r3fW6Nl34nV40ms0ajaUAOU-7hfMfn3tVGmj8sNt49FlyGPxH3wSSGCy2TAUjETDRJMpl3Ih8ijr869WSArgyBIOgs1VSCJ4jEKX3gpzhc30lssH3GtEeRxfeNsUrx1ItTEvhQGMYgpwogqwPMq8N2QyaCb7U2h6n1DFjEygaXSV7u9j_bu44N-4h6ZURy9EJWr-Q4buSy07xXZ-Aouc6pIQES5Ebu1CMxPimblhVzu7o_tZVK9jFphbwRiYQ_kK5Ak93TEXWtqdjqEJ_TRN4SOC7z-7sReinADitZfCtyUs-7oOMaFwlRibPBgb3Y67nTrzO9cAUVrII-rmi6DUSRnxVSE6Uu8mzY1GhGbqHifMJWcIcAEFr5ywFGH6ghqO04Vt3EK_9n63U0YD9VCKiP-ItlPpJUYxbR_vJ5ByW_LHWRr6e8wrUoWH1eivkJWTaOUB4hGbee6BZJyApAUzWcJBL6RRF1241LZcn6Oi_XVtLdDZ9F9eZZ6Ux-vN1Ab3dTO33HFnZIxwLqSS1xOQrjgkX_S-o7n4fP6OWWF1HGjWiGQCo2XwjdQKltuy_py-xskqzbhmgPsWJnytnwyh9za2lXw8u8b2WDuYWQq67BXjBYvjs9EZDXccM7pAdxy8wJyTJuhogkAGX_1rJVQU9Z_IjIoT9rWO4ofNcF1bTbRRtLKJiZmRuyffkhXvhfXLMyAQRG7tYm03Er-biD8mlOPKE9WxmtXwjlllx3-yinMvFIemntIH4PXAlaIXLtV4k1gcv7ln_A-mhC6EKRFWV5iStkSPFUj83Hp-7bf8qT0Jy-Xs5TMyMj1VGmGT2Mc9nyzIPnbPM0vcuFR3UV0HpQP7fQ9bEXsNUBUyQUIm-vtQWv7CM2FvqD_e1b35GX5k1KBtT44LmdAw8VOh58wUoprCKjL07lTj9mN5tj0yzwY2FmMuVun-POrkSol0IRfXWvvG9se5Z1_jJ-PxjmD3UoX9z_xxq9lS2heY5qiuR9xhUa7juQJ62YiMfknTWyMdrmUnRcNPezPE2wUrC6PT1DmAIwmRiNjOUtgxBx3MoX96yv1-NbgZOJqezjDCz0SCYCUbu2BLRYz9xL1e15c5ztnLLYvZRf-lrsKrG16rXiI4juu2tfig" charset="UTF-8"></script><link rel="stylesheet" crossorigin="anonymous" href="https://ff.kis.v2.scr.kaspersky-labs.com/E3E8934C-235A-4B0E-825A-35A08381A191/abn/main.css?attr=aHR0cHM6Ly9wcGwtYWktY29kZS1pbnRlcnByZXRlci1maWxlcy5zMy5hbWF6b25hd3MuY29tL3dlYi9kaXJlY3QtZmlsZXMvNGFkYzhlOWI1MTNiZGEyOTFiNjhlMjI2ZjViNDE3NGIvOTYzNWYzZWItNzNhNi00NGEyLTlhOGQtYWU5MWM4MWY0ZTIzL2NhbnZhcy1zbGlkZXMvcHJlc2VudGF0aW9uLmh0bWw_cmVzcG9uc2UtY29udGVudC1kaXNwb3NpdGlvbj1hdHRhY2htZW50JTNiJTIwZmlsZW5hbWUlM2RwcmVzZW50YXRpb24uaHRtbCUzYiUyMGZpbGVuYW1lJTJhJTNkVVRGLTglMjclMjdwcmVzZW50YXRpb24uaHRtbCZBV1NBY2Nlc3NLZXlJZD1BU0lBMkYzRU1FWUVWSFZPQzRVTSZTaWduYXR1cmU9OFlYRHpQVVhLZFdBWlh3YXpNS1RtekVQczRBJTNkJngtYW16LXNlY3VyaXR5LXRva2VuPUlRb0piM0pwWjJsdVgyVmpFRjhhQ1hWekxXVmhjM1F0TVNKR01FUUNJR2p0cnVUbFlxZUtYOG94a1d6WW5lRkoydWZJelElMmZPNnBGSjI2ckJYSVBWQWlCa2p2alRMVXNBaFRpVVUxWUpxbjJCUCUyZkhTWENNV09KUkFadkM5SElnNE5TcnpCQWdvRUFFYUREWTVPVGMxTXpNd09UY3dOU0lNUGFNaSUyZjdiUWJ5QnAlMmZheFZLdEFFdlQlMmJzTzYlMmJzV0UzUk9PWVIzbGJPV0V0aVBiQVNyaGhpeDYzUTJmNWF4SE51UHZUQ3Q3aWEyOFVDWU9ydHNnQ3E5bkFMdGgxdGElMmJUWVZpeEJFRTFvcFNHY1R2MkpzVHdCWG1hQWw5bWE5MjZRdExBTiUyYkVBR0h4QkFxWU0zdU5GUmFlaEJqOThhRTlOdVZHWHFvMFUlMmJJd1pwaFdnTkRjOG9zRGxnbnF0TnpQQ05Ndkw0WThnUER5dW5lbkdIMk1FUmVwOXE5Y0IlMmI3WElMOVlPejlrSXNzeEdJak5CTE44WFMzNFVZZVM1OWgwa2dlTGxGZHIwMXZsVEdleG13ckdGdG55WHRacmlBZDlXSFk5JTJmdE1aUlhMTjc3VHYlMmJVeTZJc0tnaDE0VTgwcGNqYUFxaTFvQVZFZk8xTWlaWkVvUG5KT1NET2dXZFdIZGdSM1NEWVpDSlZXd1FDa2VheERTZUx1QSUyYjV3Rm1yT2tXSU5YZWhqN3dhbFpseCUyYmtNalJqbWdSeEt2NDdjJTJiciUyZiUyZml5QlhZUCUyZk1VUDN4M2FhMWxWVUZ0QjkwdGI4RVJGQmpJSldBU1hpZDU2ZUVhcmM3T0tYbGZWJTJmNE5aMXU0VUxGVTlLRXBvWkhVY3BWdUpFJTJmN096OFVCa1BWM1loR2VidjZhd2duZUFrYTYlMmJ5ZkY3QVJKMlZ2ZEQlMmY0M0MxT1R5WFBzV0UlMmZzTkRHRGxpUnUzamFFMzJLbGdCMnJSYzY1U1dOTXFFcWFvcmJMUVRXb0Jsamd6V1RCbW9BczNNTUV6VlhNU2JCQU9kYUFFOGtoVkhOYmlJMHhCS1dPeTM2JTJiNXV6aFdiNG5LSzREUyUyYnJOZmgyQkZXSzVxRFp5MHBtWVdrT0Y0Zk9RRU93bSUyZnRBdHIxeHU0aXlaMUxnd0ZQUnpNdGNFcVptZU1wbG13ejJGN1NpeiUyYkdpSzFIdnR5ZmlaenFIdWFpb0YlMmJwT1BEcnZFemZGcHRJTjdzVUlIN0ZaTnFPJTJmUVM2SzJ4d2E2Mkx0bmgzbUN5QmZJY2UwNm0lMmZsVFpPQkpQcVM2MWI1c1RDdXZiJTJmSkJqcVpBVyUyZmdYa2dpNXV1THEyMEVTd0FBckZ0NzFZJTJmNHVTeHQ1ZldZJTJicm1STkdhb0RIN0JEeG5CWjE0bzNhOVVpV0hsTUhjNldnZGE3YkJTcmdQJTJidnVzdTkxYnJuZ2k1UEhuYmE0WUpDcm96MXlaQkhCb2lJM2FORlFRcHN5QzJFS0ElMmZGcUl2bXByMVZEdkdEQ285TEE2alpMaldFQXc2Tk1iQWxxdHM2JTJiODIwcyUyYjdCSVFDbUJhQmZZUmZjSjRqWW03UWhKTVhvMXZlJTJieFpRUlElM2QlM2QmRXhwaXJlcz0xNzY0NzQ1ODYz"/><style>
+/* Theme Variables */
+:root {
+  --font-family-display: Calibri, Arial, sans-serif;
+  --font-weight-display: 600;
+  --font-family-content: Calibri, Arial, sans-serif;
+  --font-weight-content: 400;
+  --font-size-content: 16px;
+  --line-height-content: 1.4;
+}
+
+/* LIGHT THEME */
+body.theme-light {
+  --color-bg-base: #ffffff;
+  --color-bg-elevated: #f8f9fa;
+  --color-bg-surface: #e9ecef;
+  --color-bg-muted: #dee2e6;
+  --color-text-primary: #000000;
+  --color-text-secondary: #212529;
+  --color-text-muted: #6c757d;
+  --color-text-accent: #0066CC;
+  --color-primary: #0066CC;
+  --color-primary-foreground: #ffffff;
+}
+
+/* Base Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-family-content);
+  font-weight: var(--font-weight-content);
+  font-size: var(--font-size-content);
+  line-height: var(--line-height-content);
+  overflow-x: hidden;
+}
+
+/* Slide Container */
+.slide {
+  width: 960px;
+  height: 540px;
+  margin: 0 auto 20px;
+  display: flex;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Layout Utilities */
+.row { flex-direction: row; }
+.col { flex-direction: column; }
+.center {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+.space-between { justify-content: space-between; }
+.items-center { align-items: center; }
+.items-start { align-items: flex-start; }
+.items-end { align-items: flex-end; }
+.fill-width { flex: 1; }
+.fill-height { flex: 1; display: flex; flex-direction: column; }
+
+/* Spacing */
+.gap-sm { gap: 0.5rem; }
+.gap-md { gap: 1rem; }
+.gap-lg { gap: 1.5rem; }
+.gap-xl { gap: 2rem; }
+.gap-2xl { gap: 3rem; }
+
+.p-4 { padding: 1rem; }
+.p-6 { padding: 1.5rem; }
+.p-8 { padding: 2rem; }
+.p-12 { padding: 3rem; }
+.p-16 { padding: 4rem; }
+
+.mb-2 { margin-bottom: 0.5rem; }
+.mb-4 { margin-bottom: 1rem; }
+.mb-6 { margin-bottom: 1.5rem; }
+.mb-8 { margin-bottom: 2rem; }
+.mb-12 { margin-bottom: 3rem; }
+
+.mt-2 { margin-top: 0.5rem; }
+.mt-4 { margin-top: 1rem; }
+.mt-6 { margin-top: 1.5rem; }
+.mt-8 { margin-top: 2rem; }
+.mt-12 { margin-top: 3rem; }
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-family-display);
+  font-weight: var(--font-weight-display);
+  line-height: 1.2;
+  margin: 0;
+}
+
+h1 { font-size: 3rem; }
+h2 { font-size: 2.25rem; }
+h3 { font-size: 1.75rem; }
+h4 { font-size: 1.5rem; }
+h5 { font-size: 1.25rem; }
+h6 { font-size: 1rem; }
+
+.text-6xl { font-size: 3.75rem; }
+.text-5xl { font-size: 3rem; }
+.text-4xl { font-size: 2.25rem; }
+.text-3xl { font-size: 1.875rem; }
+.text-2xl { font-size: 1.5rem; }
+.text-xl { font-size: 1.25rem; }
+.text-lg { font-size: 1.125rem; }
+.text-base { font-size: 1rem; }
+.text-sm { font-size: 0.875rem; }
+.text-xs { font-size: 0.75rem; }
+
+.font-bold { font-weight: 700; }
+.font-semibold { font-weight: 600; }
+.font-medium { font-weight: 500; }
+.font-normal { font-weight: 400; }
+
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.opacity-90 { opacity: 0.9; }
+.opacity-80 { opacity: 0.8; }
+.opacity-70 { opacity: 0.7; }
+.opacity-60 { opacity: 0.6; }
+
+/* Lists */
+ul, ol {
+  margin-left: 2rem;
+  line-height: 1.8;
+}
+
+ul li { list-style: disc; }
+ol li { list-style: decimal; }
+
+li { margin-bottom: 0.75rem; }
+li:last-child { margin-bottom: 0; }
+</style>
+</head>
+<body class="theme-light">
+
+<!-- SLIDE 1: Title Slide -->
+<section class="slide p-16 col center" style="background-color: #5B3A99; color: #ffffff;">
+  <img src="https://agi-prod-file-upload-public-main-use1.s3.amazonaws.com/fc05a195-a69c-45cd-8b1b-fd0274b8063d" alt="OTUS Logo" style="position: absolute; top: 2rem; right: 2rem; height: 3rem;">
+  <h1 class="text-6xl mb-4" style="color: #ffffff;">Stock Market Assistant</h1>
+  <p class="text-2xl mb-8" style="color: #ffffff;">Платформа для анализа биржевых котировок с многопользовательским доступом</p>
+  <div style="color: #ffffff; font-size: 1rem; line-height: 1.6;">
+    <p>Дубровский Никита Владимирович</p>
+    <p>Заворотный Александр Александрович</p>
+    <p>Мельников Игорь Евгеньевич</p>
+    <p>Шадрин Максим Александрович</p>
+    <p>Павлов Константин Петрович</p>
+  </div>
+  <p class="text-sm mt-8" style="color: #e9d8ff;">04.12.2025</p>
+</section>
+
+<!-- SLIDE 2: Problem and Solution -->
+<section class="slide p-16 col" style="background-color: #ffffff; color: #000000;">
+  <h2 class="mb-6" style="color: #0066CC;">Проблема и решение</h2>
+  <div class="row gap-lg fill-height">
+    <div class="fill-width">
+      <h3 class="mb-4" style="color: #dc3545;">Проблема</h3>
+      <ul class="text-lg" style="color: #212529;">
+        <li>Нет единой платформы для мониторинга котировок</li>
+        <li>Существующие решения сложные и дорогие</li>
+        <li>Отсутствие удобного многопользовательского доступа</li>
+      </ul>
+    </div>
+    <div class="fill-width">
+      <h3 class="mb-4" style="color: #28a745;">Решение</h3>
+      <ul class="text-lg" style="color: #212529;">
+        <li>Real-time котировки через WebSocket</li>
+        <li>Простой интерфейс для портфелей</li>
+        <li>Многопользовательский доступ (RBAC)</li>
+        <li>Аналитика и рейтинги активов</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 3: System Overview -->
+<section class="slide p-16 col" style="background-color: #ffffff; color: #000000;">
+  <h2 class="mb-6" style="color: #0066CC;">Обзор системы</h2>
+  <div class="fill-height col">
+    <h3 class="mb-4" style="color: #212529; font-size: 1.5rem;">Основные возможности</h3>
+    <ul class="text-lg" style="color: #212529;">
+      <li>Real-time мониторинг котировок акций, облигаций, криптовалют</li>
+      <li>Управление инвестиционными портфелями</li>
+      <li>Трекинг транзакций покупки и продажи</li>
+      <li>Система оповещений через Email</li>
+    </ul>
+  </div>
+</section>
+
+<!-- SLIDE 4: Domain Model -->
+<section class="slide p-16 col" style="background-color: #ffffff; color: #000000;">
+  <h2 class="mb-6" style="color: #0066CC;">Доменная модель</h2>
+  <div class="row gap-md">
+    <div class="fill-width" style="background-color: #e9ecef; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+      <h3 class="mb-2" style="color: #0066CC; font-size: 1.25rem;">PortfolioService</h3>
+      <p style="color: #212529; font-size: 0.95rem;">Portfolio, PortfolioAsset, Transaction</p>
+    </div>
+    <div class="fill-width" style="background-color: #e9ecef; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+      <h3 class="mb-2" style="color: #0066CC; font-size: 1.25rem;">StockCardService</h3>
+      <p style="color: #212529; font-size: 0.95rem;">ShareCard, BondCard, CryptoCard</p>
+    </div>
+  </div>
+  <div class="row gap-md mt-4">
+    <div class="fill-width" style="background-color: #e9ecef; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+      <h3 class="mb-2" style="color: #0066CC; font-size: 1.25rem;">AnalyticsService</h3>
+      <p style="color: #212529; font-size: 0.95rem;">AssetTransaction, AssetRating</p>
+    </div>
+    <div class="fill-width" style="background-color: #e9ecef; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+      <h3 class="mb-2" style="color: #0066CC; font-size: 1.25rem;">AuthService</h3>
+      <p style="color: #212529; font-size: 0.95rem;">User, Role, Permission</p>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 5: Business Processes Part 1 -->
+<section class="slide p-16 col" style="background-color: #ffffff; color: #000000;">
+  <h2 class="mb-6" style="color: #0066CC;">Основные бизнес-процессы (1/2)</h2>
+  <div class="fill-height">
+    <h3 class="mb-4" style="color: #212529; font-size: 1.25rem;">1. Мониторинг котировок</h3>
+    <ul style="color: #212529; font-size: 1rem;">
+      <li>WebSocket подключение через SignalR</li>
+      <li>Опрос MOEX API каждые 1.5 секунды</li>
+      <li>Real-time обновления цен</li>
+    </ul>
+    <h3 class="mb-4 mt-6" style="color: #212529; font-size: 1.25rem;">2. Управление портфелем</h3>
+    <ul style="color: #212529; font-size: 1rem;">
+      <li>Создание и управление портфелями</li>
+      <li>Регистрация транзакций</li>
+    </ul>
+  </div>
+</section>
+
+<!-- SLIDE 6: Business Processes Part 2 -->
+<section class="slide p-16 col" style="background-color: #ffffff; color: #000000;">
+  <h2 class="mb-6" style="color: #0066CC;">Основные бизнес-процессы (2/2)</h2>
+  <div class="fill-height">
+    <h3 class="mb-4" style="color: #212529; font-size: 1.25rem;">3. Система оповещений</h3>
+    <ul style="color: #212529; font-size: 1rem;">
+      <li>Мониторинг целевых цен</li>
+      <li>Email уведомления</li>
+    </ul>
+    <h3 class="mb-4 mt-6" style="color: #212529; font-size: 1.25rem;">4. Аналитика и рейтинги</h3>
+    <ul style="color: #212529; font-size: 1rem;">
+      <li>Batch processing через Kafka</li>
+      <li>Расчет рейтингов активов</li>
+      <li>Топ активов по периодам</li>
+    </ul>
+  </div>
+</section>
+
+<!-- SLIDE 7: User Stories (Development Phases) -->
+<section class="slide p-16 col" style="background-color: #ffffff; color: #000000;">
+  <h2 class="mb-6" style="color: #0066CC;">User Stories (Фазы разработки)</h2>
+  <div class="fill-height">
+    <div class="mb-4">
+      <h3 style="color: #28a745; font-size: 1.25rem;">Phase 1 (MVP — недели 1-3)</h3>
+      <p style="color: #212529;">Real-time quotes, Portfolio CRUD, Authentication</p>
+    </div>
+    <div class="mb-4">
+      <h3 style="color: #007bff; font-size: 1.25rem;">Phase 2 (WebSocket — недели 4-6)</h3>
+      <p style="color: #212529;">SignalR, Email alerts, 100 concurrent users</p>
+    </div>
+    <div class="mb-4">
+      <h3 style="color: #6610f2; font-size: 1.25rem;">Phase 3 (Analytics — недели 7-9)</h3>
+      <p style="color: #212529;">Asset ratings, Top assets, 1000 concurrent users</p>
+    </div>
+    <div>
+      <h3 style="color: #dc3545; font-size: 1.25rem;">Phase 4 (Production — недели 10-11)</h3>
+      <p style="color: #212529;">Security audit, Monitoring, Documentation</p>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 8: Technology Stack -->
+<section class="slide p-16 col" style="background-color: #ffffff; color: #000000;">
+  <h2 class="mb-6" style="color: #0066CC;">Технологический стек</h2>
+  <div class="row gap-lg fill-height">
+    <div class="fill-width">
+      <h3 class="mb-4" style="color: #212529; font-size: 1.25rem;">Backend</h3>
+      <ul style="color: #212529; font-size: 1rem;">
+        <li>.NET 8, ASP.NET Core</li>
+        <li>Entity Framework Core</li>
+        <li>SignalR (WebSocket)</li>
+      </ul>
+      <h3 class="mb-4 mt-4" style="color: #212529; font-size: 1.25rem;">Database</h3>
+      <ul style="color: #212529; font-size: 1rem;">
+        <li>PostgreSQL 17+</li>
+        <li>Redis (cache)</li>
+        <li>MongoDB (reports)</li>
+      </ul>
+    </div>
+    <div class="fill-width">
+      <h3 class="mb-4" style="color: #212529; font-size: 1.25rem;">Infrastructure</h3>
+      <ul style="color: #212529; font-size: 1rem;">
+        <li>.NET Aspire</li>
+        <li>Docker, Kubernetes</li>
+        <li>Apache Kafka</li>
+        <li>OpenTelemetry</li>
+      </ul>
+      <h3 class="mb-4 mt-4" style="color: #212529; font-size: 1.25rem;">Frontend</h3>
+      <ul style="color: #212529; font-size: 1rem;">
+        <li>React 18 + TypeScript</li>
+        <li>Tailwind CSS</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 9: Microservices Architecture Part 1 -->
+<section class="slide p-16 col" style="background-color: #ffffff; color: #000000;">
+  <h2 class="mb-6" style="color: #0066CC;">Микросервисная архитектура (1/2)</h2>
+  <div class="fill-height">
+    <div class="mb-4" style="background-color: #e9ecef; padding: 1.25rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+      <h3 style="color: #0066CC; font-size: 1.25rem;">Gateway Service</h3>
+      <p style="color: #212529; font-size: 0.95rem;">API Gateway для маршрутизации</p>
+    </div>
+    <div class="mb-4" style="background-color: #e9ecef; padding: 1.25rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+      <h3 style="color: #0066CC; font-size: 1.25rem;">AuthService</h3>
+      <p style="color: #212529; font-size: 0.95rem;">JWT аутентификация, RBAC авторизация</p>
+    </div>
+    <div style="background-color: #e9ecef; padding: 1.25rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+      <h3 style="color: #0066CC; font-size: 1.25rem;">StockCardService</h3>
+      <p style="color: #212529; font-size: 0.95rem;">Карточки активов, Real-time котировки через SignalR</p>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 10: Microservices Architecture Part 2 -->
+<section class="slide p-16 col" style="background-color: #ffffff; color: #000000;">
+  <h2 class="mb-6" style="color: #0066CC;">Микросервисная архитектура (2/2)</h2>
+  <div class="fill-height">
+    <div class="mb-4" style="background-color: #e9ecef; padding: 1.25rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+      <h3 style="color: #0066CC; font-size: 1.25rem;">PortfolioService</h3>
+      <p style="color: #212529; font-size: 0.95rem;">Управление портфелями и транзакциями</p>
+    </div>
+    <div class="mb-4" style="background-color: #e9ecef; padding: 1.25rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+      <h3 style="color: #0066CC; font-size: 1.25rem;">AnalyticsService</h3>
+      <p style="color: #212529; font-size: 0.95rem;">Batch processing, Расчет рейтингов активов</p>
+    </div>
+    <div style="background-color: #e9ecef; padding: 1.25rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+      <h3 style="color: #0066CC; font-size: 1.25rem;">NotificationService</h3>
+      <p style="color: #212529; font-size: 0.95rem;">Email уведомления</p>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 11: System Architecture Layers -->
+<section class="slide p-16 col" style="background-color: #ffffff; color: #000000;">
+  <h2 class="mb-6" style="color: #0066CC;">Архитектура системы (Layers)</h2>
+  <div class="fill-height">
+    <div class="mb-3" style="background-color: #e9ecef; padding: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+      <h3 style="color: #0066CC; font-size: 1.125rem;">Presentation Layer</h3>
+      <p style="color: #212529; font-size: 0.9rem;">Controllers, DTOs, SignalR Hubs</p>
+    </div>
+    <div class="mb-3" style="background-color: #e9ecef; padding: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+      <h3 style="color: #0066CC; font-size: 1.125rem;">Application Layer</h3>
+      <p style="color: #212529; font-size: 0.9rem;">Use Cases, Application Services</p>
+    </div>
+    <div class="mb-3" style="background-color: #e9ecef; padding: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+      <h3 style="color: #0066CC; font-size: 1.125rem;">Domain Layer</h3>
+      <p style="color: #212529; font-size: 0.9rem;">Entities, Value Objects, Domain Services</p>
+    </div>
+    <div style="background-color: #e9ecef; padding: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+      <h3 style="color: #0066CC; font-size: 1.125rem;">Infrastructure Layer</h3>
+      <p style="color: #212529; font-size: 0.9rem;">EF Core, Kafka, Redis, External APIs</p>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 12: Database Schema -->
+<section class="slide p-16 col" style="background-color: #ffffff; color: #000000;">
+  <h2 class="mb-6" style="color: #0066CC;">Database Schema</h2>
+  <div class="row gap-lg fill-height">
+    <div class="fill-width">
+      <h3 class="mb-4" style="color: #212529; font-size: 1.25rem;">PortfolioService</h3>
+      <ul style="color: #212529; font-size: 0.95rem;">
+        <li>portfolio</li>
+        <li>portfolio_asset</li>
+        <li>portfolio_asset_transaction</li>
+      </ul>
+      <h3 class="mb-4 mt-4" style="color: #212529; font-size: 1.25rem;">StockCardService</h3>
+      <ul style="color: #212529; font-size: 0.95rem;">
+        <li>ShareCards, BondCards</li>
+        <li>MongoDB: FinancialReports</li>
+      </ul>
+    </div>
+    <div class="fill-width">
+      <h3 class="mb-4" style="color: #212529; font-size: 1.25rem;">AnalyticsService</h3>
+      <ul style="color: #212529; font-size: 0.95rem;">
+        <li>asset_transactions</li>
+        <li>asset_ratings</li>
+      </ul>
+      <h3 class="mb-4 mt-4" style="color: #212529; font-size: 1.25rem;">AuthService</h3>
+      <ul style="color: #212529; font-size: 0.95rem;">
+        <li>users, roles</li>
+        <li>permissions</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 13: NFR Performance & Scalability -->
+<section class="slide p-16 col" style="background-color: #ffffff; color: #000000;">
+  <h2 class="mb-6" style="color: #0066CC;">Non-Functional Requirements</h2>
+  <div class="fill-height">
+    <h3 class="mb-4" style="color: #212529; font-size: 1.25rem;">Производительность</h3>
+    <ul style="color: #212529; font-size: 1rem;">
+      <li>API response: p95 &lt; 200ms</li>
+      <li>WebSocket latency: &lt; 100ms</li>
+      <li>Поддержка 1000+ concurrent users</li>
+    </ul>
+    <h3 class="mb-4 mt-6" style="color: #212529; font-size: 1.25rem;">Масштабируемость</h3>
+    <ul style="color: #212529; font-size: 1rem;">
+      <li>Горизонтальное масштабирование</li>
+      <li>Kubernetes HPA</li>
+    </ul>
+  </div>
+</section>
+
+<!-- SLIDE 14: NFR Reliability & Security -->
+<section class="slide p-16 col" style="background-color: #ffffff; color: #000000;">
+  <h2 class="mb-6" style="color: #0066CC;">Надежность и безопасность</h2>
+  <div class="fill-height">
+    <h3 class="mb-4" style="color: #212529; font-size: 1.25rem;">Надежность</h3>
+    <ul style="color: #212529; font-size: 1rem;">
+      <li>Availability: 99.9% SLA</li>
+      <li>Circuit Breaker для защиты</li>
+      <li>Health checks для всех сервисов</li>
+    </ul>
+    <h3 class="mb-4 mt-6" style="color: #212529; font-size: 1.25rem;">Безопасность</h3>
+    <ul style="color: #212529; font-size: 1rem;">
+      <li>TLS 1.3, JWT токены</li>
+      <li>Rate limiting</li>
+      <li>Input validation</li>
+    </ul>
+  </div>
+</section>
+
+<!-- SLIDE 15: Security Architecture -->
+<section class="slide p-16 col" style="background-color: #ffffff; color: #000000;">
+  <h2 class="mb-6" style="color: #0066CC;">Security Architecture</h2>
+  <div class="row gap-lg fill-height">
+    <div class="fill-width">
+      <h3 class="mb-4" style="color: #212529; font-size: 1.25rem;">Authentication</h3>
+      <ul style="color: #212529; font-size: 1rem;">
+        <li>JWT (15 min lifetime)</li>
+        <li>Refresh token rotation</li>
+        <li>ASP.NET Identity</li>
+      </ul>
+    </div>
+    <div class="fill-width">
+      <h3 class="mb-4" style="color: #212529; font-size: 1.25rem;">Authorization</h3>
+      <ul style="color: #212529; font-size: 1rem;">
+        <li>RBAC (ADMIN, USER)</li>
+        <li>Row-level security</li>
+        <li>Policy-based</li>
+      </ul>
+    </div>
+  </div>
+  <div class="mt-6">
+    <h3 class="mb-4" style="color: #212529; font-size: 1.25rem;">API Security</h3>
+    <ul style="color: #212529; font-size: 1rem;">
+      <li>Rate limiting (100 req/min), CORS, Input validation</li>
+    </ul>
+  </div>
+</section>
+
+<!-- SLIDE 16: Testing Strategy -->
+<section class="slide p-16 col" style="background-color: #ffffff; color: #000000;">
+  <h2 class="mb-6" style="color: #0066CC;">Testing Strategy</h2>
+  <div class="fill-height">
+    <div class="mb-4">
+      <h3 style="color: #212529; font-size: 1.25rem;">Unit Tests (80% coverage)</h3>
+      <p style="color: #212529; font-size: 1rem;">xUnit, Moq, FluentAssertions</p>
+    </div>
+    <div class="mb-4">
+      <h3 style="color: #212529; font-size: 1.25rem;">Integration Tests</h3>
+      <p style="color: #212529; font-size: 1rem;">TestContainers для PostgreSQL и Kafka</p>
+    </div>
+    <div class="mb-4">
+      <h3 style="color: #212529; font-size: 1.25rem;">Performance Tests</h3>
+      <p style="color: #212529; font-size: 1rem;">k6, NBomber для load testing</p>
+    </div>
+    <div>
+      <h3 style="color: #212529; font-size: 1.25rem;">E2E Tests</h3>
+      <p style="color: #212529; font-size: 1rem;">Playwright, Cypress для frontend</p>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 17: Deployment & DevOps -->
+<section class="slide p-16 col" style="background-color: #ffffff; color: #000000;">
+  <h2 class="mb-6" style="color: #0066CC;">Deployment &amp; DevOps</h2>
+  <div class="fill-height">
+    <h3 class="mb-4" style="color: #212529; font-size: 1.25rem;">CI/CD Pipeline</h3>
+    <ul style="color: #212529; font-size: 1rem;">
+      <li>GitHub Actions для автоматизации</li>
+      <li>TestContainers в integration tests</li>
+      <li>Blue-Green deployment</li>
+    </ul>
+    <h3 class="mb-4 mt-6" style="color: #212529; font-size: 1.25rem;">Infrastructure</h3>
+    <ul style="color: #212529; font-size: 1rem;">
+      <li>Docker, Kubernetes, .NET Aspire</li>
+      <li>Managed PostgreSQL и Redis</li>
+    </ul>
+  </div>
+</section>
+
+<!-- SLIDE 18: Monitoring & Observability -->
+<section class="slide p-16 col" style="background-color: #ffffff; color: #000000;">
+  <h2 class="mb-6" style="color: #0066CC;">Monitoring &amp; Observability</h2>
+  <div class="fill-height">
+    <h3 class="mb-4" style="color: #212529; font-size: 1.25rem;">OpenTelemetry</h3>
+    <ul style="color: #212529; font-size: 1rem;">
+      <li>Метрики: response time, error rates</li>
+      <li>Distributed tracing между сервисами</li>
+    </ul>
+    <h3 class="mb-4 mt-6" style="color: #212529; font-size: 1.25rem;">OpenSearch Stack</h3>
+    <ul style="color: #212529; font-size: 1rem;">
+      <li>Централизованное логирование</li>
+      <li>OpenSearch Dashboards для визуализации</li>
+    </ul>
+  </div>
+</section>
+
+<!-- SLIDE 19: Event-Driven Communication -->
+<section class="slide p-16 col" style="background-color: #ffffff; color: #000000;">
+  <h2 class="mb-6" style="color: #0066CC;">Event-Driven Communication</h2>
+  <div class="fill-height">
+    <h3 class="mb-4" style="color: #212529; font-size: 1.25rem;">Kafka Topics</h3>
+    <div class="mb-4" style="background-color: #e9ecef; padding: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+      <h4 style="color: #0066CC; font-size: 1rem;">portfolio.transactions</h4>
+      <p style="color: #212529; font-size: 0.9rem;">Producer: PortfolioService → Consumers: Analytics, Notifications</p>
+    </div>
+    <div style="background-color: #e9ecef; padding: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+      <h4 style="color: #0066CC; font-size: 1rem;">financial.report.created</h4>
+      <p style="color: #212529; font-size: 0.9rem;">Producer: StockCardService</p>
+    </div>
+    <p class="mt-4" style="color: #212529; font-size: 1rem;">Outbox Pattern для гарантированной доставки</p>
+  </div>
+</section>
+
+<!-- SLIDE 20: API Endpoints Part 1 -->
+<section class="slide p-16 col" style="background-color: #ffffff; color: #000000;">
+  <h2 class="mb-6" style="color: #0066CC;">API Endpoints (1/2)</h2>
+  <div class="fill-height">
+    <h3 class="mb-4" style="color: #212529; font-size: 1.25rem;">PortfolioService</h3>
+    <ul style="color: #212529; font-size: 0.95rem;">
+      <li>GET/POST /api/v1/portfolios</li>
+      <li>GET/POST /api/v1/portfolio-assets</li>
+      <li>POST /api/v1/portfolio-assets/{id}/transactions</li>
+    </ul>
+    <h3 class="mb-4 mt-6" style="color: #212529; font-size: 1.25rem;">StockCardService</h3>
+    <ul style="color: #212529; font-size: 0.95rem;">
+      <li>GET /api/stockcard/shares, /bonds, /crypto</li>
+      <li>SignalR Hub: /priceHub (WebSocket)</li>
+    </ul>
+  </div>
+</section>
+
+<!-- SLIDE 21: API Endpoints Part 2 -->
+<section class="slide p-16 col" style="background-color: #ffffff; color: #000000;">
+  <h2 class="mb-6" style="color: #0066CC;">API Endpoints (2/2)</h2>
+  <div class="fill-height">
+    <h3 class="mb-4" style="color: #212529; font-size: 1.25rem;">AnalyticsService</h3>
+    <ul style="color: #212529; font-size: 0.95rem;">
+      <li>GET /api/analytics/transactions</li>
+      <li>GET /api/analytics/assets/top-bought</li>
+      <li>GET /api/analytics/assets/top-sold</li>
+    </ul>
+    <h3 class="mb-4 mt-6" style="color: #212529; font-size: 1.25rem;">AuthService</h3>
+    <ul style="color: #212529; font-size: 0.95rem;">
+      <li>POST /api/auth/register, /login</li>
+      <li>POST /api/auth/refresh, /logout</li>
+    </ul>
+  </div>
+</section>
+
+<!-- SLIDE 22: Conclusions and Perspectives -->
+<section class="slide p-16 col" style="background-color: #ffffff; color: #000000;">
+  <h2 class="mb-6" style="color: #0066CC;">Выводы и перспективы</h2>
+  <div class="row gap-lg fill-height">
+    <div class="fill-width">
+      <h3 class="mb-4" style="color: #28a745; font-size: 1.25rem;">Технические результаты</h3>
+      <ul style="color: #212529; font-size: 0.95rem;">
+        <li>Микросервисная архитектура</li>
+        <li>Real-time через SignalR</li>
+        <li>Event-Driven с Kafka</li>
+        <li>Comprehensive monitoring</li>
+      </ul>
+    </div>
+    <div class="fill-width">
+      <h3 class="mb-4" style="color: #0066CC; font-size: 1.25rem;">Перспективы</h3>
+      <ul style="color: #212529; font-size: 0.95rem;">
+        <li>AI для прогнозирования</li>
+        <li>Мобильное приложение</li>
+        <li>ML модели для аналитики</li>
+        <li>Расширение активов</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 23: Thank You -->
+<section class="slide p-16 col center" style="background-color: #5B3A99; color: #ffffff;">
+  <h2 class="text-5xl mb-8" style="color: #ffffff;">Спасибо за внимание!</h2>
+  <p class="text-xl" style="color: #ffffff;">Вопросы?</p>
+</section>
+
+</body>
+</html>
