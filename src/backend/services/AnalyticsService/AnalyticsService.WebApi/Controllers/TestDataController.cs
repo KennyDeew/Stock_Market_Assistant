@@ -66,7 +66,8 @@ public class TestDataController : ControllerBase
     /// <summary>
     /// Заполнить базу данных тестовыми данными
     /// </summary>
-    /// <param name="request">Параметры генерации данных</param>
+    /// <param name="transactionId">ID конкретной транзакции (опционально, можно передать через query или body)</param>
+    /// <param name="request">Параметры генерации данных (опционально)</param>
     /// <param name="cancellationToken">Токен отмены</param>
     /// <returns>Результат операции заполнения</returns>
     [HttpPost("seed")]
@@ -74,34 +75,33 @@ public class TestDataController : ControllerBase
     [ProducesResponseType(typeof(TestDataOperationResult), StatusCodes.Status500InternalServerError)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<TestDataOperationResult>> SeedDatabaseAsync(
+        [FromQuery] Guid? transactionId = null,
         [FromBody] SeedDatabaseRequest? request = null,
         CancellationToken cancellationToken = default)
     {
         try
         {
-            var portfolioCount = request?.PortfolioCount ?? 4;
-            var overlapCount = request?.OverlapCount ?? 3;
+            // Приоритет: query параметр > body параметр
+            Guid? finalTransactionId = transactionId;
+
+            // Если в query нет, пытаемся парсить из body
+            if (!finalTransactionId.HasValue && !string.IsNullOrWhiteSpace(request?.TransactionId))
+            {
+                if (Guid.TryParse(request.TransactionId, out var parsedGuid))
+                {
+                    finalTransactionId = parsedGuid;
+                }
+                else
+                {
+                    // Если не удалось распарсить - игнорируем и используем режим работы с существующими транзакциями
+                    _logger.LogWarning("Некорректный формат TransactionId: '{TransactionId}'. Будет использован режим работы с существующими транзакциями.", request.TransactionId);
+                    finalTransactionId = null;
+                }
+            }
+
             var daysBack = request?.DaysBack ?? 90;
 
             // Валидация параметров
-            if (portfolioCount < 1 || portfolioCount > 10)
-            {
-                return BadRequest(new TestDataOperationResult
-                {
-                    Success = false,
-                    Message = "Количество портфелей должно быть от 1 до 10"
-                });
-            }
-
-            if (overlapCount < 0 || overlapCount > portfolioCount)
-            {
-                return BadRequest(new TestDataOperationResult
-                {
-                    Success = false,
-                    Message = $"Количество портфелей с пересечениями должно быть от 0 до {portfolioCount}"
-                });
-            }
-
             if (daysBack < 1 || daysBack > 365)
             {
                 return BadRequest(new TestDataOperationResult
@@ -112,12 +112,11 @@ public class TestDataController : ControllerBase
             }
 
             _logger.LogInformation(
-                "Запрос на заполнение базы данных тестовыми данными. Портфелей: {PortfolioCount}, Пересечений: {OverlapCount}, Дней назад: {DaysBack}",
-                portfolioCount, overlapCount, daysBack);
+                "Запрос на заполнение базы данных тестовыми данными. TransactionId: {TransactionId}, Дней назад: {DaysBack}",
+                finalTransactionId?.ToString() ?? "не указан", daysBack);
 
             var result = await _testDataService.SeedDatabaseAsync(
-                portfolioCount,
-                overlapCount,
+                finalTransactionId,
                 daysBack,
                 cancellationToken);
 
@@ -167,29 +166,24 @@ public class TestDataController : ControllerBase
             }
 
             // Затем заполняем
-            var portfolioCount = request?.PortfolioCount ?? 4;
-            var overlapCount = request?.OverlapCount ?? 3;
+            Guid? transactionId = null;
+            if (!string.IsNullOrWhiteSpace(request?.TransactionId))
+            {
+                if (Guid.TryParse(request.TransactionId, out var parsedGuid))
+                {
+                    transactionId = parsedGuid;
+                }
+                else
+                {
+                    // Если не удалось распарсить - игнорируем и используем режим работы с существующими транзакциями
+                    _logger.LogWarning("Некорректный формат TransactionId: '{TransactionId}'. Будет использован режим работы с существующими транзакциями.", request.TransactionId);
+                    transactionId = null;
+                }
+            }
+
             var daysBack = request?.DaysBack ?? 90;
 
             // Валидация параметров
-            if (portfolioCount < 1 || portfolioCount > 10)
-            {
-                return BadRequest(new TestDataOperationResult
-                {
-                    Success = false,
-                    Message = "Количество портфелей должно быть от 1 до 10"
-                });
-            }
-
-            if (overlapCount < 0 || overlapCount > portfolioCount)
-            {
-                return BadRequest(new TestDataOperationResult
-                {
-                    Success = false,
-                    Message = $"Количество портфелей с пересечениями должно быть от 0 до {portfolioCount}"
-                });
-            }
-
             if (daysBack < 1 || daysBack > 365)
             {
                 return BadRequest(new TestDataOperationResult
@@ -200,8 +194,7 @@ public class TestDataController : ControllerBase
             }
 
             var seedResult = await _testDataService.SeedDatabaseAsync(
-                portfolioCount,
-                overlapCount,
+                transactionId,
                 daysBack,
                 cancellationToken);
 
@@ -236,17 +229,15 @@ public class TestDataController : ControllerBase
 public class SeedDatabaseRequest
 {
     /// <summary>
-    /// Количество портфелей для создания (по умолчанию: 4)
+    /// ID конкретной транзакции для расчета рейтинга (опционально, можно передать как строку)
+    /// Если указан - используется эта транзакция
+    /// Если не указан - используются существующие транзакции из БД
+    /// Если транзакций нет - создаются фейковые
     /// </summary>
-    public int PortfolioCount { get; set; } = 4;
+    public string? TransactionId { get; set; }
 
     /// <summary>
-    /// Количество портфелей с пересекающимися активами (по умолчанию: 3)
-    /// </summary>
-    public int OverlapCount { get; set; } = 3;
-
-    /// <summary>
-    /// Количество дней назад для генерации транзакций (по умолчанию: 90)
+    /// Количество дней назад для генерации фейковых транзакций (если транзакций нет в БД, по умолчанию: 90)
     /// </summary>
     public int DaysBack { get; set; } = 90;
 }

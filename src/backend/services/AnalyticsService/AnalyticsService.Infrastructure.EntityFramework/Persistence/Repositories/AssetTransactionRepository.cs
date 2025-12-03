@@ -117,6 +117,26 @@ namespace StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.P
         }
 
         /// <inheritdoc />
+        public async Task<IEnumerable<AssetTransaction>> GetByPeriodAndTypeAsync(
+            Period period,
+            TransactionType? transactionType,
+            CancellationToken cancellationToken = default)
+        {
+            var query = _context.AssetTransactions
+                .AsNoTracking()
+                .Where(t => t.TransactionTime >= period.Start && t.TransactionTime <= period.End);
+
+            if (transactionType.HasValue)
+            {
+                query = query.Where(t => t.TransactionType == transactionType.Value);
+            }
+
+            return await query
+                .OrderByDescending(t => t.TransactionTime)
+                .ToListAsync(cancellationToken);
+        }
+
+        /// <inheritdoc />
         public async Task<IEnumerable<IGrouping<Guid, AssetTransaction>>> GetGroupedByStockCardAsync(
             Period? period = null,
             CancellationToken cancellationToken = default)

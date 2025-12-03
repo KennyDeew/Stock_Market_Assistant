@@ -42,10 +42,15 @@ namespace StockMarketAssistant.AnalyticsService.Application.Services
             // Агрегация для Portfolio контекста
             // Получаем все уникальные PortfolioId из транзакций
             var transactions = await _transactionRepository.GetByPeriodAsync(period, cancellationToken);
-            var portfolioIds = transactions
+            var transactionsList = transactions.ToList();
+            _logger.LogInformation("Найдено транзакций для Portfolio рейтингов: {Count}", transactionsList.Count);
+
+            var portfolioIds = transactionsList
                 .Select(t => t.PortfolioId)
                 .Distinct()
                 .ToList();
+
+            _logger.LogInformation("Найдено уникальных PortfolioId: {Count}", portfolioIds.Count);
 
             foreach (var portfolioId in portfolioIds)
             {
@@ -62,20 +67,48 @@ namespace StockMarketAssistant.AnalyticsService.Application.Services
         {
             _logger.LogInformation("Агрегация Global рейтингов за период {Start} - {End}", period.Start, period.End);
 
+            // Сначала проверяем, есть ли транзакции в периоде
+            var transactionsInPeriod = await _transactionRepository.GetByPeriodAsync(period, cancellationToken);
+            var transactionsInPeriodList = transactionsInPeriod.ToList();
+            _logger.LogInformation("Транзакций в периоде (прямая проверка): {Count}", transactionsInPeriodList.Count);
+
+            if (!transactionsInPeriodList.Any())
+            {
+                _logger.LogWarning("ВНИМАНИЕ: В периоде {Start} - {End} нет транзакций!", period.Start, period.End);
+                return; // Прерываем выполнение, если нет транзакций
+            }
+
             // Получаем транзакции за период, сгруппированные по StockCardId
             var transactionGroups = await _transactionRepository.GetGroupedByStockCardAsync(period, cancellationToken);
+            var groupsList = transactionGroups.ToList();
+            _logger.LogInformation("Найдено групп транзакций для Global рейтинга: {Count}", groupsList.Count);
+
+            if (!groupsList.Any())
+            {
+                _logger.LogWarning("ВНИМАНИЕ: Не найдено групп транзакций для Global рейтинга!");
+                return; // Прерываем выполнение, если нет групп
+            }
 
             var ratings = new List<AssetRating>();
 
-            foreach (var group in transactionGroups)
+            foreach (var group in groupsList)
             {
                 try
                 {
+                    var transactionsList = group.ToList();
+                    _logger.LogInformation("Обработка группы StockCardId {StockCardId}, транзакций: {Count}", group.Key, transactionsList.Count);
+
                     // Получаем первую транзакцию для получения информации об активе
                     var firstTransaction = group.First();
 
                     // Используем значения по умолчанию для ticker и name, если они недоступны
-                    var ticker = $"STOCK_{firstTransaction.StockCardId:N}";
+                    // Тикер должен быть не длиннее 20 символов
+                    var guidString = firstTransaction.StockCardId.ToString("N");
+                    var ticker = $"STK{guidString.Substring(0, Math.Min(17, guidString.Length))}";
+                    if (ticker.Length > 20)
+                    {
+                        ticker = ticker.Substring(0, 20);
+                    }
                     var name = $"Asset {firstTransaction.StockCardId}";
 
                     // Создаем рейтинг с помощью RatingCalculationService
@@ -89,6 +122,8 @@ namespace StockMarketAssistant.AnalyticsService.Application.Services
                         name);
 
                     ratings.Add(rating);
+                    _logger.LogInformation("Создан рейтинг для StockCardId {StockCardId}, BuyCount: {BuyCount}, SellCount: {SellCount}, TotalBuyAmount: {TotalBuyAmount}",
+                        group.Key, rating.BuyTransactionCount, rating.SellTransactionCount, rating.TotalBuyAmount);
                 }
                 catch (Exception ex)
                 {
@@ -131,7 +166,13 @@ namespace StockMarketAssistant.AnalyticsService.Application.Services
                     var firstTransaction = group.First();
 
                     // Используем значения по умолчанию для ticker и name, если они недоступны
-                    var ticker = $"STOCK_{firstTransaction.StockCardId:N}";
+                    // Тикер должен быть не длиннее 20 символов
+                    var guidString = firstTransaction.StockCardId.ToString("N");
+                    var ticker = $"STK{guidString.Substring(0, Math.Min(17, guidString.Length))}";
+                    if (ticker.Length > 20)
+                    {
+                        ticker = ticker.Substring(0, 20);
+                    }
                     var name = $"Asset {firstTransaction.StockCardId}";
 
                     // Создаем рейтинг с помощью RatingCalculationService

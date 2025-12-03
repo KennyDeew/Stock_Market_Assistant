@@ -327,6 +327,7 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
             builder.Services.AddScoped<GetTopSoldAssetsUseCase>();
             builder.Services.AddScoped<GetPortfolioHistoryUseCase>();
             builder.Services.AddScoped<ComparePortfoliosUseCase>();
+            builder.Services.AddScoped<GetAllTransactionsUseCase>();
 
             // Регистрация EventBus как Singleton
             builder.Services.AddSingleton<IEventBus, InMemoryEventBus>();

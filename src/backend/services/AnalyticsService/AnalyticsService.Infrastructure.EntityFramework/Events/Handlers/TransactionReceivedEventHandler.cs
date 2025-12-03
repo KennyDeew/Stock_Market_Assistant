@@ -122,7 +122,13 @@ namespace StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.E
                 // Создаем новый рейтинг
                 // Для нового рейтинга нужна информация об активе (ticker, name)
                 // Используем значения по умолчанию, если информация недоступна
-                var ticker = $"STOCK_{transaction.StockCardId:N}";
+                // Тикер должен быть не длиннее 20 символов
+                var guidString = transaction.StockCardId.ToString("N");
+                var ticker = $"STK{guidString.Substring(0, Math.Min(17, guidString.Length))}";
+                if (ticker.Length > 20)
+                {
+                    ticker = ticker.Substring(0, 20);
+                }
                 var name = $"Asset {transaction.StockCardId}";
 
                 if (context == AnalysisContext.Portfolio)

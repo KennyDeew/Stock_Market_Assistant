@@ -245,6 +245,74 @@ namespace StockMarketAssistant.AnalyticsService.Infrastructure.EntityFramework.H
                 throw;
             }
         }
+
+        /// <summary>
+        /// Создать новый портфель
+        /// </summary>
+        public async Task<Guid> CreatePortfolioAsync(
+            Guid userId,
+            string name,
+            string currency = "RUB",
+            bool isPrivate = false,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var requestBody = new
+                {
+                    UserId = userId,
+                    Name = name,
+                    Currency = currency,
+                    IsPrivate = isPrivate
+                };
+
+                var jsonContent = JsonSerializer.Serialize(requestBody, _jsonOptions);
+                var content = new StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json");
+
+                var url = "/api/v1/portfolios";
+                var response = await _httpClient.PostAsync(url, content, cancellationToken);
+
+                if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable)
+                {
+                    _logger.LogError("PortfolioService недоступен (503) при создании портфеля");
+                    response.EnsureSuccessStatusCode();
+                }
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
+                    _logger.LogWarning("Ошибка при создании портфеля: {StatusCode} - {Error}", response.StatusCode, errorContent);
+                    return Guid.Empty;
+                }
+
+                var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
+                var portfolioResponse = JsonSerializer.Deserialize<PortfolioShortResponse>(responseContent, _jsonOptions);
+
+                if (portfolioResponse == null || portfolioResponse.Id == Guid.Empty)
+                {
+                    _logger.LogWarning("Не удалось получить ID созданного портфеля");
+                    return Guid.Empty;
+                }
+
+                _logger.LogInformation("Портфель {PortfolioId} успешно создан для пользователя {UserId}", portfolioResponse.Id, userId);
+                return portfolioResponse.Id;
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, "Ошибка HTTP запроса к PortfolioService при создании портфеля");
+                return Guid.Empty;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Неожиданная ошибка при создании портфеля");
+                return Guid.Empty;
+            }
+        }
     }
+
+    /// <summary>
+    /// DTO для ответа при создании портфеля
+    /// </summary>
+    internal record PortfolioShortResponse(Guid Id, Guid UserId, string Name, string Currency, bool IsPrivate);
 }
 

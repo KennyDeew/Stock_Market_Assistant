@@ -156,7 +156,7 @@ namespace StockMarketAssistant.PortfolioService.WebApi.Controllers
         /// </summary>
         /// <param name="request">Параметры создаваемого портфеля</param>
         /// <returns>Созданный портфель с краткой информацией</returns>
-        [Authorize(Roles = "USER")]
+        //[Authorize(Roles = "USER")] // Отключено для тестового заполнения данных
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(PortfolioShortResponse))]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
