@@ -53,9 +53,8 @@
 - ✅ Упомянуты: Auth, Portfolio, Quote, Alert
 
 **Базы данных:**
-- ❌ Не упоминают **MongoDB** (для финансовых отчетов в StockCardService)
-- ❌ Не упоминают **OpenSearch** (для мониторинга и логирования)
-- ✅ Упомянуты: PostgreSQL, Redis, TimescaleDB
+- ✅ Упомянуты: PostgreSQL, Redis, MongoDB, OpenSearch
+- ❌ TimescaleDB не используется (удалено из плана)
 
 **Архитектурные паттерны:**
 - ❌ Не упоминают **Clean Architecture** (Domain, Application, Infrastructure, Presentation слои)
@@ -177,7 +176,6 @@
 - Индексы на внешние ключи (portfolio_id, user_id, stock_card_id)
 - Индексы на даты (transaction_date, period_start, period_end)
 - Индексы для поиска (ticker, name)
-- Партиционирование по датам для транзакций (TimescaleDB)
 
 ### 5. Заполнить NFR (Non-Functional Requirements)
 
@@ -212,7 +210,7 @@
 - Unit test coverage: 80%+
 - Integration tests для критических путей
 - Структурированное логирование (OpenSearch)
-- Мониторинг и алертинг (Prometheus + OpenSearch)
+- Мониторинг и алертинг (OpenTelemetry + OpenSearch)
 
 ---
 
@@ -296,7 +294,7 @@
 
 **AuthService:**
 - **User** (Пользователь) - учетная запись
-- **Role** (Роль) - investor, analyst, admin
+- **Role** (Роль) - ADMIN, USER
 - **Permission** (Разрешение) - гранулярные права доступа
 
 **Ключевые связи:**
@@ -336,10 +334,10 @@
    - Ранжирование активов по популярности
 
 5. **Многопользовательский доступ**
-   - RBAC (Role-Based Access Control): investor, analyst, admin
+   - RBAC (Role-Based Access Control): ADMIN, USER
    - Каждая роль имеет разные права
    - Логирование действий для аудита
-   - Возможность делиться портфелями с командой
+   - Приватные портфели (IsPrivate флаг)
 
 ---
 
@@ -357,15 +355,15 @@
 - Advanced alert management
 - 100 concurrent users
 
-**Phase 3 (Collaboration & Analytics — неделя 7-9):**
-- Portfolio sharing & permissions
-- Team collaboration features
+**Phase 3 (Analytics — неделя 7-9):**
 - AnalyticsService: рейтинги активов
+- Агрегация данных по периодам
+- Топ активов по покупкам/продажам
 - 1000 concurrent users
 
 **Phase 4 (Production hardening — неделя 10-11):**
 - Security audit & penetration testing
-- Monitoring & observability (OpenSearch, Prometheus)
+- Monitoring & observability (OpenTelemetry, OpenSearch)
 - Complete documentation
 - User acceptance testing
 
@@ -387,13 +385,12 @@
 - C# 12
 - Entity Framework Core (ORM)
 - SignalR (WebSocket server)
-- JWT + OAuth 2.0 (authentication)
+- JWT (authentication)
 
 **Database:**
 - PostgreSQL 17+ (OLTP для всех сервисов)
 - Redis 7+ (cache)
 - MongoDB 8+ (финансовые отчеты в StockCardService)
-- TimescaleDB (time-series, если используется)
 
 **Message Queue & Events:**
 - Apache Kafka (event-driven communication)
@@ -405,8 +402,9 @@
 - Kubernetes (production)
 - GitHub Actions (CI/CD)
 - AWS / Azure / Yandex.Cloud
-- Prometheus + OpenSearch (monitoring)
-- OpenSearch Dashboards (логирование и визуализация)
+- OpenTelemetry (мониторинг и трейсинг)
+- OpenSearch (логирование и визуализация)
+- OpenSearch Dashboards (дашборды)
 
 **External APIs:**
 - MOEX (Московская биржа) - котировки акций и облигаций
@@ -421,9 +419,8 @@
 **6 микросервисов:**
 
 1. **Gateway Service**
-- API Gateway для маршрутизации запросов
+- API Gateway для маршрутизации запросов (базовая реализация)
 - Единая точка входа для клиентов
-- Load balancing
 - CORS настройки
 
 2. **AuthService**
@@ -535,7 +532,6 @@
 - Индексы на внешние ключи (portfolio_id, user_id, stock_card_id)
 - Индексы на даты (transaction_date, period_start, period_end) для быстрого поиска
 - Индексы для поиска (ticker, name)
-- Партиционирование по датам для транзакций (если используется TimescaleDB)
 - Кэширование часто запрашиваемых данных в Redis
 
 ---
@@ -578,7 +574,7 @@
 - Unit test coverage: 80%+
 - Integration tests для критических путей
 - Структурированное логирование (OpenSearch)
-- Мониторинг и алертинг (Prometheus + OpenSearch Dashboards)
+- Мониторинг и алертинг (OpenTelemetry + OpenSearch Dashboards)
 - API documentation (Swagger/OpenAPI)
 
 ---
@@ -586,17 +582,16 @@
 ## СЛАЙД 12: SECURITY ARCHITECTURE
 
 **Authentication:**
-- OAuth 2.0 для third-party integrations
-- JWT tokens с 1-hour expiration
-- Refresh token rotation (автоматическая смена)
+- JWT tokens с коротким временем жизни (15 минут для access token)
+- Refresh token rotation (автоматическая смена, 30 дней)
 - Password policy: min 8 chars, complexity requirements
 - ASP.NET Identity для управления пользователями
 
 **Authorization:**
-- RBAC: investor, analyst, admin roles
-- Portfolio sharing с granular permissions
+- RBAC: ADMIN, USER roles
 - Row-level security для user data (фильтрация по user_id)
 - Policy-based authorization в ASP.NET Core
+- Приватные портфели (IsPrivate флаг)
 
 **Data Protection:**
 - TLS 1.3 for transit (HTTPS)
@@ -662,8 +657,9 @@
 - Cache: Redis cluster (managed service)
 - Load balancer: ALB (AWS) / Azure LB
 - CDN: Cloudflare / AWS CloudFront
-- Monitoring: Prometheus + OpenSearch
-- Logging: OpenSearch Dashboards
+- Monitoring: OpenTelemetry (метрики и трейсинг)
+- Logging: OpenSearch (централизованное логирование)
+- Dashboards: OpenSearch Dashboards (визуализация)
 
 **Deployment Strategy:**
 - Blue-Green deployment для zero-downtime
@@ -674,15 +670,14 @@
 
 ## СЛАЙД 15: MONITORING & OBSERVABILITY
 
-**Metrics (Prometheus):**
+**Metrics & Tracing (OpenTelemetry):**
 - API response time (p50, p95, p99)
 - Database query time
 - Cache hit ratio (Redis)
 - WebSocket connections (SignalR)
-- Alert trigger rate
-- User activity
 - Kafka message processing rate
 - Error rates по сервисам
+- Distributed tracing между сервисами
 
 **Dashboards (OpenSearch Dashboards):**
 - System health (CPU, memory, disk)
@@ -693,15 +688,16 @@
 - Kafka topics monitoring
 
 **Logging (OpenSearch):**
-- Structured JSON logs (Serilog)
+- Structured JSON logs
 - Log levels: ERROR, WARN, INFO, DEBUG
 - Centralized search и analysis
-- Error tracking integration (Sentry, если используется)
 - Correlation IDs для трейсинга запросов
+- Интеграция с OpenTelemetry для контекста
 
-**Alerting:**
-- Prometheus Alertmanager
-- Alerts на высокую latency, error rates, недоступность сервисов
+**Observability:**
+- OpenTelemetry для метрик, трейсинга и логов
+- OpenSearch для хранения и анализа логов
+- OpenSearch Dashboards для визуализации
 
 ---
 
@@ -736,7 +732,7 @@
 ✓ Real-time infrastructure с SignalR WebSocket
 ✓ Event-Driven Architecture с Kafka
 ✓ Оптимизированные databases с индексами
-✓ Multi-layer security (OAuth, JWT, encryption)
+✓ Multi-layer security (JWT, encryption)
 ✓ Comprehensive monitoring и observability
 
 **Бизнес-результаты:**
