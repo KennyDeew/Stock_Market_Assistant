@@ -1,0 +1,16 @@
+{
+  "profiles": {
+    "Docker Compose": {
+      "commandName": "DockerCompose",
+      "commandVersion": "1.0",
+      "serviceActions": {
+        "stockmarketassistant.frontend": "StartDebugging",
+        "notificationservice": "StartDebugging",
+        "portfolioservice.webapi": "StartDebugging",
+        "stockcardservice.webapi": "StartDebugging",
+        "authservice.webapi": "StartDebugging",
+        "analyticsservice.webapi": "StartDebugging"
+      }
+    }
+  }
+}
