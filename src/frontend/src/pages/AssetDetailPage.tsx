@@ -24,6 +24,9 @@ import {
   Tooltip as RechartsTooltip,
   ResponsiveContainer,
 } from 'recharts';
+
+// 🔌 SignalR
+import { HubConnection, HubConnectionBuilder } from '@microsoft/signalr';
 import AppLayout from '../components/AppLayout';
 
 // Типы
@@ -33,25 +36,14 @@ interface MoexSecurity {
   shortname: string;
 }
 
-interface MoexMarketData {
-  boardid: string;
-  last: number | null;
-  lastchange: number | null;
-  lastchangeprcnt: number | null;
+interface PriceUpdate {
+  ticker: string;
+  price: number;
+  change: number;
+  changePercent: number;
   time: string;
   volume: number;
-  numtrades: number;
-}
-
-interface MoexResponse {
-  securities: {
-    data: [string, string, string][];
-    columns: string[];
-  };
-  marketdata: {
-    data: [string, number | null, number | null, number | null, string, number, number][];
-    columns: string[];
-  };
+  numTrades: number;
 }
 
 export default function AssetDetailPage() {
@@ -59,100 +51,150 @@ export default function AssetDetailPage() {
   const navigate = useNavigate();
 
   const [security, setSecurity] = useState<MoexSecurity | null>(null);
-  const [data, setData] = useState<MoexMarketData | null>(null);
+  const [price, setPrice] = useState<number | null>(null);
+  const [change, setChange] = useState<number | null>(null);
+  const [changePercent, setChangePercent] = useState<number | null>(null);
+  const [volume, setVolume] = useState<number>(0);
+  const [numTrades, setNumTrades] = useState<number>(0);
+  const [time, setTime] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [priceHistory, setPriceHistory] = useState<Array<{ time: string; price: number; change: number }>>([]);
+  const [priceHistory, setPriceHistory] = useState<Array<{ time: string; price: number }>>([]);
 
-  const fetchData = async () => {
+  const [connection, setConnection] = useState<HubConnection | null>(null);
+
+  // 🔹 Создание подключения
+  useEffect(() => {
     if (!ticker) return;
 
-    setLoading(true);
-    setError(null);
+    const newConnection = new HubConnectionBuilder()
+      .withUrl(import.meta.env.VITE_STOCKCARD_API_URL + '/pricehub')
+      .withAutomaticReconnect()
+      .build();
 
-    try {
-      // Шаг 1: Найти бумагу по тикеру
-      const secResponse = await fetch(
-        `https://iss.moex.com/iss/securities.json?q=${ticker}&limit=1&engine=stock&market=shares`
-      );
-      const secData: { securities: { data: any[]; columns: string[] } } = await secResponse.json();
+    setConnection(newConnection);
 
-      if (!secData.securities.data.length) {
-        setError('Актив не найден на МосБирже');
-        setLoading(false);
-        return;
+    return () => {
+      if (newConnection) {
+        newConnection.stop();
       }
+    };
+  }, [ticker]);
 
-      const [secRow] = secData.securities.data;
-      const columns = secData.securities.columns;
-      const sec = columns.reduce((obj: any, col, i) => {
-        obj[col.toLowerCase()] = secRow[i];
-        return obj;
-      }, {}) as MoexSecurity;
+  // 🔹 Запуск и подписка
+  useEffect(() => {
+    if (!connection || !ticker) return;
 
-      setSecurity(sec);
+    const startConnection = async () => {
+      try {
+        await connection.start();
+        console.log('SignalR: подключено к pricehub');
 
-      // Шаг 2: Получить данные с marketdata
-      const dataResponse = await fetch(
-        `https://iss.moex.com/iss/engines/stock/markets/shares/securities/${sec.secid}/marketdata.json`
-      );
-      const marketData: MoexResponse = await dataResponse.json();
+        // Подписываемся на тикер (как массив)
+        await connection.invoke('Subscribe', [ticker.toUpperCase()]);
 
-      const marketRows = marketData.marketdata.data;
-      const marketColumns = marketData.marketdata.columns.map((c) => c.toLowerCase());
+        // Обработка входящих обновлений
+        connection.on('PriceUpdate', (update: PriceUpdate) => {
+          if (update.ticker.toUpperCase() !== ticker.toUpperCase()) return;
 
-      const filtered = marketRows.find((row) => {
-        const boardid = row[marketColumns.indexOf('boardid')];
-        return boardid === 'TQBR'; // Основной рынок
-      });
+          setPrice(Number(update.price) || 0);
+          setChange(Number(update.change) || 0);
+          setChangePercent(Number(update.changePercent) || 0);
+          setVolume(Number(update.volume) || 0);
+          setNumTrades(Number(update.numTrades) || 0);
+          setTime(update.time || new Date().toISOString().split('T')[1].slice(0, 8));
+          setLastUpdated(new Date());
 
-      if (!filtered) {
-        setError('Нет данных по котировкам');
-        setLoading(false);
-        return;
-      }
+          // Добавляем в историю
+          setPriceHistory((prev) => {
+            const next = [
+              ...prev,
+              { time: update.time, price: update.price },
+            ].slice(-60); // последние 60 точек
+            return next;
+          });
 
-      const marketObj: any = {};
-      filtered.forEach((value, i) => {
-        marketObj[marketColumns[i]] = value;
-      });
-
-      const newData = marketObj as MoexMarketData;
-      setData(newData);
-      setLastUpdated(new Date());
-
-      // Добавляем в историю цен
-      if (newData.last !== null) {
-        setPriceHistory((prev) => {
-          const next = [
-            ...prev,
-            {
-              time: newData.time || format(new Date(), 'HH:mm:ss'),
-              price: newData.last!,
-              change: newData.lastchangeprcnt || 0,
-            },
-          ].slice(-60); // ← оставляем 60 последних значений (~5 минут)
-          return next;
+          setLoading(false);
+          setError(null);
         });
+
+        // Обработка ошибок (если сервер отправляет)
+        connection.on('Error', (message: string) => {
+          setError(`Ошибка: ${message}`);
+        });
+      } catch (err) {
+        console.error('Ошибка подключения к SignalR', err);
+        setError('Не удалось подключиться к стриму цен');
+        setLoading(false);
       }
-    } catch (err) {
-      setError('Не удалось загрузить данные с МосБиржи');
-      console.error(err);
-    } finally {
-      setLoading(false);
+    };
+
+    startConnection();
+
+    // Отписка при размонтировании
+    return () => {
+      if (connection.state === 'Connected') {
+        connection.invoke('Unsubscribe', [ticker.toUpperCase()]);
+      }
+      connection.off('PriceUpdate');
+      connection.off('Error');
+    };
+  }, [connection, ticker]);
+
+  // 🔹 Получение информации о бумаге (разово)
+  useEffect(() => {
+    const fetchSecurityInfo = async () => {
+      if (!ticker) return;
+
+      try {
+        const secResponse = await fetch(
+          `https://iss.moex.com/iss/securities.json?q=${ticker}&limit=1&engine=stock&market=shares`
+        );
+        const secData = await secResponse.json();
+
+        if (!secData.securities.data.length) {
+          setError('Актив не найден на МосБирже');
+          return;
+        }
+
+        const [secRow] = secData.securities.data;
+        const columns = secData.securities.columns;
+        const sec = columns.reduce((obj: any, col: string, index: number) => {
+          obj[col.toLowerCase()] = secRow[index];
+          return obj;
+        }, {}) as MoexSecurity;
+
+        setSecurity(sec);
+      } catch (err) {
+        console.error('Ошибка загрузки информации о бумаге', err);
+        setError('Не удалось загрузить информацию об активе');
+      }
+    };
+
+    fetchSecurityInfo();
+  }, [ticker]);
+
+  // 🔹 Ручное обновление (опционально)
+  const handleRefresh = () => {
+    if (connection?.state === 'Connected') {
+      connection.invoke('ForceUpdate', ticker); // если реализовано
+    } else {
+      window.location.reload();
     }
   };
 
-  const handleRefresh = () => {
-    fetchData();
-  };
+  // Подготовка данных для графика
+  const chartData = useMemo(() => {
+    return priceHistory.map((point) => {
+      const date = new Date(point.time);
+      return {
+        name: date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        price: point.price,
+      };
+    });
+  }, [priceHistory]);
 
-  useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchData, 5000);
-    return () => clearInterval(interval);
-  }, [ticker]);
 
   if (!ticker) {
     return (
@@ -162,15 +204,6 @@ export default function AssetDetailPage() {
     );
   }
 
-  // Подготовка данных для графика
-  const chartData = useMemo(() => {
-    return priceHistory.map((point) => ({
-      name: point.time.slice(-8), // HH:MM:SS
-      price: point.price,
-      fill: point.change >= 0 ? '#4caf50' : '#f44336',
-    }));
-  }, [priceHistory]);
-
   return (
     <AppLayout>
       <Container>
@@ -179,15 +212,22 @@ export default function AssetDetailPage() {
             {security?.shortname || ticker}
           </Typography>
           <Tooltip title="Обновить">
-            <IconButton onClick={handleRefresh} disabled={loading} size="small" sx={{ ml: 1 }}>
-              <RefreshIcon />
-            </IconButton>
+            <span>
+              <IconButton
+                onClick={handleRefresh}
+                disabled={loading}
+                size="small"
+                sx={{ ml: 1 }}
+              >
+                <RefreshIcon />
+              </IconButton>
+            </span>
           </Tooltip>
         </Box>
 
         {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
 
-        {loading && !data ? (
+        {loading && !price ? (
           <Box display="flex" justifyContent="center" my={4}>
             <CircularProgress />
           </Box>
@@ -196,29 +236,29 @@ export default function AssetDetailPage() {
             {/* Текущая цена */}
             <Box mb={3}>
               <Typography variant="h4" fontWeight="bold" color="text.primary">
-                {data?.last != null ? data.last.toFixed(2) : '—'} ₽
+                {price != null ? price.toFixed(2) : '—'} ₽
               </Typography>
               <Typography
                 variant="body1"
-                color={data?.lastchangeprcnt != null && data.lastchangeprcnt >= 0 ? 'success.main' : 'error.main'}
+                color={changePercent != null && changePercent >= 0 ? 'success.main' : 'error.main'}
                 fontWeight="bold"
               >
-                {data?.lastchange != null && data.lastchange >= 0 ? '+' : ''}
-                {data?.lastchange != null ? data.lastchange.toFixed(2) : '0.00'} ₽
+                {change != null && change >= 0 ? '+' : ''}
+                {change != null ? change.toFixed(2) : '0.00'} ₽
                 {' / '}
-                {data?.lastchangeprcnt != null && data.lastchangeprcnt >= 0 ? '+' : ''}
-                {data?.lastchangeprcnt != null ? data.lastchangeprcnt.toFixed(2) : '0.00'}%
+                {changePercent != null && changePercent >= 0 ? '+' : ''}
+                {changePercent != null ? changePercent.toFixed(2) : '0.00'}%
               </Typography>
             </Box>
 
             {/* График */}
             {priceHistory.length > 1 && (
-              <Box mb={3} sx={{ height: 200 }}>
+              <Box mb={3} sx={{ height: 200, minHeight: 200, width: '100%', position: 'relative' }}>
                 <Typography variant="subtitle2" gutterBottom>
-                  Динамика цены (обновляется каждые 5 сек)
+                  Динамика цены (в реальном времени)
                 </Typography>
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
                     <XAxis dataKey="name" tick={{ fontSize: 10 }} />
                     <YAxis domain={['dataMin', 'dataMax']} tick={{ fontSize: 10 }} width={60} />
@@ -246,13 +286,13 @@ export default function AssetDetailPage() {
                 Последнее обновление: {lastUpdated ? format(lastUpdated, 'HH:mm:ss', { locale: ru }) : '—'}
               </Typography>
               <Typography variant="body2">
-                <strong>Объём:</strong> {(data?.volume || 0).toLocaleString()} ₽
+                <strong>Объём:</strong> {volume.toLocaleString()} ₽
               </Typography>
               <Typography variant="body2">
-                <strong>Сделок:</strong> {data?.numtrades?.toLocaleString() || '—'}
+                <strong>Сделок:</strong> {numTrades.toLocaleString()}
               </Typography>
               <Typography variant="body2">
-                <strong>Время:</strong> {data?.time || '—'}
+                <strong>Время:</strong> {time ? time.slice(11, 19) : '—'}
               </Typography>
             </Box>
           </Paper>
