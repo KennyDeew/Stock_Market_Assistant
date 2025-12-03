@@ -142,8 +142,8 @@ public class AutofacModule(IConfiguration configuration) : Module
 
     /// <summary>
     /// Регистрирует DbContext для Entity Framework Core.
-    /// DbContext всегда регистрируется. В production-режиме используется PostgreSQL, в тестах — InMemoryDatabase.
-    /// Если строка подключения отсутствует в production, используется InMemory база данных с предупреждением.
+    /// В production-режиме используется PostgreSQL, в тестах — InMemoryDatabase.
+    /// Если строка подключения отсутствует в production, используется InMemory с предупреждением.
     /// </summary>
     /// <param name="builder">Строитель контейнера Autofac</param>
     private void RegisterDbContext(ContainerBuilder builder)
@@ -153,23 +153,22 @@ public class AutofacModule(IConfiguration configuration) : Module
             var connectionString = _configuration.GetConnectionString("portfolio-db");
             if (!string.IsNullOrEmpty(connectionString))
             {
-                // Используем метод расширения для Autofac с PostgreSQL
+                // Используем метод расширения для Autofac
                 builder.ConfigureContext(connectionString);
             }
             else
             {
-                // Всегда регистрируем DbContext, даже если строка подключения отсутствует
-                // Используем InMemory базу данных с предупреждением
-                Log.Warning("Строка подключения 'portfolio-db' не найдена в конфигурации. " +
-                           "Используется InMemory база данных. " +
-                           "Данные не будут сохраняться между перезапусками приложения. " +
-                           "Для production окружения необходимо настроить строку подключения 'portfolio-db'.");
+                // Строка подключения отсутствует - используем InMemory с предупреждением
+                Log.Warning(
+                    "Строка подключения 'portfolio-db' не найдена в конфигурации. " +
+                    "Используется InMemory база данных. Это не рекомендуется для production окружения!");
+
                 builder.ConfigureInMemoryContext(_databaseRoot);
             }
         }
         else
         {
-            // В тестовом режиме всегда используем InMemory
+            // метод расширения для InMemory
             builder.ConfigureInMemoryContext(_databaseRoot);
         }
     }

@@ -47,7 +47,7 @@ public static class EntityFrameworkInstaller
             optionsBuilder.UseSnakeCaseNamingConvention();
 
             return new DatabaseContext(optionsBuilder.Options);
-        }).InstancePerLifetimeScope();
+        }).As<DatabaseContext>().InstancePerLifetimeScope();
     }
 
     /// <summary>
@@ -62,6 +62,6 @@ public static class EntityFrameworkInstaller
             // Используем общий InMemoryDatabaseRoot для всех тестов
             optionsBuilder.UseInMemoryDatabase("IntegrationTestDb", databaseRoot);
             return new DatabaseContext(optionsBuilder.Options);
-        }).InstancePerLifetimeScope();
+        }).As<DatabaseContext>().InstancePerLifetimeScope();
     }
 }
