@@ -114,7 +114,7 @@ function Write-Log {
         [string]$Message
     )
 
-    if ($null -eq $script:LogFile) {
+    if ($null -eq $script:LogFile -or [string]::IsNullOrWhiteSpace($script:LogFile)) {
         return
     }
 
@@ -123,7 +123,12 @@ function Write-Log {
     if ($messageLevel -ge $script:CurrentLogLevel) {
         $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
         $logEntry = "[$timestamp] [$Level] $Message"
-        Add-Content -Path $script:LogFile -Value $logEntry
+        try {
+            Add-Content -Path $script:LogFile -Value $logEntry -ErrorAction Stop
+        }
+        catch {
+            # Игнорируем ошибки записи в лог, чтобы не прерывать выполнение скрипта
+        }
     }
 }
 
@@ -296,9 +301,14 @@ function Stop-AndRemoveDockerContainers {
 
             foreach ($line in $stopOutput) {
                 Write-Host $line -ForegroundColor Yellow
-                if ($null -ne $script:LogFile) {
+                if ($null -ne $script:LogFile -and -not [string]::IsNullOrWhiteSpace($script:LogFile)) {
                     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-                    Add-Content -Path $script:LogFile -Value "[$timestamp] [WARNING] $line" -ErrorAction SilentlyContinue
+                    try {
+                        Add-Content -Path $script:LogFile -Value "[$timestamp] [WARNING] $line" -ErrorAction Stop
+                    }
+                    catch {
+                        # Игнорируем ошибки записи в лог
+                    }
                 }
             }
         }
@@ -307,9 +317,14 @@ function Stop-AndRemoveDockerContainers {
         $errorMsg = "Ошибка при остановке контейнеров: $($_.Exception.Message)"
         Write-Host "❌ ОШИБКА: $errorMsg" -ForegroundColor Red
         Write-Log "ERROR" $errorMsg
-        if ($null -ne $script:LogFile) {
+        if ($null -ne $script:LogFile -and -not [string]::IsNullOrWhiteSpace($script:LogFile)) {
             $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-            Add-Content -Path $script:LogFile -Value "[$timestamp] [ERROR] $errorMsg" -ErrorAction SilentlyContinue
+            try {
+                Add-Content -Path $script:LogFile -Value "[$timestamp] [ERROR] $errorMsg" -ErrorAction Stop
+            }
+            catch {
+                # Игнорируем ошибки записи в лог
+            }
         }
     }
 
@@ -405,22 +420,37 @@ try {
                 $script:errors += $line
                 # Выводим ошибку сразу с красным цветом
                 Write-Host $line -ForegroundColor Red
-                if ($null -ne $errorLogFile) {
+                if ($null -ne $errorLogFile -and -not [string]::IsNullOrWhiteSpace($errorLogFile)) {
                     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-                    Add-Content -Path $errorLogFile -Value "[$timestamp] [ERROR] $line" -ErrorAction SilentlyContinue
+                    try {
+                        Add-Content -Path $errorLogFile -Value "[$timestamp] [ERROR] $line" -ErrorAction Stop
+                    }
+                    catch {
+                        # Игнорируем ошибки записи в лог
+                    }
                 }
                 # Также записываем в общий лог
-                if ($null -ne $script:LogFile) {
+                if ($null -ne $script:LogFile -and -not [string]::IsNullOrWhiteSpace($script:LogFile)) {
                     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-                    Add-Content -Path $script:LogFile -Value "[$timestamp] [ERROR] $line" -ErrorAction SilentlyContinue
+                    try {
+                        Add-Content -Path $script:LogFile -Value "[$timestamp] [ERROR] $line" -ErrorAction Stop
+                    }
+                    catch {
+                        # Игнорируем ошибки записи в лог
+                    }
                 }
             }
             else {
                 # Обычный вывод - показываем сразу
                 Write-Host $line
                 # Записываем только в общий лог, не в файл ошибок
-                if ($null -ne $script:LogFile) {
-                    Add-Content -Path $script:LogFile -Value $line -ErrorAction SilentlyContinue
+                if ($null -ne $script:LogFile -and -not [string]::IsNullOrWhiteSpace($script:LogFile)) {
+                    try {
+                        Add-Content -Path $script:LogFile -Value $line -ErrorAction Stop
+                    }
+                    catch {
+                        # Игнорируем ошибки записи в лог
+                    }
                 }
             }
         }
@@ -458,19 +488,29 @@ try {
         else {
             $errorMsg = "Docker Compose завершен с ошибкой (код: $LASTEXITCODE)"
             Write-Log "ERROR" $errorMsg
-            if ($null -ne $errorLogFile) {
+            if ($null -ne $errorLogFile -and -not [string]::IsNullOrWhiteSpace($errorLogFile)) {
                 $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-                Add-Content -Path $errorLogFile -Value "[$timestamp] [ERROR] $errorMsg" -ErrorAction SilentlyContinue
+                try {
+                    Add-Content -Path $errorLogFile -Value "[$timestamp] [ERROR] $errorMsg" -ErrorAction Stop
+                }
+                catch {
+                    # Игнорируем ошибки записи в лог
+                }
             }
         }
     }
     catch {
         $errorMsg = "Ошибка при выполнении Docker Compose: $($_.Exception.Message)"
         Write-Log "ERROR" $errorMsg
-        if ($null -ne $errorLogFile) {
+        if ($null -ne $errorLogFile -and -not [string]::IsNullOrWhiteSpace($errorLogFile)) {
             $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-            Add-Content -Path $errorLogFile -Value "[$timestamp] [ERROR] $errorMsg" -ErrorAction SilentlyContinue
-            Add-Content -Path $errorLogFile -Value "[$timestamp] [ERROR] StackTrace: $($_.Exception.StackTrace)" -ErrorAction SilentlyContinue
+            try {
+                Add-Content -Path $errorLogFile -Value "[$timestamp] [ERROR] $errorMsg" -ErrorAction Stop
+                Add-Content -Path $errorLogFile -Value "[$timestamp] [ERROR] StackTrace: $($_.Exception.StackTrace)" -ErrorAction Stop
+            }
+            catch {
+                # Игнорируем ошибки записи в лог
+            }
         }
         throw
     }
@@ -484,14 +524,19 @@ catch {
     Write-Host $errorMsg -ForegroundColor Red
 
     # Записываем ошибку в файл лога, если он доступен
-    if ($null -ne $script:LogFile) {
+    if ($null -ne $script:LogFile -and -not [string]::IsNullOrWhiteSpace($script:LogFile)) {
         $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-        Add-Content -Path $script:LogFile -Value "[$timestamp] [CRITICAL] Критическая ошибка в скрипте: $errorMsg" -ErrorAction SilentlyContinue
-        if ($errorStackTrace) {
-            Add-Content -Path $script:LogFile -Value "[$timestamp] [CRITICAL] StackTrace: $errorStackTrace" -ErrorAction SilentlyContinue
+        try {
+            Add-Content -Path $script:LogFile -Value "[$timestamp] [CRITICAL] Критическая ошибка в скрипте: $errorMsg" -ErrorAction Stop
+            if ($errorStackTrace) {
+                Add-Content -Path $script:LogFile -Value "[$timestamp] [CRITICAL] StackTrace: $errorStackTrace" -ErrorAction Stop
+            }
+            Write-Host ""
+            Write-Host "Ошибка записана в лог: $script:LogFile" -ForegroundColor Yellow
         }
-        Write-Host ""
-        Write-Host "Ошибка записана в лог: $script:LogFile" -ForegroundColor Yellow
+        catch {
+            # Игнорируем ошибки записи в лог, чтобы не прерывать вывод ошибки
+        }
     }
     else {
         Write-Log "CRITICAL" "Критическая ошибка в скрипте: $errorMsg"
