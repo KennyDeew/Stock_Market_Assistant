@@ -22,6 +22,7 @@ services:
       - OpenSearchConfig__Password=admin
       - OpenSearchConfig__Url=http://opensearch:9200
       - FRONTEND_ORIGIN=http://localhost:5273 
+      
       - Aspire__Confluent__Kafka__Producer__BootstrapServers=kafka:9092
       - Aspire__Confluent__Kafka__Producer__ClientId=my-docker-producer
       - Aspire__Confluent__Kafka__Producer__Acks=all
