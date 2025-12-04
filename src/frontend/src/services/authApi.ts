@@ -11,7 +11,7 @@ import type {
  * Создаём отдельный инстанс для auth API
  */
 const authApi = axios.create({
-  baseURL: '/api/v1/auth',
+  baseURL: 'auth',
   headers: {
     'Content-Type': 'application/json',
   },

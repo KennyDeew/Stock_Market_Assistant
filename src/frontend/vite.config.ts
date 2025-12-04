@@ -10,10 +10,10 @@ export default defineConfig({
     port: 5273,
     host: '0.0.0.0',
     proxy: {
-      '/api/auth': {
+      '/auth': {
         target: process.env.VITE_AUTH_API_URL || 'http://localhost:8080',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/auth/, ''),
+        rewrite: (path) => path.replace(/^\/auth/, '/api/v1/auth'),
       },
       '/api/v1': {
         target: process.env.VITE_STOCKCARD_API_URL || 'http://localhost:8081',
