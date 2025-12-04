@@ -55,6 +55,71 @@
 			"options": {
 				"cwd": "${workspaceFolder}"
 			}
+		},
+		{
+			"label": "Start Docker Compose",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-ExecutionPolicy",
+				"Bypass",
+				"-File",
+				"${workspaceFolder}/scripts/start-docker-compose.ps1",
+				"-Build"
+			],
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated",
+				"focus": true,
+				"clear": true
+			},
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"isBackground": false,
+			"runOptions": {
+				"runOn": "default"
+			}
+		},
+		{
+			"label": "Start Docker Compose (Detached)",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-ExecutionPolicy",
+				"Bypass",
+				"-File",
+				"${workspaceFolder}/scripts/start-docker-compose.ps1",
+				"-Build",
+				"-Detached"
+			],
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			},
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"isBackground": true
+		},
+		{
+			"label": "Stop Docker Compose",
+			"type": "shell",
+			"command": "docker",
+			"args": [
+				"compose",
+				"down"
+			],
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			},
+			"options": {
+				"cwd": "${workspaceFolder}"
+			}
 		}
 	]
 }

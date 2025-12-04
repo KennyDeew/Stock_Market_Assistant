@@ -36,10 +36,17 @@ public static class DependencyInjection
         services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
             .Configure<IOptionsMonitor<JwtOptions>>((opts, jwt) =>
             {
+                var jwtOptions = jwt.CurrentValue;
+                if (string.IsNullOrEmpty(jwtOptions.Key))
+                {
+                    throw new InvalidOperationException(
+                        "JWT Key не настроен. Установите значение 'Jwt:Key' в конфигурации или переменной окружения.");
+                }
+
                 opts.SaveToken = true;
                 opts.MapInboundClaims = false;
                 opts.TokenValidationParameters =
-                    TokenValidationParametersFactory.CreateWithLifeTime(jwt.CurrentValue);
+                    TokenValidationParametersFactory.CreateWithLifeTime(jwtOptions);
             });
 
         services.AddAuthorization();

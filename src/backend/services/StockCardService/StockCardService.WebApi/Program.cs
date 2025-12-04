@@ -19,7 +19,7 @@ using StockMarketAssistant.StockCardService.WebApi.Hubs;
 namespace StockMarketAssistant.StockCardService.WebApi
 {
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public class Program
     {
@@ -55,8 +55,32 @@ namespace StockMarketAssistant.StockCardService.WebApi
             });
 
             //Настройка конфигурации Kafka
-            builder.Services.Configure<KafkaOptions>(
-                builder.Configuration.GetSection("KafkaOptions"));
+            // Используем connection string от Aspire, если доступен, иначе используем appsettings.json
+            var kafkaConnectionString = builder.Configuration.GetConnectionString("kafka");
+            var kafkaOptions = builder.Configuration.GetSection("KafkaOptions").Get<KafkaOptions>();
+
+            // Если Aspire предоставил connection string, используем его
+            if (!string.IsNullOrEmpty(kafkaConnectionString))
+            {
+                if (kafkaOptions == null)
+                {
+                    kafkaOptions = new KafkaOptions();
+                }
+                kafkaOptions.BootstrapServers = kafkaConnectionString;
+            }
+            // Если connection string не предоставлен Aspire, используем значение из appsettings.json
+            else if (kafkaOptions == null || string.IsNullOrEmpty(kafkaOptions.BootstrapServers))
+            {
+                kafkaOptions = new KafkaOptions
+                {
+                    BootstrapServers = "localhost:9092" // Fallback на localhost
+                };
+            }
+
+            builder.Services.Configure<KafkaOptions>(options =>
+            {
+                options.BootstrapServers = kafkaOptions.BootstrapServers;
+            });
 
             // Настройка логирования
             // ----------------------------------------------

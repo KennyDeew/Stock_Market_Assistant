@@ -1,31 +1,36 @@
-version: '3.8'
-
 services:
   # --- Бэкенд-сервисы ---
   gateway-api:
     build:
-      context: ../backend/Gateway.WebApi
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: src/backend/gateway/Gateway.WebApi/Dockerfile
     ports:
       - "8080:8080"
     environment:
       - ASPNETCORE_HTTP_PORTS=8080
+      - ASPNETCORE_ENVIRONMENT=Development
       - FRONTEND_ORIGIN=http://localhost:5273
     depends_on:
-      - pg-auth-db
-      - cache
+      - authservice-api
+      - stockcardservice-api
+      - portfolioservice-api
+      - analyticsservice-api
     networks:
       - aspire-net
 
   authservice-api:
     build:
-      context: ../backend/AuthService.WebApi
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: src/backend/services/AuthService/src/AuthService.WebApi/Dockerfile
     ports:
       - "8081:8080"
     environment:
       - ASPNETCORE_HTTP_PORTS=8080
+      - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__Database=Host=pg-auth-db;Port=5432;Database=Database;Username=postgres;Password=postgres
+      - Jwt__Key=YourSecretKeyForJwtTokenGenerationAndValidationMustBeAtLeast32CharactersLong
+      - Jwt__Issuer=AuthService
+      - Jwt__Audience=AuthServiceClients
       - FRONTEND_ORIGIN=http://localhost:5273
     depends_on:
       - pg-auth-db
@@ -34,12 +39,13 @@ services:
 
   stockcardservice-api:
     build:
-      context: ../backend/StockCardService.WebApi
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: src/backend/services/StockCardService/StockCardService.WebApi/Dockerfile
     ports:
       - "8082:8080"
     environment:
       - ASPNETCORE_HTTP_PORTS=8080
+      - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__pg-stock-card-db=Host=pg-stock-card-db;Port=5432;Database=stock-card-db;Username=postgres;Password=postgres
       - ConnectionStrings__mongo=mongodb://mongo-stock-card-db:27017/finantial-report-db
       - FRONTEND_ORIGIN=http://localhost:5273
@@ -52,13 +58,16 @@ services:
 
   portfolioservice-api:
     build:
-      context: ../backend/PortfolioService.WebApi
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: src/backend/services/PortfolioService/PortfolioService.WebApi/Dockerfile
     ports:
       - "8083:8080"
     environment:
       - ASPNETCORE_HTTP_PORTS=8080
+      - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__portfolio-db=Host=pg-portfolio-db;Port=5432;Database=portfolio-db;Username=postgres;Password=postgres
+      - ConnectionStrings__kafka=kafka:9092
+      - KafkaOptions__BootstrapServers=kafka:9092
       - OpenSearchConfig__Url=http://opensearch:9200
       - FRONTEND_ORIGIN=http://localhost:5273
     depends_on:
@@ -71,13 +80,16 @@ services:
 
   analyticsservice-api:
     build:
-      context: ../backend/services/AnalyticsService.WebApi
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: src/backend/services/AnalyticsService/AnalyticsService.WebApi/Dockerfile
     ports:
       - "8084:8080"
     environment:
       - ASPNETCORE_HTTP_PORTS=8080
+      - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__analytics-db=Host=pg-analytics-db;Port=5432;Database=analytics-db;Username=postgres;Password=postgres
+      - ConnectionStrings__kafka=kafka:9092
+      - Kafka__BootstrapServers=kafka:9092
       - OpenSearchConfig__Url=http://opensearch:9200
       - PortfolioService__BaseUrl=http://portfolioservice-api:8080
       - FRONTEND_ORIGIN=http://localhost:5273
@@ -90,13 +102,15 @@ services:
 
   notificationservice-api:
     build:
-      context: /src/backend/services/NotificationService/Notification
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: src/backend/services/NotificationService/Notification/Dockerfile
     ports:
       - "8085:8080"
     environment:
       - ASPNETCORE_HTTP_PORTS=8080
+      - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__notificationDb=Host=notification-db;Port=5432;Database=notificationDb;Username=postgres;Password=postgres
+      - ConnectionStrings__kafka=kafka:9092
       - OpenSearchConfig__Url=http://opensearch:9200
       - FRONTEND_ORIGIN=http://localhost:5273
     depends_on:
@@ -109,21 +123,19 @@ services:
   # --- Фронтенд ---
   webui:
     build:
-      context: ../frontend
+      context: src/frontend
       dockerfile: Dockerfile
     ports:
       - "5273:5273"
     environment:
       - PORT=5273
-      - VITE_AUTH_API_URL=http://localhost:8081
-      - VITE_STOCKCARD_API_URL=http://localhost:8082
-      - VITE_PORTFOLIO_API_URL=http://localhost:8083
-      - VITE_ANALYTICS_API_URL=http://localhost:8084
+      - VITE_AUTH_API_URL=http://localhost:8080
+      - VITE_STOCKCARD_API_URL=http://localhost:8080
+      - VITE_PORTFOLIO_API_URL=http://localhost:8080
+      - VITE_ANALYTICS_API_URL=http://localhost:8080
+      - VITE_GATEWAY_URL=http://localhost:8080
     depends_on:
-      - authservice-api
-      - stockcardservice-api
-      - portfolioservice-api
-      - analyticsservice-api
+      - gateway-api
     networks:
       - aspire-net
 

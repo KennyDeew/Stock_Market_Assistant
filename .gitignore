@@ -430,3 +430,6 @@ FodyWeavers.xsd
 # Reports folder in AnalyticsService
 src/backend/services/AnalyticsService/reports/
 .cursorrules
+
+# Build logs directory
+build_log/

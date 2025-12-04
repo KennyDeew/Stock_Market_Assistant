@@ -82,7 +82,12 @@
             .WithReference(redis)
             .WithReference(pgStockCardDb)
             .WithReference(mongoStockCardDb)
-            .WaitFor(pgStockCardDb);
+            .WithReference(kafka)
+            .WithEnvironment("ConnectionStrings__stock-card-db", pgStockCardDb.Resource.ConnectionStringExpression)
+            .WithEnvironment("ConnectionStrings__finantial-report-db", mongoStockCardDb.Resource.ConnectionStringExpression)
+            .WithEnvironment("KafkaOptions__BootstrapServers", kafka.Resource.ConnectionStringExpression)
+            .WaitFor(pgStockCardDb)
+            .WaitFor(kafka);
 
         apiPortfolioService
             .WithReference(redis)
@@ -96,6 +101,8 @@
         apiNotificationService
             .WithReference(pgNotificationDb)
             .WithReference(kafka)
+            .WithEnvironment("ConnectionStrings__notificationDb", pgNotificationDb.Resource.ConnectionStringExpression)
+            .WithEnvironment("ConnectionStrings__kafka", kafka.Resource.ConnectionStringExpression)
             .WithEnvironment("OpenSearchConfig__Url", openSearch.GetEndpoint("http"))
             .WaitFor(pgNotificationDb)
             .WaitFor(kafka)

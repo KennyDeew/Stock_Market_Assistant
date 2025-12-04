@@ -13,6 +13,12 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["src/backend/services/AnalyticsService/AnalyticsService.WebApi/AnalyticsService.WebApi.csproj", "src/backend/services/AnalyticsService/AnalyticsService.WebApi/"]
+COPY ["src/StockMarketAssistant.ServiceDefaults/StockMarketAssistant.ServiceDefaults.csproj", "src/StockMarketAssistant.ServiceDefaults/"]
+COPY ["src/backend/services/AnalyticsService/AnalyticsService.Domain/AnalyticsService.Domain.csproj", "src/backend/services/AnalyticsService/AnalyticsService.Domain/"]
+COPY ["src/backend/services/AnalyticsService/AnalyticsService.Application/AnalyticsService.Application.csproj", "src/backend/services/AnalyticsService/AnalyticsService.Application/"]
+COPY ["src/backend/services/AnalyticsService/AnalyticsService.Infrastructure.EntityFramework/AnalyticsService.Infrastructure.EntityFramework.csproj", "src/backend/services/AnalyticsService/AnalyticsService.Infrastructure.EntityFramework/"]
+COPY ["src/backend/services/AnalyticsService/AnalyticsService.Infrastructure.Security/AnalyticsService.Infrastructure.Security.csproj", "src/backend/services/AnalyticsService/AnalyticsService.Infrastructure.Security/"]
+COPY ["src/backend/services/AnalyticsService/AnalyticsService.TestDataGenerator/AnalyticsService.TestDataGenerator.csproj", "src/backend/services/AnalyticsService/AnalyticsService.TestDataGenerator/"]
 RUN dotnet restore "./src/backend/services/AnalyticsService/AnalyticsService.WebApi/AnalyticsService.WebApi.csproj"
 COPY . .
 WORKDIR "/src/src/backend/services/AnalyticsService/AnalyticsService.WebApi"

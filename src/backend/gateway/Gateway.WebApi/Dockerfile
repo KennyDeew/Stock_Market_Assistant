@@ -13,6 +13,7 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["src/backend/gateway/Gateway.WebApi/Gateway.WebApi.csproj", "src/backend/gateway/Gateway.WebApi/"]
+COPY ["src/StockMarketAssistant.ServiceDefaults/StockMarketAssistant.ServiceDefaults.csproj", "src/StockMarketAssistant.ServiceDefaults/"]
 RUN dotnet restore "./src/backend/gateway/Gateway.WebApi/Gateway.WebApi.csproj"
 COPY . .
 WORKDIR "/src/src/backend/gateway/Gateway.WebApi"

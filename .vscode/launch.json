@@ -2,6 +2,35 @@
 	"version": "0.2.0",
 	"configurations": [
 		{
+			"name": "🚀 Start Docker Compose (All Services)",
+			"type": "PowerShell",
+			"request": "launch",
+			"script": "${workspaceFolder}/scripts/start-docker-compose.ps1",
+			"args": [
+				"-Build"
+			],
+			"cwd": "${workspaceFolder}",
+			"console": "integratedTerminal",
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated",
+				"focus": true,
+				"clear": true
+			}
+		},
+		{
+			"name": "🚀 Start Docker Compose (Detached)",
+			"type": "PowerShell",
+			"request": "launch",
+			"script": "${workspaceFolder}/scripts/start-docker-compose.ps1",
+			"args": [
+				"-Build",
+				"-Detached"
+			],
+			"cwd": "${workspaceFolder}",
+			"console": "integratedTerminal"
+		},
+		{
 			"name": "Test Portfolio Asset Creation",
 			"type": "PowerShell",
 			"request": "launch",
@@ -16,6 +45,47 @@
 			"script": "${workspaceFolder}/scripts/remove_all_docker_containers.ps1",
 			"args": [],
 			"cwd": "${workspaceFolder}"
+		},
+		{
+			"name": "📋 View Error Logs",
+			"type": "PowerShell",
+			"request": "launch",
+			"script": "${workspaceFolder}/scripts/view_error_logs.ps1",
+			"args": [
+				"-SaveToFile"
+			],
+			"cwd": "${workspaceFolder}",
+			"console": "integratedTerminal",
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated",
+				"focus": true,
+				"clear": true
+			}
+		},
+		{
+			"name": "📄 Open Latest Log",
+			"type": "PowerShell",
+			"request": "launch",
+			"script": "${workspaceFolder}/scripts/open_latest_log.ps1",
+			"args": [],
+			"cwd": "${workspaceFolder}",
+			"console": "integratedTerminal"
+		},
+		{
+			"name": "🔧 Fix Docker Build",
+			"type": "PowerShell",
+			"request": "launch",
+			"script": "${workspaceFolder}/scripts/fix_docker_build.ps1",
+			"args": [],
+			"cwd": "${workspaceFolder}",
+			"console": "integratedTerminal",
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated",
+				"focus": true,
+				"clear": true
+			}
 		},
 		{
 			"name": "Convert MMD to SVG",
