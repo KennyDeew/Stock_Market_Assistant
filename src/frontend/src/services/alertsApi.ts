@@ -2,7 +2,7 @@ import { createPrivateApiClient } from './apiClient';
 import type { CreateAlertRequest, AlertResponse } from '../types/alertTypes';
 
 // Создаём приватный API-клиент
-const api = createPrivateApiClient(import.meta.env.VITE_PORTFOLIO_API_URL + '/api/v1/alerts');
+const api = createPrivateApiClient('/api/v1/alerts');
 
 /**
  * API для работы с уведомлениями

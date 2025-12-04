@@ -2,7 +2,7 @@ import axios from 'axios';
 import { handleApiError } from './errorHandler';
 
 const accountApi = axios.create({
-  baseURL: import.meta.env.VITE_AUTH_API_URL + '/api/v1/account',
+  baseURL: '/api/v1/account',
   headers: {
     'Content-Type': 'application/json',
   },

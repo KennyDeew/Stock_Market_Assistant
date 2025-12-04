@@ -9,14 +9,23 @@ services:
     build:
       context: src/frontend
       dockerfile: Dockerfile
+      args:
+        - VITE_AUTH_API_URL=/api/auth
+        - VITE_STOCKCARD_API_URL=/api/v1
+        - VITE_PORTFOLIO_API_URL=/api/portfolio
+        - VITE_ANALYTICS_API_URL=/api/analytics
+        - VITE_API_BASE_URL=/
+        - PORT=5273
     ports:
       - "5273:5273"
+    
     environment:
       - PORT=5273
       - VITE_AUTH_API_URL=http://authservice.webapi:8080
       - VITE_STOCKCARD_API_URL=http://stockcardservice.webapi:8080
       - VITE_PORTFOLIO_API_URL=http://portfolioservice.webapi:8080
       - VITE_ANALYTICS_API_URL=http://analyticsservice.webapi:8080
+      - VITE_API_BASE_URL=/
     depends_on:
       - authservice.webapi
       - stockcardservice.webapi
@@ -106,6 +115,7 @@ services:
       # - "8081"
     networks:
       - aspire-net
+
 
   authservice.webapi:
     image: authservicewebapi

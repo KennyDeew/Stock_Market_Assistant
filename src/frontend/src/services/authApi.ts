@@ -11,7 +11,7 @@ import type {
  * Создаём отдельный инстанс для auth API
  */
 const authApi = axios.create({
-  baseURL: import.meta.env.VITE_AUTH_API_URL + '/api/v1/auth',
+  baseURL: '/api/v1/auth',
   headers: {
     'Content-Type': 'application/json',
   },
