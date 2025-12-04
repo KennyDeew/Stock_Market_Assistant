@@ -9,6 +9,7 @@ import AssetCatalogPage from './pages/AssetCatalogPage.tsx';
 import AssetDetailPage from './pages/AssetDetailPage.tsx';
 import ProfilePage from './pages/ProfilePage.tsx';
 import AlertsListPage from './pages/AlertsListPage.tsx';
+import AnalyticsPage from './pages/AnalyticsPage.tsx';
 import { ProtectedRoute } from './components/ProtectedRoute.tsx';
 import ProtectedLayout from './layouts/ProtectedLayout.tsx';
 import PublicLayout from './layouts/PublicLayout.tsx';
@@ -30,6 +31,7 @@ const Routes = () => (
         <Route path="/portfolios/:id" element={<PortfolioDetailPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/alerts" element={<AlertsListPage />} />
+        <Route path="/analytics" element={<AnalyticsPage />} />
       </Route>
     </Route>
 
@@ -38,7 +40,7 @@ const Routes = () => (
 
     {/* Детальная страница актива */}
     <Route path="/asset/:ticker" element={<AssetDetailPage />} />
-    
+
     {/* Редирект */}
     <Route path="*" element={<Navigate to="/" />} />
   </RouterRoutes>
