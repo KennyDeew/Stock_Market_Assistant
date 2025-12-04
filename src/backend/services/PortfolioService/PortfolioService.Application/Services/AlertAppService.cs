@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using StockMarketAssistant.PortfolioService.Application.DTOs;
 using StockMarketAssistant.PortfolioService.Application.Interfaces;
-using StockMarketAssistant.PortfolioService.Application.Interfaces.Gateways;
 using StockMarketAssistant.PortfolioService.Application.Interfaces.Repositories;
 using StockMarketAssistant.PortfolioService.Application.Interfaces.Security;
 using StockMarketAssistant.PortfolioService.Domain.Entities;
@@ -19,7 +18,7 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
         IAlertRepository alertRepository,
         IOutboxRepository outboxRepository,
         IPortfolioAssetAppService portfolioAssetAppService,
-        IStockCardServiceGateway stockCardServiceGateway,
+        //IStockCardServiceGateway stockCardServiceGateway,
         IUserContext userContext,
         ILogger<AlertAppService> logger) : IAlertAppService
     {
@@ -127,10 +126,10 @@ namespace StockMarketAssistant.PortfolioService.Application.Services
                 if (pendingAlertsCount > 0)
                 {
                     // Принудительное обновление цен
-                    if (pendingAlerts.Any(a => a.AssetType == PortfolioAssetType.Share))
-                        await stockCardServiceGateway.UpdateAllPricesForShareCardsAsync();
-                    if (pendingAlerts.Any(a => a.AssetType == PortfolioAssetType.Bond))
-                        await stockCardServiceGateway.UpdateAllPricesForBondCardsAsync();
+                    //if (pendingAlerts.Any(a => a.AssetType == PortfolioAssetType.Share))
+                    //    await stockCardServiceGateway.UpdateAllPricesForShareCardsAsync();
+                    //if (pendingAlerts.Any(a => a.AssetType == PortfolioAssetType.Bond))
+                    //    await stockCardServiceGateway.UpdateAllPricesForBondCardsAsync();
                     foreach (var alert in pendingAlerts)
                     {
                         await ProcessSingleAlertAsync(alert);

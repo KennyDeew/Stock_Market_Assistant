@@ -16,6 +16,7 @@ import ShowChartIcon from '@mui/icons-material/ShowChart';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
+import BarChartIcon from '@mui/icons-material/BarChart'
 import type { AssetShort } from '../types/assetTypes';
 import { assetApi } from '../services/assetApi';
 import { useEffect, useState } from 'react';
@@ -46,6 +47,13 @@ import { PortfolioAssetTypeValue } from '../types/portfolioAssetTypes.ts';
 import type { AlertCondition } from '../types/alertTypes.ts';
 import AppLayout from '../components/AppLayout.tsx';
 
+// Аналитика
+import { analyticsApiService } from '../services/analyticsApi';
+import type {
+  AssetRatingDto,
+  TransactionResponseDto,
+} from '../types/analyticsTypes';
+
 export default function DashboardPage() {
   const { isAuthenticated } = useAuth();
   const { openSnackbar } = useSnackbar();
@@ -62,15 +70,12 @@ export default function DashboardPage() {
   const [selectedAsset, setSelectedAsset] = useState<AssetShort | null>(null);
   const [portfolios, setPortfolios] = useState<PortfolioShort[]>([]);
   const [loadingPortfolios, setLoadingPortfolios] = useState(true);
-  const [dashboardNews, setDashboardNews] = useState<{
-    news: MoexNewsItem[];
-    loading: boolean;
-    error: string | null;
-  }>({
-    news: [],
-    loading: true,
-    error: null,
-  });
+
+  // 🔽 Состояния аналитики
+  const [topBought, setTopBought] = useState<AssetRatingDto[]>([]);
+  const [topSold, setTopSold] = useState<AssetRatingDto[]>([]);
+  const [recentTransactions, setRecentTransactions] = useState<TransactionResponseDto[]>([]);
+  const [loadingAnalytics, setLoadingAnalytics] = useState(false);
 
   interface MoexNewsItem {
     id: number;
@@ -82,8 +87,20 @@ export default function DashboardPage() {
     category: string;
   }
 
+  const [dashboardNews, setDashboardNews] = useState<{
+    news: MoexNewsItem[];
+    loading: boolean;
+    error: string | null;
+  }>({
+    news: [],
+    loading: true,
+    error: null,
+  });
+
+  // Обновление страницы при смене фильтров
   useEffect(() => setPage(0), [typeFilter, search]);
 
+  // Загрузка активов
   useEffect(() => {
     const loadAssets = async () => {
       setLoading(true);
@@ -105,6 +122,7 @@ export default function DashboardPage() {
     loadAssets();
   }, [page, typeFilter, search, pageSize]);
 
+  // Загрузка портфелей
   useEffect(() => {
     if (!isAuthenticated) return;
 
@@ -138,6 +156,7 @@ export default function DashboardPage() {
     }
   }, [isAuthenticated]);
 
+  // Загрузка новостей МосБиржи
   useEffect(() => {
     let mounted = true;
 
@@ -206,85 +225,240 @@ export default function DashboardPage() {
     };
   }, []);
 
-  const content = (
-    <AppLayout>
-      <Container>
-        <Typography
-          variant="h3"
-          component="h1"
-          align="center"
-          fontWeight={700}
-          sx={{
-            mb: 4,
-            mt: 2,
-            fontSize: { xs: '1.8rem', sm: '2.2rem', md: '2.5rem' },
-            background: 'linear-gradient(90deg, #2C3E50 40%, #3498DB 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-            textDecoration: 'underline',
-            textUnderlineOffset: '8px',
-            textDecorationColor: 'primary.main',
-            textDecorationThickness: '2px',
-          }}
-        >
-          Добро пожаловать в Stock Market Assistant
-        </Typography>
+  // 🔽 Загрузка аналитики — только для авторизованных
+  useEffect(() => {
+    if (!isAuthenticated) return;
 
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 3, mb: 5 }}>
-          {[
-            {
-              to: '/assets',
-              icon: <ShowChartIcon sx={{ fontSize: 36 }} color="primary" />,
-              title: 'Котировки',
-              subtitle: 'Акции, облигации, крипта',
-              desc: 'Следите за ценами в реальном времени.',
-            },
-            {
-              to: '/portfolios',
-              icon: <AccountBalanceIcon sx={{ fontSize: 36 }} color="success" />,
-              title: 'Портфели',
-              subtitle: 'Управление инвестициями',
-              desc: isAuthenticated ? 'Создавайте, отслеживайте доходность.' : 'Доступно после входа.',
-              disabled: !isAuthenticated,
-            },
-            {
-              to: isAuthenticated ? '/alerts' : '/login',
-              icon: <ReceiptLongIcon sx={{ fontSize: 36 }} color="warning" />,
-              title: 'Уведомления',
-              subtitle: 'Целевые цены',
-              desc: isAuthenticated ? 'Подписывайтесь на цели.' : 'Доступно после входа.',
-              disabled: !isAuthenticated,
-            },
-          ].map((item, i) => (
-            <Link key={i} to={item.to} style={{ textDecoration: 'none' }}>
-              <Card
-                sx={{
-                  p: 3,
-                  cursor: item.disabled ? 'not-allowed' : 'pointer',
-                  opacity: item.disabled ? 0.6 : 1,
-                  '&:hover': {
-                    transform: item.disabled ? 'none' : 'translateY(-4px)',
-                    boxShadow: item.disabled ? 'none' : '0 4px 12px rgba(52, 152, 219, 0.15)',
-                  },
-                  border: '1px solid #ECF0F1',
-                }}
-              >
-                {item.icon}
-                <Typography variant="h6" fontWeight={600} mt={1} mb={0.5}>
-                  {item.title}
-                </Typography>
-                <Typography variant="subtitle2" color="text.secondary" mb={1}>
-                  {item.subtitle}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {item.desc}
-                </Typography>
-              </Card>
-            </Link>
-          ))}
+    const loadAnalytics = async () => {
+      setLoadingAnalytics(true);
+      const now = new Date();
+      const weekAgo = new Date(now);
+      weekAgo.setDate(now.getDate() - 7);
+
+      const format = (d: Date) => d.toISOString();
+
+      try {
+        const [boughtRes, soldRes, transRes] = await Promise.all([
+          analyticsApiService.getTopBought(5, format(weekAgo), format(now), 'Global'),
+          analyticsApiService.getTopSold(5, format(weekAgo), format(now), 'Global'),
+          analyticsApiService.getAllTransactions('Week'),
+        ]);
+
+        setTopBought(boughtRes.assets);
+        setTopSold(soldRes.assets);
+        setRecentTransactions(transRes.transactions.slice(0, 5));
+      } catch (err) {
+        console.error('Ошибка загрузки аналитики:', err);
+        openSnackbar('Не удалось загрузить аналитику', 'warning');
+      } finally {
+        setLoadingAnalytics(false);
+      }
+    };
+
+    loadAnalytics();
+  }, [isAuthenticated]);
+
+  // Блок аналитики
+  const analyticsSection = isAuthenticated && (
+    <Paper sx={{ p: 3, mb: 4 }}>
+      <Typography variant="h6" gutterBottom fontWeight={500}>
+        🔝 Топ активов и ваши сделки
+      </Typography>
+
+      {loadingAnalytics ? (
+        <Box display="flex" justifyContent="center" my={2}>
+          <CircularProgress size={20} />
+          <Typography variant="body2" color="textSecondary" ml={2}>
+            Загрузка аналитики...
+          </Typography>
         </Box>
+      ) : (
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
+          {/* 🛒 Топ по покупкам */}
+          <Box>
+            <Typography variant="subtitle1" fontWeight="bold" color="success.main" mb={1}>
+              🛒 Популярные покупки
+            </Typography>
+            {topBought.length === 0 ? (
+              <Typography variant="body2" color="text.secondary">Нет данных</Typography>
+            ) : (
+              <Table size="small">
+                <TableBody>
+                  {topBought.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell>
+                        <Link to={`/asset/${item.ticker}`} style={{ fontWeight: 500 }}>
+                          {item.ticker}
+                        </Link>
+                      </TableCell>
+                      <TableCell align="right">
+                        {item.buyTransactionCount}×
+                      </TableCell>
+                      <TableCell align="right">
+                        {item.totalBuyAmount.toLocaleString()} ₽
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </Box>
 
+          {/* Топ по продажам */}
+          <Box>
+            <Typography variant="subtitle1" fontWeight="bold" color="error.main" mb={1}>
+              📉 Популярные продажи
+            </Typography>
+            {topSold.length === 0 ? (
+              <Typography variant="body2" color="text.secondary">Нет данных</Typography>
+            ) : (
+              <Table size="small">
+                <TableBody>
+                  {topSold.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell>
+                        <Link to={`/asset/${item.ticker}`} style={{ fontWeight: 500 }}>
+                          {item.ticker}
+                        </Link>
+                      </TableCell>
+                      <TableCell align="right">
+                        {item.sellTransactionCount}×
+                      </TableCell>
+                      <TableCell align="right">
+                        {item.totalSellAmount.toLocaleString()} ₽
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </Box>
+        </Box>
+      )}
+
+      {/* Последние сделки */}
+      <Box mt={4}>
+        <Typography variant="subtitle1" fontWeight="bold" mb={1}>
+          💸 Ваши последние сделки
+        </Typography>
+        {recentTransactions.length === 0 ? (
+          <Typography variant="body2" color="text.secondary">Нет недавних сделок</Typography>
+        ) : (
+          <Table size="small">
+            <TableBody>
+              {recentTransactions.map((tx) => (
+                <TableRow key={tx.id}>
+                  <TableCell>
+                    <Link to={`/asset/${tx.stockCardId}`} style={{ fontWeight: 500 }}>
+                      {tx.stockCardId}
+                    </Link>
+                  </TableCell>
+                  <TableCell>
+                    {tx.transactionType === 'Buy' ? '🟢 Куплено' : '🔴 Продано'}
+                  </TableCell>
+                  <TableCell align="right">
+                    {tx.quantity} × {tx.pricePerUnit.toFixed(2)} ₽
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </Box>
+    </Paper>
+  );
+
+const content = (
+  <AppLayout>
+    <Container>
+      <Typography
+        variant="h3"
+        component="h1"
+        align="center"
+        fontWeight={700}
+        sx={{
+          mb: 4,
+          mt: 2,
+          fontSize: { xs: '1.8rem', sm: '2.2rem', md: '2.5rem' },
+          background: 'linear-gradient(90deg, #2C3E50 40%, #3498DB 100%)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
+          textDecoration: 'underline',
+          textUnderlineOffset: '8px',
+          textDecorationColor: 'primary.main',
+          textDecorationThickness: '2px',
+        }}
+      >
+        Добро пожаловать в Stock Market Assistant
+      </Typography>
+
+      {/* Блок с карточками */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' }, gap: 3, mb: 5 }}>
+        {[
+          {
+            to: '/assets',
+            icon: <ShowChartIcon sx={{ fontSize: 36 }} color="primary" />,
+            title: 'Котировки',
+            subtitle: 'Акции, облигации, крипта',
+            desc: 'Следите за ценами в реальном времени.',
+          },
+          {
+            to: '/portfolios',
+            icon: <AccountBalanceIcon sx={{ fontSize: 36 }} color="success" />,
+            title: 'Портфели',
+            subtitle: 'Управление инвестициями',
+            desc: isAuthenticated ? 'Создавайте, отслеживайте доходность.' : 'Доступно после входа.',
+            disabled: !isAuthenticated,
+          },
+          {
+            to: isAuthenticated ? '/alerts' : '/login',
+            icon: <ReceiptLongIcon sx={{ fontSize: 36 }} color="warning" />,
+            title: 'Уведомления',
+            subtitle: 'Целевые цены',
+            desc: isAuthenticated ? 'Подписывайтесь на цели.' : 'Доступно после входа.',
+            disabled: !isAuthenticated,
+          },
+          {
+            to: isAuthenticated ? '/analytics' : '/login',
+            icon: <BarChartIcon sx={{ fontSize: 36 }} color="info" />,
+            title: 'Аналитика',
+            subtitle: 'Графики и сравнение',
+            desc: isAuthenticated ? 'Смотрите статистику и динамику.' : 'Доступно после входа.',
+            disabled: !isAuthenticated,
+          },
+        ].map((item, i) => (
+          <Link key={i} to={item.to} style={{ textDecoration: 'none' }}>
+            <Card
+              sx={{
+                p: 3,
+                cursor: item.disabled ? 'not-allowed' : 'pointer',
+                opacity: item.disabled ? 0.6 : 1,
+                '&:hover': {
+                  transform: item.disabled ? 'none' : 'translateY(-4px)',
+                  boxShadow: item.disabled ? 'none' : '0 4px 12px rgba(52, 152, 219, 0.15)',
+                },
+                border: '1px solid #ECF0F1',
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+              }}
+            >
+              {item.icon}
+              <Typography variant="h6" fontWeight={600} mt={1} mb={0.5}>
+                {item.title}
+              </Typography>
+              <Typography variant="subtitle2" color="text.secondary" mb={1}>
+                {item.subtitle}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {item.desc}
+              </Typography>
+            </Card>
+          </Link>
+        ))}
+      </Box>
         <Paper sx={{ p: 3, mb: 4 }}>
           <Box>
             <Typography variant="h6" gutterBottom fontWeight={500}>
@@ -439,6 +613,9 @@ export default function DashboardPage() {
             )}
           </Box>
         </Paper>
+
+        {/* Аналитика — только если авторизован */}
+        {analyticsSection}
 
         <Paper sx={{ p: 3, mb: 4 }}>
           <Typography variant="h6" gutterBottom fontWeight={500}>

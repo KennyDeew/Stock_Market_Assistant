@@ -19,7 +19,7 @@ namespace StockMarketAssistant.PortfolioService.Infrastructure.BackgroundService
     {
         private readonly IServiceProvider _serviceProvider = serviceProvider;
         private readonly ILogger<AlertProcessingService> _logger = logger;
-        private readonly TimeSpan _processingInterval = TimeSpan.FromMinutes(1);
+        private readonly TimeSpan _processingInterval = TimeSpan.FromMinutes(2.5);
 
         /// <inheritdoc/>
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)

@@ -195,6 +195,19 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
             // Регистрация UserContext
             builder.Services.AddScoped<IUserContext, UserContext>();
 
+            // CORS
+            var frontendOrigin = builder.Configuration["FRONTEND_ORIGIN"] ?? "http://localhost:5173";
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowFrontendApp", policy =>
+                {
+                    policy
+                        .WithOrigins(frontendOrigin)
+                        .AllowAnyHeader()
+                        .AllowAnyMethod();
+                });
+            });
+
             // Регистрация контроллеров
             builder.Services.AddControllers();
 
@@ -485,9 +498,6 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
             // Глобальная обработка исключений (должна быть первой в pipeline)
             app.UseMiddleware<GlobalExceptionMiddleware>();
 
-            // Middleware для обработки SecurityException (должен быть перед UseAuthentication)
-            app.UseMiddleware<SecurityExceptionMiddleware>();
-
             if (app.Environment.IsDevelopment())
             {
                 app.UseOpenApi();
@@ -500,10 +510,14 @@ namespace StockMarketAssistant.AnalyticsService.WebApi
             // Временно отключаем HTTPS редирект для диагностики
             // app.UseHttpsRedirection();
             app.UseRouting();
+            app.UseCors("AllowFrontendApp");
 
             // Аутентификация должна быть перед авторизацией
             app.UseAuthentication();
             app.UseAuthorization();
+
+            // Middleware для обработки SecurityException (должен быть перед UseAuthentication)
+            app.UseMiddleware<SecurityExceptionMiddleware>();
 
             app.MapDefaultEndpoints();
             app.MapControllers();

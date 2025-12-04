@@ -108,10 +108,10 @@
         //    args: ["run", "dev"],
         //    workingDirectory: "../frontend")
 
-        //var webui = builder.AddNpmApp("webui", "../frontend", scriptName: "dev")
-        var webui = builder.AddContainer("webui", "webui")
+        var webui = builder.AddNpmApp("webui", "../frontend", scriptName: "dev")
+        //var webui = builder.AddContainer("webui", "webui")
         //.WithHttpEndpoint(port: 80, targetPort: 80)
-        .WithDockerfile("../frontend", "Dockerfile")
+        //.WithDockerfile("../frontend", "Dockerfile")
         .WithHttpEndpoint(
             port: 5273,           // порт, который будет открыт
             targetPort: 5273,     // порт, на котором слушает Vite
@@ -151,24 +151,24 @@
         var app = builder.Build();
 
         // Открываем OpenSearch Dashboards в браузере после запуска (с задержкой для инициализации)
-        _ = Task.Run(async () =>
-        {
-            await Task.Delay(TimeSpan.FromSeconds(10)); // Ждем 10 секунд для инициализации контейнера
-            try
-            {
-                // Используем фиксированный URL, так как порт известен
-                var openSearchDashboardsUrl = "http://localhost:5601";
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-                {
-                    FileName = openSearchDashboardsUrl,
-                    UseShellExecute = true
-                });
-            }
-            catch
-            {
-                // Игнорируем ошибки открытия браузера
-            }
-        });
+        //_ = Task.Run(async () =>
+        //{
+        //    await Task.Delay(TimeSpan.FromSeconds(10)); // Ждем 10 секунд для инициализации контейнера
+        //    try
+        //    {
+        //        // Используем фиксированный URL, так как порт известен
+        //        var openSearchDashboardsUrl = "http://localhost:5601";
+        //        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+        //        {
+        //            FileName = openSearchDashboardsUrl,
+        //            UseShellExecute = true
+        //        });
+        //    }
+        //    catch
+        //    {
+        //        // Игнорируем ошибки открытия браузера
+        //    }
+        //});
 
         app.Run();
     }

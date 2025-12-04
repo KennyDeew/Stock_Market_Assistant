@@ -19,7 +19,6 @@ using StockMarketAssistant.PortfolioService.Infrastructure.EntityFramework;
 using StockMarketAssistant.PortfolioService.Infrastructure.Repositories;
 using StockMarketAssistant.PortfolioService.Infrastructure.Security;
 using StockMarketAssistant.PortfolioService.WebApi.Options;
-using ILogger = Microsoft.Extensions.Logging.ILogger;
 using ILoggerFactory = Microsoft.Extensions.Logging.ILoggerFactory;
 using OptionsExtensions = Microsoft.Extensions.Options;
 
