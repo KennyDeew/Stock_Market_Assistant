@@ -2,6 +2,7 @@ using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using StockMarketAssistant.PortfolioService.Application.Interfaces.Gateways;
 using StockMarketAssistant.PortfolioService.Infrastructure.BackgroundServices;
@@ -46,23 +47,42 @@ namespace StockMarketAssistant.PortfolioService.WebApi
             Console.InputEncoding = Encoding.UTF8;
 
             // Add services to the container.
+            // Настройка JWT Bearer Authentication
             var jwtSettings = builder.Configuration.GetSection("Jwt");
+            var jwtKey = jwtSettings["Key"];
 
-            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                .AddJwtBearer(options =>
-                {
-                    options.TokenValidationParameters = new TokenValidationParameters()
+            // Если ключ не указан, используем дефолтный ключ для разработки (только для Development)
+            if (string.IsNullOrEmpty(jwtKey) && builder.Environment.IsDevelopment())
+            {
+                jwtKey = "DevelopmentKey-AtLeast32CharactersLongForHS256Algorithm";
+            }
+
+            // Регистрируем JWT только если ключ указан
+            if (!string.IsNullOrEmpty(jwtKey))
+            {
+                builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                    .AddJwtBearer(options =>
                     {
-                        ValidateIssuer = true,
-                        ValidateAudience = true,
-                        ValidateLifetime = true,
-                        ValidateIssuerSigningKey = true,
-                        ValidIssuer = jwtSettings["Issuer"],
-                        ValidAudience = jwtSettings["Audience"],
-                        RoleClaimType = "Role",
-                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"]!))
-                    };
-                });
+                        options.TokenValidationParameters = new TokenValidationParameters()
+                        {
+                            ValidateIssuer = !string.IsNullOrEmpty(jwtSettings["Issuer"]),
+                            ValidateAudience = !string.IsNullOrEmpty(jwtSettings["Audience"]),
+                            ValidateLifetime = true,
+                            ValidateIssuerSigningKey = true,
+                            ValidIssuer = jwtSettings["Issuer"] ?? "AuthService",
+                            ValidAudience = jwtSettings["Audience"] ?? "AuthServiceClients",
+                            RoleClaimType = "Role",
+                            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+                        };
+                    });
+            }
+            else
+            {
+                // Если ключ не указан и не Development режим, логируем предупреждение
+                var jwtLoggerFactory = LoggerFactory.Create(b => b.AddConsole());
+                var jwtLogger = jwtLoggerFactory.CreateLogger<Program>();
+                jwtLogger.LogWarning("JWT ключ не указан. JWT авторизация отключена.");
+            }
 
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddAuthorization();
@@ -163,9 +183,11 @@ namespace StockMarketAssistant.PortfolioService.WebApi
                 app.MapDefaultEndpoints();
             }
 
-            app.UseMiddleware<SecurityExceptionMiddleware>();
+            app.UseRouting();
             app.UseAuthentication();
             app.UseAuthorization();
+            // SecurityExceptionMiddleware должен быть после UseAuthorization, чтобы перехватывать SecurityException из контроллеров
+            app.UseMiddleware<SecurityExceptionMiddleware>();
             app.MapControllers();
 
             app.Run();

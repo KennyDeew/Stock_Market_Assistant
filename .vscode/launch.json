@@ -55,7 +55,6 @@
 				"-SaveToFile"
 			],
 			"cwd": "${workspaceFolder}",
-			"console": "integratedTerminal",
 			"presentation": {
 				"reveal": "always",
 				"panel": "dedicated",
@@ -69,8 +68,7 @@
 			"request": "launch",
 			"script": "${workspaceFolder}/scripts/open_latest_log.ps1",
 			"args": [],
-			"cwd": "${workspaceFolder}",
-			"console": "integratedTerminal"
+			"cwd": "${workspaceFolder}"
 		},
 		{
 			"name": "🔧 Fix Docker Build",
@@ -79,7 +77,20 @@
 			"script": "${workspaceFolder}/scripts/fix_docker_build.ps1",
 			"args": [],
 			"cwd": "${workspaceFolder}",
-			"console": "integratedTerminal",
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated",
+				"focus": true,
+				"clear": true
+			}
+		},
+		{
+			"name": "🔧 Fix PowerShell Extension",
+			"type": "PowerShell",
+			"request": "launch",
+			"script": "${workspaceFolder}/scripts/fix_powershell_extension.ps1",
+			"args": [],
+			"cwd": "${workspaceFolder}",
 			"presentation": {
 				"reveal": "always",
 				"panel": "dedicated",

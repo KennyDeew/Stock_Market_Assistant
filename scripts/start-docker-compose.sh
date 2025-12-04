@@ -16,6 +16,10 @@ DETACHED=false
 FORCE=false
 LOG_LEVEL="ERROR"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
 
+# Глобальные переменные для логов
+LOG_FILE=""
+ERROR_LOG_FILE=""
+
 # Уровни логирования (по возрастанию важности)
 declare -A LOG_LEVELS=(
     ["DEBUG"]=0
@@ -32,22 +36,71 @@ init_logging() {
     PROJECT_ROOT="$( cd "$SCRIPT_DIR/.." && pwd )"
     LOG_DIR="$PROJECT_ROOT/build_log"
 
+    # Создание директории с проверкой
     if [ ! -d "$LOG_DIR" ]; then
-        mkdir -p "$LOG_DIR"
+        if ! mkdir -p "$LOG_DIR" 2>/dev/null; then
+            echo -e "${RED}❌ ОШИБКА: Не удалось создать директорию для логов: $LOG_DIR${NC}" >&2
+            return 1
+        fi
+    fi
+
+    # Проверка, что директория существует и доступна для записи
+    if [ ! -d "$LOG_DIR" ] || [ ! -w "$LOG_DIR" ]; then
+        echo -e "${RED}❌ ОШИБКА: Директория для логов недоступна для записи: $LOG_DIR${NC}" >&2
+        return 1
     fi
 
     # Генерация имени файла лога
     TIMESTAMP=$(date +"%Y-%m-%d_%H%M%S")
     LOG_FILE="$LOG_DIR/log_${TIMESTAMP}.txt"
+    ERROR_LOG_FILE="$LOG_DIR/error_logs_${TIMESTAMP}.txt"
+
+    # Создание файлов логов с проверкой
+    if ! touch "$LOG_FILE" 2>/dev/null; then
+        echo -e "${RED}❌ ОШИБКА: Не удалось создать файл лога: $LOG_FILE${NC}" >&2
+        return 1
+    fi
+
+    if ! touch "$ERROR_LOG_FILE" 2>/dev/null; then
+        echo -e "${RED}❌ ОШИБКА: Не удалось создать файл ошибок: $ERROR_LOG_FILE${NC}" >&2
+        return 1
+    fi
 
     # Запись заголовка в лог
-    echo "========================================" >> "$LOG_FILE"
-    echo "  Stock Market Assistant" >> "$LOG_FILE"
-    echo "  Docker Compose Startup Script" >> "$LOG_FILE"
-    echo "  Log Level: $LOG_LEVEL" >> "$LOG_FILE"
-    echo "  Started: $(date '+%Y-%m-%d %H:%M:%S')" >> "$LOG_FILE"
-    echo "========================================" >> "$LOG_FILE"
-    echo "" >> "$LOG_FILE"
+    {
+        echo "========================================"
+        echo "  Stock Market Assistant"
+        echo "  Docker Compose Startup Script"
+        echo "  Log Level: $LOG_LEVEL"
+        echo "  Started: $(date '+%Y-%m-%d %H:%M:%S')"
+        echo "========================================"
+        echo ""
+    } > "$LOG_FILE"
+
+    # Запись заголовка в файл ошибок
+    {
+        echo "========================================"
+        echo "  Stock Market Assistant"
+        echo "  Docker Compose Startup Script"
+        echo "  Error Log"
+        echo "  Started: $(date '+%Y-%m-%d %H:%M:%S')"
+        echo "========================================"
+        echo ""
+    } > "$ERROR_LOG_FILE"
+
+    # Проверка, что файлы созданы
+    if [ ! -f "$LOG_FILE" ]; then
+        echo -e "${RED}❌ ОШИБКА: Файл лога не создан: $LOG_FILE${NC}" >&2
+        return 1
+    fi
+
+    if [ ! -f "$ERROR_LOG_FILE" ]; then
+        echo -e "${RED}❌ ОШИБКА: Файл ошибок не создан: $ERROR_LOG_FILE${NC}" >&2
+        return 1
+    fi
+
+    echo -e "${GREEN}✓ Файлы логов созданы успешно${NC}"
+    return 0
 }
 
 # Функция логирования
@@ -57,13 +110,32 @@ log() {
     local message="$@"
     local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
 
+    # Проверка, что файл лога существует
+    if [ -z "$LOG_FILE" ] || [ ! -f "$LOG_FILE" ]; then
+        return 0
+    fi
+
     # Проверка уровня логирования
     local current_level=${LOG_LEVELS[$LOG_LEVEL]}
     local message_level=${LOG_LEVELS[$level]}
 
     if [ $message_level -ge $current_level ]; then
-        echo "[$timestamp] [$level] $message" >> "$LOG_FILE"
+        echo "[$timestamp] [$level] $message" >> "$LOG_FILE" 2>/dev/null || true
     fi
+}
+
+# Функция записи ошибок в отдельный файл
+log_error() {
+    local message="$@"
+    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+
+    # Проверка, что файл ошибок существует
+    if [ -n "$ERROR_LOG_FILE" ] && [ -f "$ERROR_LOG_FILE" ]; then
+        echo "[$timestamp] [ERROR] $message" >> "$ERROR_LOG_FILE" 2>/dev/null || true
+    fi
+
+    # Также записываем в общий лог
+    log "ERROR" "$message"
 }
 
 # Парсинг аргументов
@@ -101,7 +173,10 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Инициализация логирования
-init_logging
+if ! init_logging; then
+    echo -e "${YELLOW}⚠ ПРЕДУПРЕЖДЕНИЕ: Не удалось инициализировать логирование. Продолжение без файлов логов.${NC}"
+    echo ""
+fi
 
 # Очистка экрана
 clear
@@ -110,7 +185,12 @@ echo -e "${CYAN}========================================"
 echo -e "  Stock Market Assistant"
 echo -e "  Docker Compose Startup Script"
 echo -e "========================================${NC}"
-echo -e "${CYAN}Лог файл: $LOG_FILE${NC}"
+if [ -n "$LOG_FILE" ]; then
+    echo -e "${CYAN}Лог файл: $LOG_FILE${NC}"
+fi
+if [ -n "$ERROR_LOG_FILE" ]; then
+    echo -e "${CYAN}Файл ошибок: $ERROR_LOG_FILE${NC}"
+fi
 echo ""
 log "INFO" "Скрипт запущен. Уровень логирования: $LOG_LEVEL"
 
@@ -265,18 +345,38 @@ main() {
 
     # Запуск docker compose
     log "INFO" "Выполнение команды: docker compose up ${COMPOSE_ARGS[*]}"
+
+    # Функция для обработки вывода docker compose
+    process_docker_output() {
+        while IFS= read -r line; do
+            # Выводим в консоль
+            echo "$line"
+
+            # Записываем в общий лог
+            if [ -n "$LOG_FILE" ] && [ -f "$LOG_FILE" ]; then
+                echo "$line" >> "$LOG_FILE" 2>/dev/null || true
+            fi
+
+            # Проверяем, является ли строка ошибкой
+            if echo "$line" | grep -qiE "error|ERROR|failed|FAILED|exception|EXCEPTION|timeout|TIMEOUT"; then
+                # Записываем в файл ошибок
+                log_error "$line"
+            fi
+        done
+    }
+
     if [ ${#COMPOSE_ARGS[@]} -gt 0 ]; then
-        docker compose up "${COMPOSE_ARGS[@]}" 2>&1 | tee -a "$LOG_FILE"
+        docker compose up "${COMPOSE_ARGS[@]}" 2>&1 | process_docker_output
         EXIT_CODE=${PIPESTATUS[0]}
     else
-        docker compose up 2>&1 | tee -a "$LOG_FILE"
+        docker compose up 2>&1 | process_docker_output
         EXIT_CODE=${PIPESTATUS[0]}
     fi
 
     if [ $EXIT_CODE -eq 0 ]; then
         log "INFO" "Docker Compose завершен успешно"
     else
-        log "ERROR" "Docker Compose завершен с ошибкой (код: $EXIT_CODE)"
+        log_error "Docker Compose завершен с ошибкой (код: $EXIT_CODE)"
     fi
 
     return $EXIT_CODE

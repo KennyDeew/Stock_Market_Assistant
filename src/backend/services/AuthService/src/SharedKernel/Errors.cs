@@ -13,7 +13,7 @@ public static class Errors
                 name);
         }
 
-        public static Error NotFound(string id = null, string? name = null)
+        public static Error NotFound(string? id = null, string? name = null)
         {
             string label = name ?? "Запись";
             string forId = id == null ? string.Empty : $" (Id: {id})";

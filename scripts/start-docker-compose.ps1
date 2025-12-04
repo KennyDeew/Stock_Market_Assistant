@@ -20,23 +20,52 @@ $script:LogLevels = @{
 
 # Глобальные переменные для логирования
 $script:LogFile = $null
+$script:ErrorLogFile = $null
 $script:CurrentLogLevel = $script:LogLevels[$LogLevel]
 
 # Функция инициализации логирования
 function Initialize-Logging {
     try {
-        # Создание директории для логов
-        $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Path
+        # Определение пути к скрипту (работает в разных контекстах)
+        if ($PSScriptRoot) {
+            $scriptPath = $PSScriptRoot
+        }
+        elseif ($MyInvocation.MyCommand.Path) {
+            $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Path
+        }
+        else {
+            $scriptPath = Split-Path -Parent $PSCommandPath
+        }
+
         $projectRoot = Split-Path -Parent $scriptPath
         $logDir = Join-Path $projectRoot "build_log"
 
+        # Создание директории для логов с проверкой
         if (-not (Test-Path $logDir)) {
-            New-Item -ItemType Directory -Path $logDir -Force | Out-Null
+            $null = New-Item -ItemType Directory -Path $logDir -Force -ErrorAction Stop
+        }
+
+        # Проверка, что директория создана
+        if (-not (Test-Path $logDir)) {
+            throw "Не удалось создать директорию для логов: $logDir"
         }
 
         # Генерация имени файла лога
         $timestamp = Get-Date -Format "yyyy-MM-dd_HHmmss"
         $script:LogFile = Join-Path $logDir "log_${timestamp}.txt"
+        $script:ErrorLogFile = Join-Path $logDir "error_logs_${timestamp}.txt"
+
+        # Создаем пустые файлы логов перед стартом с проверкой
+        $null = New-Item -ItemType File -Path $script:LogFile -Force -ErrorAction Stop
+        $null = New-Item -ItemType File -Path $script:ErrorLogFile -Force -ErrorAction Stop
+
+        # Проверка, что файлы созданы
+        if (-not (Test-Path $script:LogFile)) {
+            throw "Не удалось создать файл лога: $script:LogFile"
+        }
+        if (-not (Test-Path $script:ErrorLogFile)) {
+            throw "Не удалось создать файл ошибок: $script:ErrorLogFile"
+        }
 
         # Запись заголовка в лог
         $header = @"
@@ -48,12 +77,29 @@ function Initialize-Logging {
 ========================================
 
 "@
-        Add-Content -Path $script:LogFile -Value $header -ErrorAction SilentlyContinue
+        Set-Content -Path $script:LogFile -Value $header -ErrorAction Stop
+
+        # Запись заголовка в файл ошибок
+        $errorHeader = @"
+========================================
+  Stock Market Assistant
+  Docker Compose Startup Script
+  Error Log
+  Started: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')
+========================================
+
+"@
+        Set-Content -Path $script:ErrorLogFile -Value $errorHeader -ErrorAction Stop
+
+        Write-Host "✓ Файлы логов созданы успешно" -ForegroundColor Green
     }
     catch {
         # Если не удалось инициализировать логирование, продолжаем без файла лога
-        Write-Warning "Не удалось инициализировать файл лога: $($_.Exception.Message). Логирование будет только в консоль."
+        $errorMsg = "Не удалось инициализировать файл лога: $($_.Exception.Message)"
+        Write-Warning $errorMsg
+        Write-Warning "Логирование будет только в консоль."
         $script:LogFile = $null
+        $script:ErrorLogFile = $null
     }
 }
 
@@ -92,6 +138,9 @@ Write-Host "  Stock Market Assistant" -ForegroundColor Cyan
 Write-Host "  Docker Compose Startup Script" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "Лог файл: $script:LogFile" -ForegroundColor Cyan
+if ($null -ne $script:ErrorLogFile) {
+    Write-Host "Файл ошибок: $script:ErrorLogFile" -ForegroundColor Cyan
+}
 Write-Host ""
 Write-Log "INFO" "Скрипт запущен. Уровень логирования: $LogLevel"
 
@@ -118,15 +167,7 @@ function Test-DockerReady {
     Write-Host "✓ Docker найден" -ForegroundColor Green
     Write-Log "INFO" "Docker найден в системе"
 
-    # Проверка наличия docker-compose
-    $dockerComposeCmd = "docker compose"
-    if (-not (Test-Command "docker")) {
-        $errorMsg = "docker compose не доступен"
-        Write-Host "❌ ОШИБКА: $errorMsg" -ForegroundColor Red
-        Write-Log "CRITICAL" $errorMsg
-        exit 1
-    }
-
+    # Проверка наличия docker-compose (встроен в Docker)
     Write-Host "✓ docker compose найден" -ForegroundColor Green
     Write-Log "INFO" "docker compose найден"
 
@@ -219,6 +260,62 @@ function Stop-ExistingContainers {
     }
 }
 
+# Функция остановки и удаления Docker контейнеров
+function Stop-AndRemoveDockerContainers {
+    Write-Host ""
+    Write-Host "========================================" -ForegroundColor Cyan
+    Write-Host "Остановка Docker контейнеров" -ForegroundColor Cyan
+    Write-Host "========================================" -ForegroundColor Cyan
+    Write-Host ""
+
+    try {
+        # Переход в корневую директорию проекта
+        $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Path
+        $projectRoot = Split-Path -Parent $scriptPath
+        Set-Location $projectRoot
+
+        Write-Host "Остановка контейнеров..." -ForegroundColor Yellow
+        Write-Log "INFO" "Остановка Docker контейнеров по запросу пользователя"
+
+        # Останавливаем и удаляем контейнеры
+        $stopOutput = docker compose down 2>&1
+        $stopSuccess = $LASTEXITCODE -eq 0
+
+        if ($stopSuccess) {
+            Write-Host "✓ Контейнеры остановлены и удалены" -ForegroundColor Green
+            Write-Log "INFO" "Контейнеры успешно остановлены и удалены"
+
+            # Выводим результат
+            foreach ($line in $stopOutput) {
+                Write-Host $line -ForegroundColor Gray
+            }
+        }
+        else {
+            Write-Host "⚠ Предупреждение: Не удалось полностью остановить контейнеры" -ForegroundColor Yellow
+            Write-Log "WARNING" "Не удалось полностью остановить контейнеры"
+
+            foreach ($line in $stopOutput) {
+                Write-Host $line -ForegroundColor Yellow
+                if ($null -ne $script:LogFile) {
+                    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+                    Add-Content -Path $script:LogFile -Value "[$timestamp] [WARNING] $line" -ErrorAction SilentlyContinue
+                }
+            }
+        }
+    }
+    catch {
+        $errorMsg = "Ошибка при остановке контейнеров: $($_.Exception.Message)"
+        Write-Host "❌ ОШИБКА: $errorMsg" -ForegroundColor Red
+        Write-Log "ERROR" $errorMsg
+        if ($null -ne $script:LogFile) {
+            $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+            Add-Content -Path $script:LogFile -Value "[$timestamp] [ERROR] $errorMsg" -ErrorAction SilentlyContinue
+        }
+    }
+
+    Write-Host ""
+}
+
 # Основная логика
 try {
     # Проверка Docker
@@ -266,41 +363,153 @@ try {
     $composeArgsString = $composeArgs -join " "
     Write-Log "INFO" "Выполнение команды: docker compose up $composeArgsString"
 
+    # Файл для записи ошибок
+    $errorLogFile = $script:ErrorLogFile
+
     try {
-        if ($composeArgs.Count -gt 0) {
-            if ($null -ne $script:LogFile) {
-                docker compose up $composeArgs 2>&1 | Tee-Object -FilePath $script:LogFile -Append
+        # Используем скрипт-область для хранения ошибок
+        $script:errors = @()
+
+        # Функция для обработки строки в реальном времени
+        function Write-OutputLine {
+            param([string]$line)
+
+            if ([string]::IsNullOrWhiteSpace($line)) {
+                return
+            }
+
+            # Определяем, является ли строка ошибкой
+            $isError = $line -is [System.Management.Automation.ErrorRecord] -or
+                      $line -match "error|ERROR|Error|failed|FAILED|Failed|exception|EXCEPTION|Exception|timeout|TIMEOUT|Timeout"
+
+            if ($isError) {
+                $script:errors += $line
+                # Выводим ошибку сразу с красным цветом
+                Write-Host $line -ForegroundColor Red
+                if ($null -ne $errorLogFile) {
+                    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+                    Add-Content -Path $errorLogFile -Value "[$timestamp] [ERROR] $line" -ErrorAction SilentlyContinue
+                }
+                # Также записываем в общий лог
+                if ($null -ne $script:LogFile) {
+                    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+                    Add-Content -Path $script:LogFile -Value "[$timestamp] [ERROR] $line" -ErrorAction SilentlyContinue
+                }
             }
             else {
-                docker compose up $composeArgs
+                # Обычный вывод - показываем сразу
+                Write-Host $line
+                # Записываем только в общий лог, не в файл ошибок
+                if ($null -ne $script:LogFile) {
+                    Add-Content -Path $script:LogFile -Value $line -ErrorAction SilentlyContinue
+                }
+            }
+        }
+
+        # Запускаем docker compose с обработкой вывода в реальном времени
+        if ($composeArgs.Count -gt 0) {
+            docker compose up $composeArgs 2>&1 | ForEach-Object {
+                Write-OutputLine $_
             }
         }
         else {
-            if ($null -ne $script:LogFile) {
-                docker compose up 2>&1 | Tee-Object -FilePath $script:LogFile -Append
+            docker compose up 2>&1 | ForEach-Object {
+                Write-OutputLine $_
+            }
+        }
+
+        # Если были ошибки, выводим сводку
+        if ($script:errors.Count -gt 0) {
+            Write-Host ""
+            Write-Host "========================================" -ForegroundColor Red
+            Write-Host "ОБНАРУЖЕНО ОШИБОК: $($script:errors.Count)" -ForegroundColor Red
+            Write-Host "========================================" -ForegroundColor Red
+            if ($null -ne $errorLogFile) {
+                Write-Host "Ошибки записаны в файл: $errorLogFile" -ForegroundColor Yellow
             }
             else {
-                docker compose up
+                Write-Host "Внимание: Файл для записи ошибок не был создан" -ForegroundColor Yellow
             }
+            Write-Host ""
         }
 
         if ($LASTEXITCODE -eq 0) {
             Write-Log "INFO" "Docker Compose завершен успешно"
         }
         else {
-            Write-Log "ERROR" "Docker Compose завершен с ошибкой (код: $LASTEXITCODE)"
+            $errorMsg = "Docker Compose завершен с ошибкой (код: $LASTEXITCODE)"
+            Write-Log "ERROR" $errorMsg
+            if ($null -ne $errorLogFile) {
+                $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+                Add-Content -Path $errorLogFile -Value "[$timestamp] [ERROR] $errorMsg" -ErrorAction SilentlyContinue
+            }
         }
     }
     catch {
-        Write-Log "ERROR" "Ошибка при выполнении Docker Compose: $($_.Exception.Message)"
+        $errorMsg = "Ошибка при выполнении Docker Compose: $($_.Exception.Message)"
+        Write-Log "ERROR" $errorMsg
+        if ($null -ne $errorLogFile) {
+            $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+            Add-Content -Path $errorLogFile -Value "[$timestamp] [ERROR] $errorMsg" -ErrorAction SilentlyContinue
+            Add-Content -Path $errorLogFile -Value "[$timestamp] [ERROR] StackTrace: $($_.Exception.StackTrace)" -ErrorAction SilentlyContinue
+        }
         throw
     }
 }
 catch {
+    $errorMsg = $_.Exception.Message
+    $errorStackTrace = $_.Exception.StackTrace
+
     Write-Host ""
     Write-Host "❌ КРИТИЧЕСКАЯ ОШИБКА:" -ForegroundColor Red
-    Write-Host $_.Exception.Message -ForegroundColor Red
-    Write-Log "CRITICAL" "Критическая ошибка в скрипте: $($_.Exception.Message)"
+    Write-Host $errorMsg -ForegroundColor Red
+
+    # Записываем ошибку в файл лога, если он доступен
+    if ($null -ne $script:LogFile) {
+        $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+        Add-Content -Path $script:LogFile -Value "[$timestamp] [CRITICAL] Критическая ошибка в скрипте: $errorMsg" -ErrorAction SilentlyContinue
+        if ($errorStackTrace) {
+            Add-Content -Path $script:LogFile -Value "[$timestamp] [CRITICAL] StackTrace: $errorStackTrace" -ErrorAction SilentlyContinue
+        }
+        Write-Host ""
+        Write-Host "Ошибка записана в лог: $script:LogFile" -ForegroundColor Yellow
+    }
+    else {
+        Write-Log "CRITICAL" "Критическая ошибка в скрипте: $errorMsg"
+    }
+
+    # Спрашиваем перед выходом с ошибкой
+    Write-Host ""
+    Write-Host "========================================" -ForegroundColor Yellow
+    $response = Read-Host "Остановить и удалить Docker контейнеры? (Д/Да/1/Y/y для подтверждения)"
+
+    $positiveResponses = @("Д", "Да", "да", "1", "Y", "y", "yes", "Yes", "YES")
+    if ($positiveResponses -contains $response) {
+        Stop-AndRemoveDockerContainers
+    }
+    else {
+        Write-Host "Контейнеры не остановлены" -ForegroundColor Gray
+        Write-Log "INFO" "Пользователь отказался от остановки контейнеров"
+    }
+
     exit 1
 }
+
+# Спрашиваем перед завершением работы (успешное или прерванное)
+Write-Host ""
+Write-Host "========================================" -ForegroundColor Cyan
+$response = Read-Host "Остановить и удалить Docker контейнеры? (Д/Да/1/Y/y для подтверждения)"
+
+$positiveResponses = @("Д", "Да", "да", "1", "Y", "y", "yes", "Yes", "YES")
+if ($positiveResponses -contains $response) {
+    Stop-AndRemoveDockerContainers
+}
+else {
+    Write-Host "Контейнеры не остановлены" -ForegroundColor Gray
+    Write-Log "INFO" "Пользователь отказался от остановки контейнеров"
+}
+
+Write-Host ""
+Write-Host "Скрипт завершен" -ForegroundColor Green
+Write-Log "INFO" "Скрипт завершен"
 
