@@ -358,9 +358,13 @@ main() {
             fi
 
             # Проверяем, является ли строка ошибкой
+            # Исключаем ложные срабатывания
             if echo "$line" | grep -qiE "error|ERROR|failed|FAILED|exception|EXCEPTION|timeout|TIMEOUT"; then
-                # Записываем в файл ошибок
-                log_error "$line"
+                # Проверяем на ложные срабатывания
+                if ! echo "$line" | grep -qiE "Executed DbCommand|0 Error\(s\)|Connection refused.*kafka|brokers are down|Coordinator load in progress|retrying|INFO.*JVM arguments|\[INF\]|\[WRN\]|handshake timed out.*kafka-ui"; then
+                    # Записываем в файл ошибок
+                    log_error "$line"
+                fi
             fi
         done
     }

@@ -11,10 +11,14 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - FRONTEND_ORIGIN=http://localhost:5273
     depends_on:
-      - authservice-api
-      - stockcardservice-api
-      - portfolioservice-api
-      - analyticsservice-api
+      authservice-api:
+        condition: service_started
+      stockcardservice-api:
+        condition: service_healthy
+      portfolioservice-api:
+        condition: service_started
+      analyticsservice-api:
+        condition: service_started
     networks:
       - aspire-net
 
@@ -31,6 +35,10 @@ services:
       - Jwt__Key=YourSecretKeyForJwtTokenGenerationAndValidationMustBeAtLeast32CharactersLong
       - Jwt__Issuer=AuthService
       - Jwt__Audience=AuthServiceClients
+      - DefaultAdministrator__Apply=true
+      - DefaultAdministrator__UserName=admin
+      - DefaultAdministrator__Email=admin@mail.local
+      - DefaultAdministrator__Password=Admin123!@#
       - FRONTEND_ORIGIN=http://localhost:5273
     depends_on:
       - pg-auth-db
@@ -49,6 +57,12 @@ services:
       - ConnectionStrings__pg-stock-card-db=Host=pg-stock-card-db;Port=5432;Database=stock-card-db;Username=postgres;Password=postgres
       - ConnectionStrings__mongo=mongodb://mongo-stock-card-db:27017/finantial-report-db
       - FRONTEND_ORIGIN=http://localhost:5273
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 60s
     depends_on:
       - pg-stock-card-db
       - mongo-stock-card-db
@@ -185,6 +199,12 @@ services:
       discovery.type: single-node
       plugins.security.disabled: "true"
       OPENSEARCH_INITIAL_ADMIN_PASSWORD: admin
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
     networks:
       - aspire-net
 
@@ -196,7 +216,8 @@ services:
       OPENSEARCH_HOSTS: http://opensearch:9200
       DISABLE_SECURITY_DASHBOARDS_PLUGIN: "true"
     depends_on:
-      - opensearch
+      opensearch:
+        condition: service_healthy
     networks:
       - aspire-net
 

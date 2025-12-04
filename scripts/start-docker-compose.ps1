@@ -379,8 +379,27 @@ try {
             }
 
             # Определяем, является ли строка ошибкой
-            $isError = $line -is [System.Management.Automation.ErrorRecord] -or
-                      $line -match "error|ERROR|Error|failed|FAILED|Failed|exception|EXCEPTION|Exception|timeout|TIMEOUT|Timeout"
+            # Исключаем ложные срабатывания
+            $falsePositives = @(
+                "Executed DbCommand",           # Это не ошибка, а информационное сообщение
+                "0 Error\(s\)",                 # Сообщение о количестве ошибок сборки (0 ошибок)
+                "Connection refused.*kafka",    # Временная ошибка при старте Kafka
+                "brokers are down",             # Временная ошибка при старте Kafka
+                "Coordinator load in progress",  # Нормальное поведение при старте Kafka
+                "retrying",                     # Повторные попытки - нормальное поведение
+                "INFO.*JVM arguments",          # Информационные сообщения OpenSearch
+                "INF\]",                        # Информационные сообщения (INF уровень)
+                "WRN\]",                        # Предупреждения (WRN уровень)
+                "handshake timed out.*kafka-ui" # SSL handshake timeout в kafka-ui (не критично)
+            )
+
+            $isFalsePositive = $falsePositives | Where-Object { $line -match $_ }
+
+            $isError = -not $isFalsePositive -and (
+                $line -is [System.Management.Automation.ErrorRecord] -or
+                ($line -match "error|ERROR|Error|failed|FAILED|Failed|exception|EXCEPTION|Exception|timeout|TIMEOUT|Timeout" -and
+                 $line -notmatch "retrying|retry|INFO|INF\]|WRN\]|Executed DbCommand|relation.*does not exist|Coordinator load|brokers are down|Connection refused.*kafka")
+            )
 
             if ($isError) {
                 $script:errors += $line

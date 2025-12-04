@@ -35,7 +35,7 @@ namespace StockMarketAssistant.StockCardService.WebApi
             //EntityFramework. Настройки подключения пробрасываем из Aspire. Aspire пробрасывает connection string (по имени базы).
             builder.Services.AddDbContext<StockCardDbContext>(options =>
             {
-                options.UseNpgsql(builder.Configuration.GetConnectionString("stock-card-db"),
+                options.UseNpgsql(builder.Configuration.GetConnectionString("pg-stock-card-db"),
                     optionsBuilder => optionsBuilder.MigrationsAssembly("StockCardService.Infrastructure.EntityFramework"));
                 options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
             });
@@ -43,7 +43,7 @@ namespace StockMarketAssistant.StockCardService.WebApi
             //MongoDb. Настройки подключения пробрасываем из Aspire. Aspire пробрасывает connection string (по имени базы).
             builder.Services.Configure<MongoSettings>(options =>
             {
-                var connStr = builder.Configuration.GetConnectionString("finantial-report-db");
+                var connStr = builder.Configuration.GetConnectionString("mongo");
 
                 if (string.IsNullOrEmpty(connStr))
                 {
