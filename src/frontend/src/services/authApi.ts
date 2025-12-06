@@ -17,25 +17,16 @@ const authApi = axios.create({
   },
 });
 
-// Перехват ошибок
-authApi.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    handleApiError(error);
-    return Promise.reject(error);
-  }
-);
-
 /**
  * Проверка, занят ли email
  */
 export const checkEmail = async (email: string): Promise<boolean> => {
   try {
     const response = await authApi.post<CheckEmailResponse>('/check-email', { email });
-    return !response.data.exists; // true = доступен
+    return !response.data.exists; // true = доступен (email свободен)
   } catch (error: any) {
     if (error.response?.status === 409) {
-      return false;
+      return false; // email занят
     }
     console.error('Ошибка при проверке email:', error);
     throw error;
@@ -45,7 +36,7 @@ export const checkEmail = async (email: string): Promise<boolean> => {
 /**
  * Регистрация пользователя
  */
-export const register = async (data: RegisterRequest): Promise<AuthResponse> => {
+export const register = async (data: Omit<RegisterRequest, 'confirmPassword'>): Promise<AuthResponse> => {
   try {
     const response = await authApi.post<AuthResponse>('/register', data);
     return response.data;

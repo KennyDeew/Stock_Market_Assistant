@@ -10,25 +10,26 @@ export interface LoginRequest {
  * Запрос на регистрацию
  */
 export interface RegisterRequest {
-  fullName: string;
   email: string;
   password: string;
-  confirmPassword: string;
+  fullName: string; // соответствие с бэкендом
 }
 
 /**
- * Ответ от API: только токены
+ * Ответ от API: токены + метаданные
  */
 export interface AuthResponse {
   accessToken: string;
   refreshToken: string;
+  accessExpiresAt?: string; // ISO string
+  refreshExpiresAt?: string;
 }
 
 /**
  * Ответ от проверки email
  */
 export interface CheckEmailResponse {
-  exists: boolean;
+  exists: boolean; // true = email занят
 }
 
 /**
@@ -58,7 +59,7 @@ export interface AuthContextType {
   isAuthenticated: boolean;
   user?: UserType; 
   login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   register: (email: string, password: string, fullName: string) => Promise<void>;
   checkEmail: (email: string) => Promise<boolean>;
   deleteAccount: () => Promise<void>;

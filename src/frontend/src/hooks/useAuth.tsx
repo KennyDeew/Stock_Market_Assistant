@@ -2,9 +2,16 @@ import { useState, useEffect, createContext, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { parseJwt } from '../utils/jwt';
 import type { UserType, AuthContextType } from '../types/authTypes';
-import { login as apiLogin, register as apiRegister, checkEmail as apiCheckEmail, logout as apiLogout, refreshTokens } from '../services/authApi';
-import { deleteAccount as apiDeleteAccount} from '../services/accountApi';
+import {
+  login as apiLogin,
+  register as apiRegister,
+  checkEmail as apiCheckEmail,
+  logout as apiLogout,
+  refreshTokens,
+} from '../services/authApi';
+import { deleteAccount as apiDeleteAccount } from '../services/accountApi';
 import { useSnackbar } from './useSnackbar';
+import { handleApiError } from '../services/errorHandler';
 
 // Создаём контекст
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -24,7 +31,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const { openSnackbar } = useSnackbar();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<UserType | undefined>(undefined);
-  
+
   // Функция восстановления из localStorage
   const restoreUser = () => {
     const stored = localStorage.getItem('user');
@@ -38,7 +45,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const parsed = JSON.parse(stored);
       const payload = parseJwt(parsed.accessToken);
       if (!payload || !payload.Id || !payload.Email) {
-        throw new Error('Invalid token');
+        throw new Error('Invalid token payload');
       }
 
       // Проверка срока действия
@@ -86,7 +93,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const payload = parseJwt(accessToken);
 
       if (!payload?.Id || !payload?.Email) {
-        throw new Error('Invalid token payload');
+        throw new Error('Недопустимый токен: отсутствуют обязательные данные');
       }
 
       const userData: UserType = {
@@ -102,17 +109,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setIsAuthenticated(true);
       navigate('/portfolios', { replace: true });
     } catch (error) {
-      console.error('Login failed:', error);
-      throw error;
+      const message = handleApiError(error); // ← получаем локализованное сообщение
+      console.error('Login failed:', message);
+      throw new Error(message); // ← пробрасываем дальше для отображения в UI
     }
   };
 
-    // Функция выхода
-  const logout = () => {
+  // Функция выхода
+  const logout = async () => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       const { refreshToken } = JSON.parse(storedUser);
-      apiLogout(refreshToken).catch(console.warn);
+      try {
+        await apiLogout(refreshToken);
+      } catch (error) {
+        console.warn('Не удалось отозвать refreshToken', error);
+      }      
     }
     localStorage.removeItem('user');
     setUser(undefined);
@@ -123,11 +135,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Функция регистрации
   const register = async (email: string, password: string, fullName: string) => {
     try {
-      const { accessToken, refreshToken } = await apiRegister({ email, password, confirmPassword: password, fullName: fullName });
+      const { accessToken, refreshToken } = await apiRegister({ email, password, fullName });
       const payload = parseJwt(accessToken);
 
       if (!payload?.Id || !payload?.Email) {
-        throw new Error('Invalid token payload');
+        throw new Error('Недопустимый токен: отсутствуют обязательные данные');
       }
 
       const userData: UserType = {
@@ -136,16 +148,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         userName: payload.UserName || fullName,
       };
 
-      localStorage.setItem(
-        'user',
-        JSON.stringify({ accessToken, refreshToken, user: userData })
-      );
-
+      localStorage.setItem('user', JSON.stringify({ accessToken, refreshToken, user: userData }));
+      setUser(userData);
       setIsAuthenticated(true);
       navigate('/portfolios', { replace: true });
     } catch (error) {
-      console.error('Registration failed:', error);
-      throw error;
+      const message = handleApiError(error); // ← локализованная ошибка
+      console.error('Registration failed:', message);
+      throw new Error(message); // ← пробрасываем дальше
     }
   };
 
@@ -161,14 +171,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       navigate('/login', { replace: true });
       openSnackbar('Аккаунт удалён', 'success');
     } catch (err: any) {
-      console.error('Delete account failed:', err);
-      openSnackbar(err.message || 'Не удалось удалить аккаунт', 'error');
+      const message = handleApiError(err); // ← используем единый обработчик
+      console.error('Delete account failed:', message);
+      openSnackbar(message, 'error');
     }
   };
 
   // Проверка email
   const checkEmail = async (email: string): Promise<boolean> => {
-    return await apiCheckEmail(email);
+    try {
+      return await apiCheckEmail(email);
+    } catch (error) {
+      const message = handleApiError(error);
+      console.warn('Email check failed:', message);
+      throw new Error(message);
+    }
   };
 
   // Прослушка localStorage (например, выход в другой вкладке)
@@ -231,15 +248,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [logout]);
 
   return (
-    <AuthContext.Provider value={{
-      isAuthenticated,
-      user,
-      login,
-      logout,
-      register,
-      checkEmail,
-      deleteAccount
-    }}>
+    <AuthContext.Provider
+      value={{
+        isAuthenticated,
+        user,
+        login,
+        logout,
+        register,
+        checkEmail,
+        deleteAccount,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

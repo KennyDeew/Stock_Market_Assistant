@@ -43,15 +43,52 @@ export default function RegisterPage() {
     const newErrors = { email: '', password: '', confirmPassword: '', fullName: '', general: '' };
     let isValid = true;
 
-    if (!formData.fullName) { newErrors.fullName = 'ФИО обязательно'; isValid = false; }
-    if (!formData.email) { newErrors.email = 'Email обязателен'; isValid = false; }
-    else if (!/\S+@\S+\.\S+/.test(formData.email)) { newErrors.email = 'Некорректный email'; isValid = false; }
-    else if (!emailChecked) { newErrors.email = 'Проверьте доступность email'; isValid = false; }
-    else if (!emailAvailable) { newErrors.email = 'Этот email уже занят'; isValid = false; }
-    if (!formData.password) { newErrors.password = 'Пароль обязателен'; isValid = false; }
-    else if (formData.password.length < 6) { newErrors.password = 'Пароль должен быть не менее 6 символов'; isValid = false; }
-    if (!formData.confirmPassword) { newErrors.confirmPassword = 'Подтвердите пароль'; isValid = false; }
-    else if (formData.password !== formData.confirmPassword) { newErrors.confirmPassword = 'Пароли не совпадают'; isValid = false; }
+    if (!formData.fullName) {
+      newErrors.fullName = 'ФИО обязательно';
+      isValid = false;
+    }
+
+    if (!formData.email) {
+      newErrors.email = 'Email обязателен';
+      isValid = false;
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = 'Некорректный email';
+      isValid = false;
+    } else if (!emailChecked) {
+      newErrors.email = 'Проверьте доступность email';
+      isValid = false;
+    } else if (!emailAvailable) {
+      newErrors.email = 'Этот email уже занят';
+      isValid = false;
+    }
+
+    if (!formData.password) {
+      newErrors.password = 'Пароль обязателен';
+      isValid = false;
+    } else if (formData.password.length < 6) {
+      newErrors.password = 'Пароль должен быть не менее 6 символов';
+      isValid = false;
+    } else if (!/\d/.test(formData.password)) {
+      newErrors.password = 'Пароль должен содержать хотя бы одну цифру (0-9)';
+      isValid = false;
+    } else if (!/[A-Z]/.test(formData.password)) {
+      newErrors.password = 'Пароль должен содержать хотя бы одну заглавную букву';
+      isValid = false;
+    } else if (!/[a-z]/.test(formData.password)) {
+      newErrors.password = 'Пароль должен содержать хотя бы одну строчную букву';
+      isValid = false;
+    } else if (!/[^A-Za-z0-9]/.test(formData.password)) {
+      newErrors.password = 'Пароль должен содержать хотя бы один спецсимвол (!, @, #, $ и т.д.)';
+      isValid = false;
+    }
+
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = 'Подтвердите пароль';
+      isValid = false;
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Пароли не совпадают';
+      isValid = false;
+    }
 
     setErrors(newErrors);
     return isValid;
@@ -70,9 +107,12 @@ export default function RegisterPage() {
       const available = await checkEmail(formData.email);
       setEmailAvailable(available);
       setEmailChecked(true);
-      if (!available) setErrors(prev => ({ ...prev, email: 'Этот email уже занят' }));
-    } catch {
-      setErrors(prev => ({ ...prev, email: 'Ошибка при проверке email' }));
+      if (!available) {
+        setErrors(prev => ({ ...prev, email: 'Этот email уже занят' }));
+      }
+    } catch (error: any) {
+      const message = error.message || 'Ошибка при проверке email';
+      setErrors(prev => ({ ...prev, email: message }));
       setEmailChecked(false);
     } finally {
       setCheckingEmail(false);
@@ -88,8 +128,11 @@ export default function RegisterPage() {
     try {
       await register(formData.email, formData.password, formData.fullName);
       navigate('/login', { replace: true });
-    } catch {
-      setErrors(prev => ({ ...prev, general: 'Не удалось зарегистрироваться. Попробуйте позже.' }));
+    } catch (error: any) {
+      setErrors(prev => ({
+        ...prev,
+        general: error instanceof Error ? error.message : 'Не удалось зарегистрироваться. Проверьте данные.'
+      }));
     } finally {
       setLoading(false);
     }
@@ -108,7 +151,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <AppLayout maxWidth={"sm"}>
+    <AppLayout maxWidth="sm">
       <Container>
         <Paper sx={{ p: 4, borderRadius: 2, boxShadow: 2 }}>
           <Typography variant="h4" component="h1" gutterBottom align="center" fontWeight={600}>
@@ -172,6 +215,10 @@ export default function RegisterPage() {
               helperText={errors.password}
               sx={{ borderRadius: 1 }}
             />
+
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              Пароль должен содержать: минимум 6 символов, цифру, заглавную и строчную букву, а также спецсимвол (например, !, @, #, $).
+            </Typography>
 
             <TextField
               label="Подтвердите пароль"
