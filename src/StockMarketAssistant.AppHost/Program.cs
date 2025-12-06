@@ -8,6 +8,7 @@
 
         var apiGatewayService = builder.AddProject<Projects.Gateway_WebApi>("gateway-api");
         var apiAuthService = builder.AddProject<Projects.AuthService_WebApi>("authservice-api");
+        var authServiceMigrationJob = builder.AddProject<Projects.AuthService_MigrationsJob>("authservice-migrations-job");
         var apiStockCardService = builder.AddProject<Projects.StockCardService_WebApi>("stockcardservice-api");
         var apiPortfolioService = builder.AddProject<Projects.PortfolioService_WebApi>("portfolioservice-api");
         var apiAnalyticsService = builder.AddProject<Projects.AnalyticsService_WebApi>("analyticsservice-api");
@@ -73,10 +74,16 @@
         //var container = builder.AddDockerfile("gateway", "../backend/gateway/");
 
         // Связывание ресурсов с проектами
-        apiAuthService
+        authServiceMigrationJob
             .WithReference(pgAuthDb)
             .WithEnvironment("ConnectionStrings__Database", pgAuthDb.Resource.ConnectionStringExpression)
             .WaitFor(pgAuthDb);
+
+        apiAuthService
+            .WithReference(pgAuthDb)
+            .WithEnvironment("ConnectionStrings__Database", pgAuthDb.Resource.ConnectionStringExpression)
+            .WaitFor(pgAuthDb)
+            .WaitFor(authServiceMigrationJob);
 
         apiStockCardService
             .WithReference(redis)

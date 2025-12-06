@@ -52,7 +52,7 @@ export default function TransactionModal({
   assetName,
   initialType = 'Buy',
   isLoading = false,
-  asset, // 🔥 Получаем актив
+  asset,
 }: TransactionModalProps) {
   const [type, setType] = useState<TransactionType>(initialType);
   const [quantity, setQuantity] = useState('');
@@ -75,7 +75,7 @@ export default function TransactionModal({
     const p = parseFloat(price);
 
     if (!quantity || isNaN(q) || q <= 0) {
-      setError('Количество должно быть числом больше 0');
+      setError('Количество должно быть целым числом больше 0');
       return;
     }
     if (!price || isNaN(p) || p <= 0) {
@@ -122,16 +122,17 @@ export default function TransactionModal({
             value={quantity}
             onChange={(e) => {
               const val = e.target.value;
-              if (val === '' || /^\d*\.?\d*$/.test(val)) setQuantity(val);
+              // Разрешаем только целые положительные числа
+              if (val === '' || /^\d+$/.test(val)) setQuantity(val);
             }}
             fullWidth
             required
             slotProps={{
               input: {
-                inputProps: { min: 0.001, step: 0.001 }
+                inputProps: { min: 1, step: 1 } // ← изменено: шаг 1, минимум 1
               }
             }}
-            helperText="Минимум 0.001"
+            helperText="Минимум 1"
           />
 
           <TextField

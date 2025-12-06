@@ -36,6 +36,7 @@ export default function LoginPage() {
       await login(email, password);
       navigate('/portfolios', { replace: true });
     } catch (err: any) {
+      // Ошибка уже локализована в useAuth через handleApiError
       setError(err.message || 'Неверный email или пароль');
     } finally {
       setLoading(false);
@@ -43,7 +44,7 @@ export default function LoginPage() {
   };
 
   return (
-    <AppLayout maxWidth={"sm"}>
+    <AppLayout maxWidth="sm">
       <Container>
         <Paper sx={{ p: 4, borderRadius: 2, boxShadow: 2 }}>
           <Typography variant="h4" component="h1" gutterBottom align="center" fontWeight={600}>
@@ -62,6 +63,7 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
               autoFocus
+              error={!!error && !email}
               sx={{ borderRadius: 1 }}
             />
             <TextField
@@ -72,6 +74,7 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              error={!!error && !password}
               sx={{ borderRadius: 1 }}
             />
 
