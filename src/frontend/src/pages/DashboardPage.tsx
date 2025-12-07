@@ -46,13 +46,8 @@ import { getAssetTypeName, getAssetTypeColor, mapUiToApiAssetType } from '../uti
 import { PortfolioAssetTypeValue } from '../types/portfolioAssetTypes.ts';
 import type { AlertCondition } from '../types/alertTypes.ts';
 import AppLayout from '../components/AppLayout.tsx';
-
-// Аналитика
 import { analyticsApiService } from '../services/analyticsApi';
-import type {
-  AssetRatingDto,
-  TransactionResponseDto,
-} from '../types/analyticsTypes';
+import type { AssetRatingDto } from '../types/analyticsTypes';
 
 export default function DashboardPage() {
   const { isAuthenticated } = useAuth();
@@ -71,10 +66,9 @@ export default function DashboardPage() {
   const [portfolios, setPortfolios] = useState<PortfolioShort[]>([]);
   const [loadingPortfolios, setLoadingPortfolios] = useState(true);
 
-  // 🔽 Состояния аналитики
+  // Состояния аналитики
   const [topBought, setTopBought] = useState<AssetRatingDto[]>([]);
   const [topSold, setTopSold] = useState<AssetRatingDto[]>([]);
-  const [recentTransactions, setRecentTransactions] = useState<TransactionResponseDto[]>([]);
   const [loadingAnalytics, setLoadingAnalytics] = useState(false);
 
   interface MoexNewsItem {
@@ -238,7 +232,7 @@ export default function DashboardPage() {
       const format = (d: Date) => d.toISOString();
 
       try {
-        const [boughtRes, soldRes, transRes] = await Promise.all([
+        const [boughtRes, soldRes] = await Promise.all([
           analyticsApiService.getTopBought(5, format(weekAgo), format(now), 'Global'),
           analyticsApiService.getTopSold(5, format(weekAgo), format(now), 'Global'),
           analyticsApiService.getAllTransactions('Week'),
@@ -246,7 +240,6 @@ export default function DashboardPage() {
 
         setTopBought(boughtRes.assets);
         setTopSold(soldRes.assets);
-        setRecentTransactions(transRes.transactions.slice(0, 5));
       } catch (err) {
         console.error('Ошибка загрузки аналитики:', err);
         openSnackbar('Не удалось загрузить аналитику', 'warning');
@@ -336,35 +329,6 @@ export default function DashboardPage() {
         </Box>
       )}
 
-      {/* Последние сделки */}
-      <Box mt={4}>
-        <Typography variant="subtitle1" fontWeight="bold" mb={1}>
-          💸 Ваши последние сделки
-        </Typography>
-        {recentTransactions.length === 0 ? (
-          <Typography variant="body2" color="text.secondary">Нет недавних сделок</Typography>
-        ) : (
-          <Table size="small">
-            <TableBody>
-              {recentTransactions.map((tx) => (
-                <TableRow key={tx.id}>
-                  <TableCell>
-                    <Link to={`/asset/${tx.stockCardId}`} style={{ fontWeight: 500 }}>
-                      {tx.stockCardId}
-                    </Link>
-                  </TableCell>
-                  <TableCell>
-                    {tx.transactionType === 'Buy' ? '🟢 Куплено' : '🔴 Продано'}
-                  </TableCell>
-                  <TableCell align="right">
-                    {tx.quantity} × {tx.pricePerUnit.toFixed(2)} ₽
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </Box>
     </Paper>
   );
 
