@@ -1,3 +1,6 @@
 {
-	"dotnet.defaultSolution": "StockMarketAssistant.sln"
+	"dotnet.defaultSolution": "StockMarketAssistant.sln",
+	"workbench.panel.defaultLocation": "bottom",
+	"workbench.sideBar.location": "left",
+	"workbench.statusBar.visible": true
 }
