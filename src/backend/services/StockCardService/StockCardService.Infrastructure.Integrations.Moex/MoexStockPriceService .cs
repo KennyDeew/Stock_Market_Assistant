@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using StockMarketAssistant.StockCardService.Application.DTOs;
 using StockMarketAssistant.StockCardService.Application.Interfaces;
 using System.Text.Json;
 
@@ -27,6 +28,7 @@ namespace StockCardService.Infrastructure.Integrations.Moex
         {
             // Примерный запрос к API Мосбиржи (нужно адаптировать под нужный endpoint)
             var url = $"https://iss.moex.com/iss/engines/stock/markets/{market}/boards/{board}/securities/{ticker}.json?iss.meta=off";
+            _logger.LogInformation($"Start. url - {url}");
             var response = await _httpClient.GetAsync(url, cancellationToken);
             response.EnsureSuccessStatusCode();
 
@@ -49,8 +51,7 @@ namespace StockCardService.Infrastructure.Integrations.Moex
                 propName = "LAST";
             }
 
-            //var typestr = root.ValueKind.ToString();
-            //_logger.LogInformation($"Start. fieldName - {fieldName},propName - {propName} type - {typestr}");
+            var typestr = root.ValueKind.ToString();
 
             if (!root.TryGetProperty(fieldName, out var marketData))
             {
@@ -84,7 +85,7 @@ namespace StockCardService.Infrastructure.Integrations.Moex
                     if (priceValue.ValueKind == JsonValueKind.Number)
                     {
                         var price = priceValue.GetDecimal();
-                        _logger.LogInformation("Fetched price for {Ticker}: {Price}", ticker, price);
+                        //_logger.LogInformation("Fetched price for {Ticker}: {Price}", ticker, price);
                         return price;
                     }
                 }
@@ -92,6 +93,26 @@ namespace StockCardService.Infrastructure.Integrations.Moex
 
             _logger.LogWarning("Could not extract price for {Ticker}", ticker);
             return null;
+        }
+
+        public async Task<StockPriceDto> GetStockPricesAsync(string ticker, string market, string board, CancellationToken cancellationToken)
+        {
+            decimal currentPrice = 0;
+            try
+            {
+                currentPrice = await GetCurrentPriceAsync(ticker, market, board, cancellationToken) ?? 0;
+            }
+            catch (Exception exp)
+            {
+                _logger.LogError(exp.Message);
+            }
+
+            return new StockPriceDto()
+            {
+                Ticker = ticker,
+                Price = currentPrice,
+                Timestamp = DateTime.UtcNow
+            };
         }
     }
 }

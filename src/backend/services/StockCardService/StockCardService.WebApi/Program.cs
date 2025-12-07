@@ -16,6 +16,8 @@ using StockMarketAssistant.StockCardService.Infrastructure.MongoDb;
 using StockMarketAssistant.StockCardService.Infrastructure.MongoDb.Settings;
 using StockMarketAssistant.StockCardService.Infrastructure.Repositories;
 using StockMarketAssistant.StockCardService.WebApi.Helper;
+using StockMarketAssistant.StockCardService.WebApi.Hubs;
+using StockMarketAssistant.StockCardService.WebApi.BackgroundServices;
 
 namespace StockMarketAssistant.StockCardService.WebApi
 {
@@ -60,16 +62,16 @@ namespace StockMarketAssistant.StockCardService.WebApi
                 builder.Configuration.GetSection("KafkaOptions"));
 
             //Найстройка CORs
-            string StockCardServiceCORsName = "StockCardServiceCORs";
-            builder.Services.AddCors(options =>
+            builder.Services.AddCors(opt =>
             {
-                options.AddPolicy(name: StockCardServiceCORsName,
-                                  corsBuilder =>
-                                  {
-                                      corsBuilder.AllowAnyOrigin()
-                                       .WithHeaders(builder.Configuration.GetSection("CORS:Headers").Get<string[]>())
-                                       .WithMethods(builder.Configuration.GetSection("CORS:Methods").Get<string[]>());
-                                  });
+                opt.AddPolicy("AllowFrontend", policy =>
+                {
+                    policy
+                        .AllowAnyMethod()
+                        .AllowAnyHeader()
+                        .AllowCredentials()
+                        .WithOrigins("http://localhost:3000");
+                });
             });
 
             // Настройка логирования
@@ -77,6 +79,9 @@ namespace StockMarketAssistant.StockCardService.WebApi
             builder.Logging.ClearProviders();   // Убираем стандартные провайдеры (например, Debug)
             builder.Logging.AddConsole();       // Добавляем логирование в консоль
             builder.Logging.AddDebug();         // (опционально) логирование в Visual Studio Output
+
+            //Добавление SignalR
+            builder.Services.AddSignalR();
 
             //IOC
             builder.Services.AddControllers();
@@ -88,7 +93,7 @@ namespace StockMarketAssistant.StockCardService.WebApi
             builder.Services.AddScoped(typeof(IMongoRepository<FinancialReport, Guid>), typeof(FinancialReportRepository));
             builder.Services.AddHttpClient<IMoexCardService, MoexCardService>();
             builder.Services.AddScoped<IDbInitializer, DbInitializer>();
-            builder.Services.AddScoped<IStockPriceService, MoexStockPriceService>();
+            builder.Services.AddHttpClient<IStockPriceService, MoexStockPriceService>();
             builder.Services.AddSingleton<IMongoDBContext, MongoDBContext>();
             builder.Services.AddSingleton<IKafkaProducerFactory, KafkaProducerFactory>();
             builder.Services.AddSingleton<IKafkaProducer<string, FinancialReportCreatedMessage>, FinReportCreatedMessageProducer>();
@@ -98,6 +103,10 @@ namespace StockMarketAssistant.StockCardService.WebApi
             builder.Services.AddScoped<IDividendService, DividendService>();
             builder.Services.AddScoped<ICouponService, CouponService>();
             builder.Services.AddScoped<IFinancialReportService, FinancialReportService>();
+            //builder.Services.AddSingleton<IPriceHubClient, PriceHubClient>();
+            //Добавляем бэкграун сервис
+            builder.Services.AddSingleton<PriceStreamingService>();
+            builder.Services.AddHostedService(sp => sp.GetRequiredService<PriceStreamingService>());
 
             builder.Services.AddEndpointsApiExplorer(); // Для генерации OpenAPI spec
             // Добавляет Swagger-сервисы. Настраиваем xml разметку
@@ -117,30 +126,15 @@ namespace StockMarketAssistant.StockCardService.WebApi
                 app.UseSwaggerUI();
             }
 
-            app.UseHttpsRedirection();
+
+            //app.UseHttpsRedirection();
             app.UseRouting();
-            app.UseCors(StockCardServiceCORsName);
+            app.UseCors("AllowFrontend"); ;
             app.UseAuthorization();
             app.MapControllers();
 
-            // Раздача фронтенда из wwwroot
-            app.UseDefaultFiles();  // index.html
-            app.UseStaticFiles();
-
-            // SPA fallback для клиентского роутинга
-            app.Use(async (context, next) =>
-            {
-                await next();
-
-                if (context.Response.StatusCode == 404 &&
-                    !Path.HasExtension(context.Request.Path.Value) &&
-                    !context.Request.Path.Value.StartsWith("/api"))
-                {
-                    context.Request.Path = "/index.html";
-                    context.Response.StatusCode = 200;
-                    await context.Response.SendFileAsync(Path.Combine(app.Environment.ContentRootPath, "wwwroot", "index.html"));
-                }
-            });
+            //настройка хаба SignalR
+            app.MapHub<PriceHub>("/stockPriceHub");
 
             app.MigrateDatabase<StockCardDbContext>();
 

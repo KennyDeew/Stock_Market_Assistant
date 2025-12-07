@@ -12,6 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.SpaServices.Extensions" Version="9.0.11" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.6">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -30,6 +31,10 @@
     <ProjectReference Include="..\StockCardService.Infrastructure.Integrations.Moex\StockCardService.Infrastructure.Integrations.Moex.csproj" />
     <ProjectReference Include="..\StockCardService.Infrastructure.MongoDb\StockCardService.Infrastructure.MongoDb.csproj" />
     <ProjectReference Include="..\StockCardService.Infrastructure.Repositories\StockCardService.Infrastructure.Repositories.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="wwwroot\" />
   </ItemGroup>
 
 </Project>

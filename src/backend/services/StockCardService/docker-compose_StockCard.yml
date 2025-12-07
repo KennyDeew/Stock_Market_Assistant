@@ -16,8 +16,8 @@ services:
     depends_on:
       - zookeeper
     ports:
-      - "9091:9091"       # для других контейнеров
-      - "29091:29091"     # для localhost снаружи
+      - "9091:9091"
+      - "29091:29091"
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
@@ -46,29 +46,36 @@ services:
       - stock_network
 
   stockcardservice-api:
-    image: docker.io/kennydew/stockcardservice-api:1.0.4
+    image: docker.io/kennydew/stockcardservice-api:1.0.3
     ports:
       - 8080:8080
     environment:
-      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
       - ConnectionStrings__stock-card-db=Host=postgres-stockcard;Database=stock-card-db;Username=postgres;Password=password;Port=5432
       - ConnectionStrings__finantial-report-db=mongodb://root:example@mongo-stockcard:27017/finantial-report-db?authSource=admin
       #- ApplicationOptions__KafkaOptions__BootstrapServers=kafka1:9091,kafka2:9092,kafka3:9093
       - KafkaOptions__BootstrapServers=kafka:9091
     depends_on:
-      - postgres-stockcard
-      - mongo-stockcard
-      - kafka
+      postgres-stockcard:
+        condition: service_healthy
+      mongo-stockcard:
+        condition: service_started
+      kafka:
+        condition: service_started
     networks:
       - stock_network
     command: >
       sh -c "echo 'Waiting for PostgreSQL...' &&
-             sleep 5 &&
-             echo 'Applying migrations...' &&
-             dotnet ef database update --project /src/StockCardService.Infrastructure --startup-project /src/StockCardService.WebApi &&
-             echo 'Migrations applied. Starting API...' &&
-             dotnet StockCardService.WebApi.dll"
+         until pg_isready -h postgres-stockcard -p 5432 -U postgres; do
+           echo 'PostgreSQL is unavailable - sleeping';
+           sleep 2;
+         done &&
+         echo 'PostgreSQL is up!' &&
+         echo 'Applying migrations...' &&
+         dotnet ef database update --project /src/StockCardService.Infrastructure --startup-project /src/StockCardService.WebApi &&
+         echo 'Migrations applied. Starting API...' &&
+         dotnet StockCardService.WebApi.dll"
 
   kafka-consumer:
     image: kennydew/kafkaconsumer:1.0.0
@@ -84,7 +91,7 @@ services:
     restart: always
   
   postgres-stockcard:
-    image: postgres:latest
+    image: postgres:17.5
     restart: always
     environment:
       - POSTGRES_USER=postgres
@@ -143,6 +150,15 @@ services:
       - "8082:8081"
     networks:
       - stock_network
+      
+  shares-frontend:
+    image: docker.io/kennydew/shares-frontend:1.0.3
+    container_name: shares-frontend
+    ports:
+      - "3000:80"
+    networks:
+      - stock_network
+
 
 volumes:
   postgres_data:
