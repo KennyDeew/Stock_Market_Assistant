@@ -22,13 +22,13 @@ services:
     environment:
       - PORT=5273
       - VITE_AUTH_API_URL=http://authservice.webapi:8080
-      - VITE_STOCKCARD_API_URL=http://stockcardservice.webapi:8080
+      - VITE_STOCKCARD_API_URL=http://stockcardservice-api:8080
       - VITE_PORTFOLIO_API_URL=http://portfolioservice.webapi:8080
       - VITE_ANALYTICS_API_URL=http://analyticsservice.webapi:8080
       - VITE_API_BASE_URL=/
     depends_on:
       - authservice.webapi
-      - stockcardservice.webapi
+      - stockcardservice-api
       - portfolioservice.webapi
       - analyticsservice.webapi
     networks:
@@ -82,6 +82,7 @@ services:
       - OpenSearchConfig__Url=http://opensearch:9200
       # - PortfolioService__BaseUrl=http://portfolioservice-api:8080
       - FRONTEND_ORIGIN=http://localhost:5273 
+      - ConnectionStrings__cache=cache:6379
     ports:
       - "8080"
       # - "8081"
@@ -94,7 +95,7 @@ services:
 
 
 
-  stockcardservice.webapi:
+  stockcardservice-api:
     image: stockcardservicewebapi
     build:
       context: .
@@ -170,6 +171,15 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_HTTP_PORTS=8080
+      - ConnectionStrings__analytics-db=Host=pg-analytics-db;Port=5432;Database=analytics-db;Username=postgres;Password=postgres
+      - OpenSearchConfig__Username=admin
+      - OpenSearchConfig__Password=admin
+      - Kafka__BootstrapServers=localhost:9092
+      - Kafka__ConsumerGroup=localhost:9092
+      - Kafka__Topic=portfolio.transactions
+      - Kafka__BatchSize=100
+      - PortfolioService__BaseUrl=portfolioservice.webapi:8080
+
       # - ASPNETCORE_HTTPS_PORTS=8081
     ports:
       - "8080"

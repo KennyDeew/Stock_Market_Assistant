@@ -19,10 +19,10 @@ import type {
 } from '../types/portfolioAssetTypes';
 
 // Инстанс для /portfolios
-const portfolioApiInstance = createPrivateApiClient('/api/v1/portfolios');
+const portfolioApiInstance = createPrivateApiClient('/portfolios');
 
 // Инстанс для /portfolio-assets
-const portfolioAssetsApi = createPrivateApiClient('/api/v1/portfolio-assets');
+const portfolioAssetsApi = createPrivateApiClient('/portfolio-assets');
 
 // Основные методы портфеля
 export const portfolioApi = {

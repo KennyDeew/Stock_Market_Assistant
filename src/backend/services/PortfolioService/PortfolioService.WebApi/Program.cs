@@ -74,7 +74,7 @@ namespace StockMarketAssistant.PortfolioService.WebApi
             // Регистрация HttpClient и gateway для взаимодействия с сервисом карточек ценных бумаг
             var httpClientBuilder = builder.Services.AddHttpClient<IStockCardServiceGateway, StockCardServiceGateway>(httpClient =>
             {
-                httpClient.BaseAddress = new Uri("http://stockcardservice-api");
+                httpClient.BaseAddress = new Uri("http://stockcardservice-api:8080");
             });
 
             if (!isRunningIntegrationTests)

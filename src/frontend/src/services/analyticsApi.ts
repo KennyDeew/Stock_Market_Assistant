@@ -5,7 +5,7 @@ import type {
 } from '../types/analyticsTypes';
 
 // Инстанс для /analytics
-const analyticsApi = createPrivateApiClient('/api/analytics');
+const analyticsApi = createPrivateApiClient('/analytics');
 
 analyticsApi.interceptors.request.use(
   (config) => {
