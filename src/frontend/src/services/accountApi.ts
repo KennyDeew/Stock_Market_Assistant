@@ -5,7 +5,7 @@ import { handleApiError } from './errorHandler';
  * Создаём инстанс для account API
  */
 const accountApi = axios.create({
-  baseURL: '/api/v1/account',
+  baseURL: '/account',
   headers: {
     'Content-Type': 'application/json',
   },
