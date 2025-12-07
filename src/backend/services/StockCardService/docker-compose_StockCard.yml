@@ -46,7 +46,7 @@ services:
       - stock_network
 
   stockcardservice-api:
-    image: docker.io/kennydew/stockcardservice-api:1.0.3
+    image: docker.io/kennydew/stockcardservice-api:1.0.5
     ports:
       - 8080:8080
     environment:
@@ -152,7 +152,7 @@ services:
       - stock_network
       
   shares-frontend:
-    image: docker.io/kennydew/shares-frontend:1.0.3
+    image: docker.io/kennydew/shares-frontend:1.0.5
     container_name: shares-frontend
     ports:
       - "3000:80"
