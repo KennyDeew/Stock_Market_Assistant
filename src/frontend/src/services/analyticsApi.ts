@@ -1,13 +1,11 @@
 import { createPrivateApiClient } from './apiClient'; // Приватный клиент
 import type {
-  AssetRatingDto,
-  TransactionResponseDto,
   TopAssetsResponseDto,
   TransactionsListResponseDto,
 } from '../types/analyticsTypes';
 
 // Инстанс для /analytics
-const analyticsApi = createPrivateApiClient(import.meta.env.VITE_ANALYTICS_API_URL + '/api/analytics');
+const analyticsApi = createPrivateApiClient('/api/analytics');
 
 analyticsApi.interceptors.request.use(
   (config) => {

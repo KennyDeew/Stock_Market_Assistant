@@ -5,7 +5,7 @@ import { handleApiError } from './errorHandler';
  * Создаём инстанс для account API
  */
 const accountApi = axios.create({
-  baseURL: import.meta.env.VITE_AUTH_API_URL + '/api/v1/account',
+  baseURL: '/api/v1/account',
   headers: {
     'Content-Type': 'application/json',
   },
