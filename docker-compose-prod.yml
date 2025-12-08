@@ -27,7 +27,7 @@ services:
       - VITE_ANALYTICS_API_URL=http://analyticsservice.webapi:8080
       - VITE_API_BASE_URL=/
     depends_on:
-      - authservice.webapi
+      # - authservice.webapi
       - stockcardservice-api
       - portfolioservice.webapi
       - analyticsservice.webapi
@@ -144,24 +144,24 @@ services:
     networks:
       - aspire-net
 
-  authservice.webapi:
-    image: authservicewebapi
-    build:
-      context: .
-      dockerfile: src/backend/services/AuthService/src/AuthService.WebApi/Dockerfile
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_HTTP_PORTS=8080
-      # - ASPNETCORE_HTTPS_PORTS=
-      - ConnectionStrings__Database=Host=pg-auth-db;Port=5432;Database=Database;Username=postgres;Password=postgres
-      - FRONTEND_ORIGIN=http://localhost:5273
-    ports:
-      - "8080"
-      # - "8081"
-    depends_on:
-      - pg-auth-db
-    networks:
-      - aspire-net
+  # .authservice.webapi:
+  #   image: authservicewebapi
+  #   build:
+  #     context: .
+  #     dockerfile: src/backend/services/AuthService/src/AuthService.WebApi/Dockerfile
+  #   environment:
+  #     - ASPNETCORE_ENVIRONMENT=Development
+  #     - ASPNETCORE_HTTP_PORTS=8080
+  #     # - ASPNETCORE_HTTPS_PORTS=
+  #     - ConnectionStrings__Database=Host=pg-auth-db;Port=5432;Database=Database;Username=postgres;Password=postgres
+  #     - FRONTEND_ORIGIN=http://localhost:5273
+  #   ports:
+  #     - "8080"
+  #     # - "8081"
+  #   depends_on:
+  #     - pg-auth-db
+  #   networks:
+  #     - aspire-net
 
   analyticsservice.webapi:
     image: analyticsservicewebapi
