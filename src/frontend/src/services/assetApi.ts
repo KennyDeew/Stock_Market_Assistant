@@ -3,9 +3,9 @@ import { handleApiError } from './errorHandler';
 import type { ShareCard, BondCard, CryptoCard, AssetShort } from '../types/assetTypes';
 
 // Создаём инстансы с полными URL через переменные окружения
-const stockApi = createPublicApiClient('/api/v1/ShareCard');
-const bondApi = createPublicApiClient('/api/v1/BondCard');
-const cryptoApi = createPublicApiClient('/api/v1/CryptoCard');
+const stockApi = createPublicApiClient('/stockcardservice-api/api/v1/ShareCard');
+const bondApi = createPublicApiClient('/stockcardservice-api/api/v1/BondCard');
+const cryptoApi = createPublicApiClient('/stockcardservice-api/api/v1/CryptoCard');
 
 export const assetApi = {
   /**
