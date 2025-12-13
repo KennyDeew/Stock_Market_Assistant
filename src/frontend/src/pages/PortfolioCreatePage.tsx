@@ -50,7 +50,7 @@ export default function PortfolioCreatePage() {
     try {
       const { user } = JSON.parse(storedUser);
       return typeof user?.id === 'string' ? user.id : null;
-    } catch (e) {
+    } catch {
       console.error('Failed to parse user from localStorage');
       return null;
     }
@@ -98,10 +98,10 @@ export default function PortfolioCreatePage() {
         isPrivate: formData.isPrivate
       });
       navigate('/portfolios');
-    } catch (err: any) {
-      setError(err.message || 'Не удалось создать портфель');
+    } catch (err: unknown) {
+        setError((err as Error).message || 'Не удалось создать портфель');
     } finally {
-      setLoading(false);
+       setLoading(false);
     }
   };
 

@@ -106,9 +106,9 @@ export default function DashboardPage() {
           pageSize,
         });
         setAssets(response.data);
-        setTotal(response.total);
-      } catch (err: any) {
-        setError(err.message || 'Не удалось загрузить котировки');
+          setTotal(response.total);
+      } catch (err: unknown) {
+          setError((err as Error).message || 'Не удалось загрузить котировки');
       } finally {
         setLoading(false);
       }
@@ -148,7 +148,7 @@ export default function DashboardPage() {
       openSnackbar('Ошибка данных пользователя', 'error');
       setLoadingPortfolios(false);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, openSnackbar]);
 
   // Загрузка новостей МосБиржи
   useEffect(() => {
@@ -164,7 +164,6 @@ export default function DashboardPage() {
           const data = await response.json();
           if (!data?.sitenews?.data) throw new Error('Invalid response format');
 
-          const columns = data.sitenews.columns;
           const items = data.sitenews.data;
 
           const decode = (text: string): string => {
@@ -174,26 +173,24 @@ export default function DashboardPage() {
           };
 
           const news: MoexNewsItem[] = items
-            .map((item: any[]) => {
-              const obj: any = {};
-              columns.forEach((col: string, idx: number) => {
-                obj[col] = item[idx];
-              });
+            .map((item: (string | number | null)[]) => {
+              const [id, title, announce, published_at, tag] = item;
 
-              const publishedAt = String(obj.published_at || '').trim();
+              const publishedAt = String(published_at || '').trim();
               const [date, time] = publishedAt.split(' ');
 
               return {
-                id: Number(obj.id),
+                id: Number(id) || 0,
                 date: date || '2000-01-01',
                 time: time || '00:00:00',
-                title: decode(obj.title || 'Без названия'),
-                announce: decode(obj.announce || ''),
-                link: `https://moex.com/n${obj.id}`,
-                category: obj.tag || 'Новости',
+                title: decode(String(title || 'Без названия')),
+                announce: decode(String(announce || '')),
+                link: `https://moex.com/n${id || ''}`,
+                category: String(tag || 'Новости'),
               };
             })
             .slice(0, 6);
+
 
           if (mounted) {
             setDashboardNews({ news, loading: false, error: null });
@@ -249,7 +246,7 @@ export default function DashboardPage() {
     };
 
     loadAnalytics();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, openSnackbar]);
 
   // Блок аналитики
   const analyticsSection = isAuthenticated && (
@@ -695,8 +692,8 @@ const content = (
                 openSnackbar('Уведомление установлено', 'success');
                 setIsModalOpen(false);
                 setSelectedAsset(null);
-              } catch (err: any) {
-                openSnackbar('Ошибка: ' + (err.message || 'Не удалось создать уведомление'), 'error');
+              } catch (err: unknown) {
+                  openSnackbar('Ошибка: ' + ((err as Error).message || 'Не удалось создать уведомление'), 'error');
               }
             }}
           />
@@ -736,8 +733,8 @@ const content = (
                   purchasePricePerUnit: Number(purchasePrice.toFixed(8)),
                 });
                 openSnackbar('Актив успешно добавлен', 'success');
-              } catch (err: any) {
-                openSnackbar('Ошибка: ' + (err.message || 'ошибка'), 'error');
+              } catch (err: unknown) {
+                  openSnackbar('Ошибка: ' + ((err as Error).message || 'ошибка'), 'error');
                 throw err;
               }
             }}

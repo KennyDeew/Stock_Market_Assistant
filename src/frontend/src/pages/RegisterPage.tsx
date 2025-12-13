@@ -110,8 +110,8 @@ export default function RegisterPage() {
       if (!available) {
         setErrors(prev => ({ ...prev, email: 'Этот email уже занят' }));
       }
-    } catch (error: any) {
-      const message = error.message || 'Ошибка при проверке email';
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Ошибка при проверке email';
       setErrors(prev => ({ ...prev, email: message }));
       setEmailChecked(false);
     } finally {
@@ -128,7 +128,7 @@ export default function RegisterPage() {
     try {
       await register(formData.email, formData.password, formData.fullName);
       navigate('/login', { replace: true });
-    } catch (error: any) {
+    } catch (error: unknown) {
       setErrors(prev => ({
         ...prev,
         general: error instanceof Error ? error.message : 'Не удалось зарегистрироваться. Проверьте данные.'

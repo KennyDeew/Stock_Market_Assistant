@@ -19,8 +19,8 @@ import {
   Tooltip,
   IconButton,
 } from '@mui/material';
-import { Delete as DeleteIcon, Edit as EditIcon, Visibility as VisibilityIcon, VisibilityOff as VisibilityOffIcon} from '@mui/icons-material';
-import { useEffect, useState, useMemo } from 'react';
+import { Delete as DeleteIcon, Edit as EditIcon, Visibility as VisibilityIcon, VisibilityOff as VisibilityOffIcon } from '@mui/icons-material';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Pagination from '@mui/material/Pagination';
 import EditPortfolioModal from '../components/EditPortfolioModal';
@@ -36,9 +36,11 @@ export default function PortfolioListPage() {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
   const [total, setTotal] = useState(0);
-
-  // 🔹 Состояние для модального окна редактирования
+  // Состояние для модального окна редактирования
   const [editingPortfolio, setEditingPortfolio] = useState<PortfolioShort | null>(null);
+  // Состояние для подтверждения удаления
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
   const { openSnackbar } = useSnackbar();
 
   // Получаем userId из localStorage
@@ -55,7 +57,7 @@ export default function PortfolioListPage() {
   }, []);
 
   // Загрузка портфелей
-  const loadPortfolios = async () => {
+  const loadPortfolios = useCallback(async () => {
     if (!userId) {
       setError('Не удалось получить ID пользователя.');
       setLoading(false);
@@ -66,19 +68,20 @@ export default function PortfolioListPage() {
       const response = await portfolioApi.getAll(userId, page, pageSize);
       setPortfolios(Array.isArray(response.items) ? response.items : []);
       setTotal(response.totalCount || 0);
-    } catch (err: any) {
-      console.error('Ошибка загрузки портфелей:', err);
-      setError(err.response?.data?.message || err.message || 'Не удалось загрузить портфели.');
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Не удалось загрузить портфели.';
+      setError(message);
       setPortfolios([]);
       setTotal(0);
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId, page, pageSize]);
 
+  // Загружаем при изменении page или userId
   useEffect(() => {
     loadPortfolios();
-  }, [userId, page]);
+  }, [loadPortfolios]);
 
   const handlePageChange = (_: React.ChangeEvent<unknown>, value: number) => setPage(value);
 
@@ -92,18 +95,15 @@ export default function PortfolioListPage() {
     try {
       await portfolioApi.update(id, data);
       setPortfolios((prev) =>
-          prev.map((p) => (p.id === id ? { ...p, name: data.name, currency: data.currency, isPrivate: data.isPrivate } : p))
-        );
+        prev.map((p) => (p.id === id ? { ...p, name: data.name, currency: data.currency, isPrivate: data.isPrivate } : p))
+      );
       setEditingPortfolio(null);
       openSnackbar('Портфель успешно обновлён', 'success');
-    } catch (err: any) {
+    } catch (error: unknown) {
       openSnackbar('Не удалось обновить портфель', 'error');
-      throw err;
+      throw error;
     }
   };
-
-  // Состояние для подтверждения удаления
-  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Обработчик клика по удалению
   const handleDeleteClick = (id: string) => {
@@ -121,7 +121,7 @@ export default function PortfolioListPage() {
       await portfolioApi.delete(id);
       setPortfolios((prev) => prev.filter((p) => p.id !== id));
       openSnackbar('Портфель удалён', 'success');
-    } catch (err: any) {
+    } catch {
       openSnackbar('Не удалось удалить портфель', 'error');
     } finally {
       setDeletingId(null);
@@ -301,7 +301,6 @@ export default function PortfolioListPage() {
                             </Tooltip>
                           </Box>
                         </TableCell>
-
                       </TableRow>
                     ))
                   )}

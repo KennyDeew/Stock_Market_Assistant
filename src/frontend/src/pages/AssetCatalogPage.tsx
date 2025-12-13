@@ -274,8 +274,8 @@ export default function AssetCatalogPage() {
                   purchasePricePerUnit: Number(purchasePrice.toFixed(8)),
                 });
                 openSnackbar('Актив успешно добавлен', 'success');
-              } catch (err: any) {
-                openSnackbar('Ошибка: ' + (err.message || 'ошибка'), 'error');
+              } catch (err: unknown) {
+                  openSnackbar('Ошибка: ' + ((err as Error).message || 'ошибка'), 'error');
                 throw err;
               }
             }}

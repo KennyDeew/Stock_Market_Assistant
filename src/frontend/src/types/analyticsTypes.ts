@@ -41,3 +41,9 @@ export interface TransactionsListResponseDto {
   endDate: string;
   filteredTransactionType: 'Buy' | 'Sell' | null;
 }
+
+export interface PortfolioComparisonItem {
+  [key: string]: string | number;
+  name: string;
+  value: number;
+}

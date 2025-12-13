@@ -47,8 +47,8 @@ export const useAssetSearch = (): UseAssetSearchResult => {
       if (latestQueryRef.current !== query) return;
 
       setAssets(response.data);
-    } catch (err: any) {
-      const message = err.message || 'Не удалось загрузить активы';
+    } catch (err: unknown) {
+      const message = (err as Error).message || 'Не удалось загрузить активы';
       setError(message);
       if (latestQueryRef.current === query) {
         setAssets([]);

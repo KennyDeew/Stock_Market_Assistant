@@ -1,6 +1,13 @@
 import { useEffect, useRef } from 'react';
 
-export function useDebounce<T extends (...args: any[]) => void>(callback: T, delay: number) {
+function useDebounce<F extends (query: string, type?: string) => void | Promise<void>>(
+  callback: F,
+  delay: number
+): F;
+
+function useDebounce<F extends () => void | Promise<void>>(callback: F, delay: number): F;
+
+function useDebounce(callback: (...args: unknown[]) => void | Promise<void>, delay: number) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -9,10 +16,14 @@ export function useDebounce<T extends (...args: any[]) => void>(callback: T, del
     };
   }, []);
 
-  return (...args: Parameters<T>) => {
+  const debounced = (...args: unknown[]): void => {
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
       callback(...args);
     }, delay);
   };
+
+  return debounced;
 }
+
+export { useDebounce };

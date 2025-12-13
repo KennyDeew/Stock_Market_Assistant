@@ -35,9 +35,9 @@ export default function LoginPage() {
     try {
       await login(email, password);
       navigate('/portfolios', { replace: true });
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Ошибка уже локализована в useAuth через handleApiError
-      setError(err.message || 'Неверный email или пароль');
+        setError((err as Error).message || 'Неверный email или пароль');
     } finally {
       setLoading(false);
     }

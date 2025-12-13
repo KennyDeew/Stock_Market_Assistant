@@ -60,14 +60,15 @@ export default function EditPortfolioModal({
 
     setSubmitting(true);
     try {
-      await onSave(portfolio.id, formData);
-      onClose();
-    } catch (err: any) {
-      setErrors({
-        name: err.message || 'Не удалось обновить портфель',
-      });
+        await onSave(portfolio.id, formData);
+        onClose();
+    } catch (err: unknown) {
+        const message = (err as Error).message || 'Не удалось обновить портфель';
+        setErrors({
+            name: message,
+        });
     } finally {
-      setSubmitting(false);
+        setSubmitting(false);
     }
   };
 

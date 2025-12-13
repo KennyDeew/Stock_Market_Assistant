@@ -63,3 +63,14 @@ export interface AuthContextType {
   register: (email: string, password: string, fullName: string) => Promise<void>;
   checkEmail: (email: string) => Promise<boolean>;
 }
+
+/**
+ * Поля из JWT-токена (payload)
+ */
+export interface JwtPayload {
+  Id?: string;
+  Email?: string;
+  UserName?: string;
+  exp?: number; // время истечения в секундах
+  [key: string]: unknown; // для дополнительных полей (например, role, scope)
+}

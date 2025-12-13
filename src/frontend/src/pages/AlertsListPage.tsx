@@ -35,7 +35,7 @@ export default function AlertsListPage() {
     setLoading(true);
     try {
       const response = await alertsApi.getAll();
-      console.log('Ответ от alertsApi.getAll():', response); // 🔍
+      console.log('Ответ от alertsApi.getAll():', response);
 
       if (!Array.isArray(response)) {
         console.error('Ожидался массив, но пришёл:', response);
@@ -44,9 +44,9 @@ export default function AlertsListPage() {
       } else {
         setAlerts(response);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Ошибка загрузки уведомлений:', err);
-      setError(err.message || 'Не удалось загрузить уведомления');
+        setError((err as Error).message || 'Не удалось загрузить уведомления');
     } finally {
       setLoading(false);
     }
@@ -57,7 +57,7 @@ export default function AlertsListPage() {
     try {
       await alertsApi.delete(id);
       setAlerts(alerts.filter(a => a.id !== id));
-    } catch (err: any) {
+    } catch {
       alert('Ошибка при удалении');
     }
   };

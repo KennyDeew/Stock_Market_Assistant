@@ -160,10 +160,16 @@ export default function AssetDetailPage() {
 
         const [secRow] = secData.securities.data;
         const columns = secData.securities.columns;
-        const sec = columns.reduce((obj: any, col: string, index: number) => {
-          obj[col.toLowerCase()] = secRow[index];
-          return obj;
-        }, {}) as MoexSecurity;
+        
+        type MoexValue = string | number | null;
+
+        const sec = columns.reduce(
+          (obj: Record<string, MoexValue>, col: string, index: number) => {
+            obj[col.toLowerCase()] = secRow[index];
+            return obj;
+          },
+          {} as Record<string, MoexValue>
+        ) as MoexSecurity;
 
         setSecurity(sec);
       } catch (err) {

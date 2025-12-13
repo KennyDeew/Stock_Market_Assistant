@@ -1,7 +1,5 @@
 import { createPrivateApiClient } from './apiClient'; // Приватный клиент
 import type {
-  AssetRatingDto,
-  TransactionResponseDto,
   TopAssetsResponseDto,
   TransactionsListResponseDto,
 } from '../types/analyticsTypes';

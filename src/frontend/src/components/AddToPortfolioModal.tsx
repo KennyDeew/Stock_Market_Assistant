@@ -76,19 +76,19 @@ export default function AddToPortfolioModal({
     }
   }, [fixedPortfolioId]);
 
-  // Подставляем цену, если есть актив, но цена пустая
+  // Подставляем цену из selectedAsset, если она есть и ещё не установлена
   useEffect(() => {
     if (
-      initialAsset &&
+      selectedAsset &&
       !price &&
       initialPurchasePrice == null &&
-      typeof initialAsset.currentPrice === 'number'
+      typeof selectedAsset.currentPrice === 'number'
     ) {
-      setPrice(initialAsset.currentPrice.toFixed(2));
+      setPrice(selectedAsset.currentPrice.toFixed(2));
     }
-  }, [initialAsset, price, initialPurchasePrice]);
+  }, [selectedAsset, price, initialPurchasePrice]);
 
-  // 🔥 Сброс формы только при полном закрытии модалки
+  // Сброс формы при закрытии
   useEffect(() => {
     if (!open) {
       // Даем время анимации закрытия
@@ -116,8 +116,9 @@ export default function AddToPortfolioModal({
       await onAdd(selectedAsset, portfolioId, q, p);
       openSnackbar('Актив успешно добавлен в портфель', 'success');
       onClose();
-    } catch (err: any) {
-      openSnackbar('Ошибка: ' + (err.message || 'не удалось добавить актив'), 'error');
+    } catch (err: unknown) {
+        const message = (err as Error).message || 'Не удалось добавить актив';
+        openSnackbar('Ошибка: ' + message, 'error');
     } finally {
       setSubmitting(false);
     }

@@ -1,4 +1,3 @@
-// pages/AnalyticsPage.tsx
 import {
   Box,
   Typography,
@@ -15,7 +14,7 @@ import { useSnackbar } from '../hooks/useSnackbar';
 import AppLayout from '../components/AppLayout';
 import ProtectedLayout from '../layouts/ProtectedLayout';
 import { analyticsApiService } from '../services/analyticsApi';
-import type { AssetRatingDto, TransactionResponseDto } from '../types/analyticsTypes';
+import type { AssetRatingDto, TransactionResponseDto, PortfolioComparisonItem } from '../types/analyticsTypes';
 import {
   LineChart,
   Line,
@@ -46,7 +45,7 @@ export default function AnalyticsPage() {
   const [topBought, setTopBought] = useState<AssetRatingDto[]>([]);
   const [topSold, setTopSold] = useState<AssetRatingDto[]>([]);
   const [transactions, setTransactions] = useState<TransactionResponseDto[]>([]);
-  const [portfolioComparison, setPortfolioComparison] = useState<any[]>([]);
+  const [portfolioComparison, setPortfolioComparison] = useState<PortfolioComparisonItem[]>([]);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -87,7 +86,7 @@ export default function AnalyticsPage() {
     };
 
     loadData();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, openSnackbar]);
 
   const handleChangeTab = (_: React.SyntheticEvent, newValue: TabValue) => {
     setTab(newValue);
@@ -191,7 +190,9 @@ export default function AnalyticsPage() {
                           cx="50%"
                           cy="50%"
                           labelLine={false}
-                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          label={({ name, percent }) =>
+                            percent ? `${name} ${(percent * 100).toFixed(0)}%` : name
+                          }
                           outerRadius={80}
                           fill="#8884d8"
                           dataKey="value"
@@ -215,18 +216,24 @@ export default function AnalyticsPage() {
                   💸 История транзакций
                 </Typography>
 
-                <Paper sx={{ p: 3 }}>
-                  <ResponsiveContainer width="100%" height={400}>
-                    <LineChart data={dailyTransactions}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis />
-                      <RechartsTooltip formatter={(value: number) => [`${value.toFixed(2)} ₽`, 'Сумма']} />
-                      <Legend />
-                      <Line type="monotone" dataKey="amount" stroke="#8884d8" name="Объём сделок" dot={false} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </Paper>
+                {dailyTransactions.length === 0 ? (
+                  <Alert severity="info" sx={{ mb: 3 }}>
+                    Нет данных о транзакциях за выбранный период
+                  </Alert>
+                ) : (
+                  <Paper sx={{ p: 3 }}>
+                    <ResponsiveContainer width="100%" height={400}>
+                      <LineChart data={dailyTransactions}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="date" />
+                        <YAxis />
+                        <RechartsTooltip formatter={(value: number) => [`${value.toFixed(2)} ₽`, 'Сумма']} />
+                        <Legend />
+                        <Line type="monotone" dataKey="amount" stroke="#8884d8" name="Объём сделок" dot={false} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </Paper>
+                )}
               </Box>
             )}
 
@@ -257,12 +264,14 @@ export default function AnalyticsPage() {
                           cx="50%"
                           cy="50%"
                           labelLine={false}
-                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          label={({ name, percent }) =>
+                            percent ? `${name} ${(percent * 100).toFixed(0)}%` : name
+                          }
                           outerRadius={100}
                           fill="#8884d8"
                           dataKey="value"
                         >
-                          {portfolioComparison.map((entry, index) => (
+                          {portfolioComparison.map((_entry, index) => (
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                           ))}
                         </Pie>

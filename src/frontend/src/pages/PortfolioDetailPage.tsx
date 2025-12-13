@@ -25,11 +25,11 @@ import {
   ButtonGroup,
   Tooltip,
 } from '@mui/material';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useSnackbar } from '../hooks/useSnackbar';
 import { portfolioApi, portfolioAssetApi } from '../services/portfolioApi';
-import type { PortfolioResponse, PortfolioShort, PortfolioAssetProfitLossItem } from '../types/portfolioTypes';
+import type { PortfolioResponse, PortfolioShort, PortfolioAssetProfitLossItem, PortfolioProfitLoss } from '../types/portfolioTypes';
 import {
   PortfolioAssetTypeValue,
   type PortfolioAssetShort,
@@ -138,12 +138,12 @@ function AssetTransactions({
 
 export default function PortfolioDetailPage() {
   const { id } = useParams();
+  const { openSnackbar } = useSnackbar();
+
   const [portfolio, setPortfolio] = useState<PortfolioResponse | null>(null);
   const [assets, setAssets] = useState<PortfolioAssetShort[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const { openSnackbar } = useSnackbar();
-
   const [openAssetId, setOpenAssetId] = useState<string | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -157,34 +157,31 @@ export default function PortfolioDetailPage() {
   const [loadingTransactions, setLoadingTransactions] = useState<string | null>(null);
 
   // ✅ Доходность
-  const [profitLoss, setProfitLoss] = useState<PortfolioResponse['assets'][number] extends never ? null : { portfolio: any; assets: PortfolioAssetProfitLossItem[] } | null>(null);
+  const [profitLoss, setProfitLoss] = useState<
+    | {
+        portfolio: PortfolioProfitLoss;
+        assets: PortfolioAssetProfitLossItem[];
+      }
+    | null
+  >(null);
   const [loadingPL, setLoadingPL] = useState(false);
   const [calculationType, setCalculationType] = useState<'Current' | 'Realized'>('Current');
 
-  useEffect(() => {
-    if (!id) return;
-    loadPortfolio();
-    loadAvailablePortfolios();
-  }, [id]);
-
-  useEffect(() => {
-    if (id) loadProfitLoss();
-  }, [id, calculationType]);
-
-  const loadPortfolio = async () => {
+  const loadPortfolio = useCallback(async () => {
     setLoading(true);
     try {
       const data = await portfolioApi.getById(id!);
       setPortfolio(data);
       setAssets(data.assets);
-    } catch (err: any) {
-      setError(err.message || 'Не удалось загрузить портфель');
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Не удалось загрузить портфель';
+      setError(message);
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
-  const loadProfitLoss = async () => {
+  const loadProfitLoss = useCallback(async () => {
     if (!id) return;
     setLoadingPL(true);
     try {
@@ -193,13 +190,39 @@ export default function PortfolioDetailPage() {
         portfolioApi.getPortfolioAssetsProfitLoss(id, calculationType),
       ]);
       setProfitLoss({ portfolio: portfolioPL, assets: assetsPL });
-    } catch (err) {
-      console.error('Failed to load profit/loss data', err);
+    } catch (error) {
+      console.error('Failed to load profit/loss data', error);
       openSnackbar('Не удалось загрузить доходность', 'error');
     } finally {
       setLoadingPL(false);
     }
-  };
+  }, [id, calculationType, openSnackbar]);
+
+  const loadAvailablePortfolios = useCallback(async () => {
+    try {
+      const storedUser = localStorage.getItem('user');
+      const userId = storedUser ? JSON.parse(storedUser)?.user?.id : null;
+      if (!userId) return;
+
+      const response = await portfolioApi.getAll(userId, 1, 100);
+      setPortfolios(response.items);
+    } catch (error) {
+      console.error('Failed to load portfolios for AddToPortfolioModal', error);
+      openSnackbar('Не удалось загрузить портфели', 'error');
+    } finally {
+      setLoadingPortfolios(false);
+    }
+  }, [openSnackbar]);  
+
+  useEffect(() => {
+    if (!id) return;
+    loadPortfolio();
+    loadAvailablePortfolios();
+  }, [id, loadPortfolio, loadAvailablePortfolios]);
+
+  useEffect(() => {
+    if (id) loadProfitLoss();
+  }, [id, calculationType, loadProfitLoss]);
 
   const loadAssetTransactions = async (assetId: string, force = false) => {
     if (loadingTransactions === assetId) return;
@@ -220,22 +243,6 @@ export default function PortfolioDetailPage() {
       openSnackbar('Не удалось загрузить операции', 'warning');
     } finally {
       setLoadingTransactions(null);
-    }
-  };
-
-  const loadAvailablePortfolios = async () => {
-    try {
-      const storedUser = localStorage.getItem('user');
-      const userId = storedUser ? JSON.parse(storedUser)?.user?.id : null;
-      if (!userId) return;
-
-      const response = await portfolioApi.getAll(userId, 1, 100);
-      setPortfolios(response.items);
-    } catch (err) {
-      console.error('Failed to load portfolios for AddToPortfolioModal', err);
-      openSnackbar('Не удалось загрузить портфели', 'error');
-    } finally {
-      setLoadingPortfolios(false);
     }
   };
 
@@ -274,8 +281,8 @@ export default function PortfolioDetailPage() {
       });
       openSnackbar('Актив добавлен', 'success');
       await loadPortfolio();
-    } catch (err: any) {
-      openSnackbar('Ошибка: ' + (err.message || 'ошибка'), 'error');
+    } catch (err: unknown) {
+      openSnackbar('Ошибка: ' + ((err as Error).message || 'ошибка'), 'error');
       throw err;
     }
   };
